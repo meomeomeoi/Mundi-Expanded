@@ -12,6 +12,9 @@ export const STARTERS = [
     { name: 'the amusement park', bg: 'bg/ferris.jpg' },
     { name: 'the gym', bg: 'bg/gym.jpg' },
     { name: 'the library', bg: 'bg/mh_library.jpg' },
+    { name: 'the electronics store', bg: 'bg/downtown.jpg' }, // [expanded] 0.2.0.7: shops for things
+    { name: 'a furniture store', bg: 'bg/gv_store.jpg' },
+    { name: 'the flea market', bg: 'bg/pl_boardwalk.jpg' },
 ];
 export const MAX_SAVED = 24;
 export const norm = (s) => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();

@@ -10,7 +10,9 @@ import { moneyOn, houseOf } from '../sim/money.js';
 import { weekday, hm } from '../sim/time.js';
 import * as F from '../sim/furnish.js';
 import { furnishOn, eraOf, houseRooms, roomName, hallOf } from '../sim/furnishrun.js';
-import { placeOrder, unpackOrder, priceOfCat } from '../sim/orders.js';
+import { placeOrder, unpackOrder, priceOfCat, SHOPPING, shopRoll, buyHere } from '../sim/orders.js';
+import { isOuting } from '../sim/places.js';
+import { outingOf } from '../sim/outing.js';
 export const OV = { open: '', room: '', busy: false };
 const G = (g) => g;
 const GROUPS = [
@@ -48,6 +50,30 @@ function itemHtml(g, w, c) {
         <div class="mu-row"><button class="mu-primary" data-act="or-buy" data-v="${esc(c.id)}" ${OV.busy || (money(g) && wallet < priceOfCat(g, c)) ? 'disabled' : ''}>${icon('download')}<span>Order${price ? ` · ${esc(price)}` : ''}</span></button>
             ${forHouse ? `<button class="mu-ghost" data-act="or-propose" data-v="${esc(c.id)}" title="The house votes in the house chat; paid from the fund">${icon('users')}<span>Propose to the house</span></button>` : ''}</div></div>`;
 }
+// [expanded] In a shop (Go out, after looking around): what it has today, bought on the spot.
+const atShop = (g) => SHOPPING.kind && SHOPPING.day === g.day && isOuting(g.player.loc) && outingOf(g)?.place === SHOPPING.place ? SHOPPING.kind : null;
+function shopHtml(g, w, kind) {
+    const era = eraOf(g);
+    const list = F.assortment(kind, era, g.day, SHOPPING.place, shopRoll);
+    const along = (outingOf(g)?.with ?? []).map(a => g.cast[a]?.name).filter(Boolean);
+    const row = ({ cat: c, share }) => {
+        const key = `shop:${c.id}`;
+        const open = OV.open === key;
+        const price = money(g) ? Math.max(1, Math.round(priceOfCat(g, c) * share)) : 0;
+        const head = `<button class="mu-ph-row mu-or-row ${open ? 'is-on' : ''}" data-act="or-open" data-v="${esc(key)}"><span><b data-notr>${esc(F.catName(c, era))}</b>
+            <small>${esc(c.affords.map(a => F.AFFORDS[a]).join(', '))}${share < 1 ? ` · ${Math.round((1 - share) * 100)}% off` : ''} · ${c.size === 'small' ? 'you can carry it' : along.length ? `big: carried with ${along[0]}` : 'big: delivered tomorrow'}</small></span>${price ? `<em class="mu-or-price">${price}</em>` : ''}</button>`;
+        if (!open)
+            return head;
+        const rooms = roomsForCat(g, w, c);
+        if (!rooms.some(r => r.id === OV.room))
+            OV.room = rooms[0]?.id ?? '';
+        const take = c.size === 'small' || along.length > 0;
+        return `${head}<div class="mu-or-form"><label class="mu-field"><span>For</span><select data-input="or-room">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === OV.room ? 'selected' : ''}>${esc(r.owner === 'player' ? 'Your room' : r.name)}</option>`).join('')}</select></label>
+            <div class="mu-row"><button class="mu-primary" data-act="or-here" data-v="${esc(c.id)}" data-share="${share}" ${money(g) && g.player.money < price ? 'disabled' : ''}>${icon('wallet')}<span>${take ? (c.size === 'small' ? 'Buy it' : `Buy it, carry it home with ${esc(along[0])}`) : 'Buy it, delivered tomorrow'}${price ? ` · ${price}` : ''}</span></button></div></div>`;
+    };
+    return `<section class="mu-bd-panel mu-or-shop"><b>${icon('map')} ${esc(SHOPPING.place.charAt(0).toUpperCase() + SHOPPING.place.slice(1))}</b>
+        ${list.length ? `<div class="mu-ph-list">${list.map(row).join('')}</div>` : '<p class="mu-muted">Nothing for the house here today.</p>'}</section>`;
+}
 export function orderApp(g, w, header) {
     if (!furnishOn(w))
         return `${header}<div class="mu-ph-body"><p class="mu-muted">Nothing to order for this house.</p></div>`;
@@ -56,7 +82,9 @@ export function orderApp(g, w, header) {
     const coming = orders.filter(o => o.state === 'coming'), here = orders.filter(o => o.state === 'here');
     const hall = roomName(g, w, hallOf(g, w));
     const mine = (o) => `${o.owner === 'player' ? 'yours' : o.owner === 'house' ? 'the house\'s' : `${g.cast[o.owner]?.name ?? '?'}'s`}, for ${o.owner === 'player' ? 'your room' : roomName(g, w, o.room).toLowerCase()}`;
+    const shop = atShop(g);
     return `${header}<div class="mu-ph-body mu-or">
+        ${shop ? shopHtml(g, w, shop) : ''}
         ${money(g) ? `<p class="mu-muted mu-or-wallet">${icon('wallet')} Wallet: <b>${Math.floor(g.player.money)}</b> · House fund: <b>${Math.floor(houseOf(g).fund)}</b></p>` : ''}
         ${here.length ? `<section class="mu-bd-panel"><b>${icon('download')} In the ${esc(hall.toLowerCase())}</b>${here.map(o => `<div class="mu-st-item"><span data-notr>📦 ${esc(o.name)} <small class="mu-muted">(${esc(mine(o))})</small></span><button data-act="or-unpack" data-id="${esc(o.id)}">Unpack</button></div>`).join('')}</section>` : ''}
         ${coming.length ? `<section class="mu-bd-panel"><b>On its way</b>${coming.map(o => `<div class="mu-st-item"><span data-notr>${esc(o.name)} <small class="mu-muted">(${esc(mine(o))})</small></span><small class="mu-muted">${esc(when(g, o.due))}</small></div>`).join('')}</section>` : ''}
@@ -85,6 +113,27 @@ Object.assign(ACT, {
         toast(`Ordered: ${o.name}. It comes ${when(g, o.due)}.`, 'success');
         OV.open = '';
         saveGame();
+        notify();
+    },
+    'or-here': (el) => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!g || !w)
+            return;
+        const room = houseRooms(g, w).find(r => r.id === OV.room);
+        if (!room)
+            return;
+        const along = (outingOf(g)?.with ?? []).length > 0;
+        const why = buyHere(g, w, { cat: el.dataset.v, room: room.id, owner: room.owner === 'player' ? 'player' : 'house', share: Number(el.dataset.share) || 1, carried: along });
+        if (why) {
+            toast(why, 'warn');
+            return;
+        }
+        const c = F.catOf(el.dataset.v);
+        toast(c.size === 'small' || along ? `Bought: ${F.catName(c, eraOf(g))}. It goes home with you.` : `Bought: ${F.catName(c, eraOf(g))}. Delivered tomorrow.`, 'success');
+        OV.open = '';
+        saveGame();
+        refreshPrompt();
         notify();
     },
     'or-unpack': (el) => {

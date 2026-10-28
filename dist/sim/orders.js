@@ -25,7 +25,7 @@ export function placeOrder(g, w, o) {
         return 'Not in this era.';
     const name = F.catName(c, era);
     const money = moneyOn(g);
-    const price = money ? priceOfCat(g, c) : 0;
+    const price = money ? Math.max(1, Math.round(priceOfCat(g, c) * (o.share ?? 1))) : 0;
     if (money && o.pay === 'wallet' && g.player.money < price)
         return 'Not enough money in your wallet.';
     if (money && o.pay === 'fund' && houseOf(g).fund < price)
@@ -38,7 +38,7 @@ export function placeOrder(g, w, o) {
     }
     const now = nowAbs(g);
     F.newOrder(G(g), { cat: c.id, name, room: o.room, owner: o.owner, price, paid: money ? o.pay : 'free', by: o.by ?? 'player', day: g.day, via: o.via ?? 'order',
-        due: o.now ? now : F.deliveryAt(now, c.size, H(`${g.day}|${c.id}|${F.ordersOf(G(g)).length}`)), ...(o.prop ? { prop: o.prop } : {}) });
+        due: o.due ?? (o.now ? now : F.deliveryAt(now, c.size, H(`${g.day}|${c.id}|${F.ordersOf(G(g)).length}`))), ...(o.prop ? { prop: o.prop } : {}) });
     return '';
 }
 /** Unpacks a box: the thing stands in its room. */
@@ -75,3 +75,25 @@ onDay.push((g, w) => {
     }
     return out;
 });
+/* ---------- buying in person (a shop in Go out) ---------- */
+/** The shop you are looking around (set by its action; gone once you leave it). */
+export const SHOPPING = { kind: '', place: '', day: -1 };
+export const shopRoll = (k) => H(k);
+/** Buys a thing here: small things (or big ones carried with someone who came along) go home with you, and stand in
+ *  their room; big ones come the next day. '' when done, else why not. */
+export function buyHere(g, w, o) {
+    const c = F.catOf(o.cat);
+    if (!c)
+        return 'That is not here.';
+    const now = nowAbs(g);
+    const take = c.size === 'small' || o.carried;
+    const why = placeOrder(g, w, { cat: o.cat, room: o.room, owner: o.owner, pay: 'wallet', via: 'shop', share: o.share, due: take ? now : F.deliveryAt(now, 'small', H(`${g.day}|${c.id}|shop`)) });
+    if (why)
+        return why;
+    if (take) {
+        const x = F.ordersOf(G(g)).at(-1);
+        x.state = 'here';
+        unpackOrder(g, x.id);
+    }
+    return '';
+}

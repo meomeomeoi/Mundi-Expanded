@@ -73,5 +73,16 @@ test('orders: when they come, boxes in the hallway, unpacked into their room', (
     const x = F.unpack(g, o.id, '2000s'); assert.equal(x.name, 'CRT TV'); assert.equal(x.room, 'living'); assert.equal(x.via, 'order');
     assert.equal(F.ordersOf(g).length, 0); assert.equal(F.unpack(g, o.id, 'now'), null);
 });
+test('shops: kinds from the place\'s name, what each has, the flea market\'s few cheap things of the day', () => {
+    assert.equal(F.shopKindOf('the shopping mall'), 'mall'); assert.equal(F.shopKindOf('the flea market'), 'flea'); assert.equal(F.shopKindOf('a furniture store'), 'furniture');
+    assert.equal(F.shopKindOf('the electronics store downtown'), 'electronics'); assert.equal(F.shopKindOf('the park'), null); assert.equal(F.shopKindOf('the supermarket'), 'super');
+    const roll = (k) => { let h = 7; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return (h % 1000) / 1000; };
+    const el = F.assortment('electronics', '2000s', 3, 'x', roll).map(x => x.cat.id);
+    assert.ok(el.includes('tv') && el.includes('dvd') && !el.includes('vr')); assert.ok(F.assortment('furniture', 'now', 3, 'x', roll).every(x => x.share === 1));
+    const f1 = F.assortment('flea', 'now', 3, 'the flea market', roll), f2 = F.assortment('flea', 'now', 4, 'the flea market', roll);
+    assert.ok(f1.length > 0 && f1.length <= 6); assert.ok(f1.every(x => x.share >= 0.4 && x.share <= 0.7 && x.cat.price < 2000));
+    assert.notDeepEqual(f1.map(x => x.cat.id), f2.map(x => x.cat.id));
+    assert.ok(F.CURB.every(F.catOf) && F.RUMMAGE_THINGS.every(F.catOf));
+});
 
 console.log(`furnish: ${n} tests passed`);

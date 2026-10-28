@@ -85,7 +85,7 @@ export const catalogFor = (era: Era, kind?: RoomKind) => CATALOG.filter(c => for
 export type Owner = 'house' | string;   // 'house', 'player', or a character's avatar
 export type Via = 'start' | 'bought' | 'order' | 'shop' | 'found' | 'gift' | 'story' | 'hand';
 export interface Fixture { id: string; cat?: string; name: string; room: string; owner: Owner; via: Via; day: number; decor?: boolean }
-export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[] }
+export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[]; curb?: { cat: string; day: number }; rummaged?: number }
 export type GLike = { day: number; furnishx?: FurnishX };
 export function furnishOf(g: GLike): FurnishX {
     const f = (g.furnishx ??= { items: [], seq: 0 }); f.items ??= []; f.seq ??= 0; return f;
@@ -259,3 +259,42 @@ export function unpack(g: GLike, id: string, era: Era): Fixture | null {
     furnishOf(g).orders = ordersOf(g).filter(x => x !== o);
     return addFixture(g, { cat: o.cat, room: o.room, owner: o.owner, via: o.via, era });
 }
+
+/* ---------- shops in person, and finds ---------- */
+
+export type ShopKind = 'electronics' | 'furniture' | 'mall' | 'music' | 'sports' | 'hardware' | 'super' | 'flea';
+const SHOP_KINDS: [RegExp, ShopKind][] = [
+    [/flea|thrift|second-?hand|antique|garage sale|yard sale|junk|барахолк|комисс/i, 'flea'],
+    [/electronic|tech store|gadget|computer (store|shop)|электрон/i, 'electronics'],
+    [/furniture|home store|interior|мебел/i, 'furniture'],
+    [/music (store|shop)|instrument|музыкальн/i, 'music'],
+    [/sport(s|ing)? (store|shop|goods)|спорттовар/i, 'sports'],
+    [/hardware|diy|home improvement|tool|хозтовар|строител/i, 'hardware'],
+    [/mall|department store|shopping|торгов/i, 'mall'],
+    [/supermarket|grocer|convenience|супермаркет|продукт/i, 'super'],
+];
+export const SHOP_NAMES: Record<ShopKind, string> = { electronics: 'electronics store', furniture: 'furniture store', mall: 'shops', music: 'music store', sports: 'sports store', hardware: 'hardware store', super: 'aisles', flea: 'stalls' };
+/** What kind of shop a place out is, from its name (null: not a shop). */
+export const shopKindOf = (place: string): ShopKind | null => { for (const [re, k] of SHOP_KINDS) if (re.test(String(place ?? ''))) return k; return null; };
+const STOCK: Record<Exclude<ShopKind, 'flea'>, string[]> = {
+    electronics: ['tv', 'projector', 'dvd', 'console', 'handheld', 'vr', 'pc', 'laptop', 'stereo', 'turntable', 'karaoke', 'microwave', 'coffee'],
+    furniture: ['couch', 'armchair', 'bookshelf', 'desk', 'doublebed', 'vanity', 'table', 'loungers', 'aquarium'],
+    mall: ['tv', 'console', 'handheld', 'laptop', 'stereo', 'boardgames', 'guitar', 'yogamat', 'coffee', 'microwave', 'armchair', 'vanity', 'easel', 'sewing'],
+    music: ['guitar', 'keyboard', 'piano', 'turntable', 'karaoke', 'stereo'],
+    sports: ['treadmill', 'weights', 'yogamat', 'bike', 'darts', 'pooltable'],
+    hardware: ['workbench', 'grill', 'washer', 'stove', 'bathtub', 'hottub', 'loungers', 'microwave'],
+    super: ['microwave', 'coffee', 'boardgames', 'darts', 'yogamat'],
+};
+/** What a shop has today, with the share of the price it asks (a flea market: a few things a day, 40–70%). */
+export function assortment(kind: ShopKind, era: Era, day: number, place: string, roll: (k: string) => number): { cat: CatFixture; share: number }[] {
+    if (kind !== 'flea') return STOCK[kind].map(id => catOf(id)).filter((c): c is CatFixture => !!c && forEra(c, era)).map(cat => ({ cat, share: 1 }));
+    const all = CATALOG.filter(c => forEra(c, era) && c.price < 2000);
+    const picked: CatFixture[] = [];
+    for (let i = 0; picked.length < 6 && i < 40; i++) { const c = all[Math.floor(roll(`${place}|${day}|f${i}`) * all.length)]; if (c && !picked.includes(c)) picked.push(c); }
+    return picked.map(cat => ({ cat, share: Math.round((0.4 + 0.3 * roll(`${place}|${day}|${cat.id}|p`)) * 100) / 100 }));
+}
+/** Left on the curb now and then: big things someone did not want. */
+export const CURB = ['armchair', 'bookshelf', 'desk', 'couch', 'table', 'aquarium'];
+/** In the storage room: an old thing, or decor. */
+export const RUMMAGE_THINGS = ['boardgames', 'guitar', 'turntable', 'easel', 'darts', 'yogamat', 'handheld', 'dvd'];
+export const RUMMAGE_DECOR = ['a box of old photos', 'a dusty lava lamp', 'a framed movie poster', 'string lights', 'a stack of old magazines', 'a vintage globe'];

@@ -16,17 +16,17 @@ const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++
 export const priceOfCat = (g: Save, c: F.CatFixture) => Math.max(1, Math.round(c.price * difficultyOf(g).price));
 
 /** Orders a catalog thing for a room (whose it will be: `owner`). '' when done, else why not. */
-export function placeOrder(g: Save, w: WorldDef, o: { cat: string; room: string; owner: F.Owner; pay: 'wallet' | 'fund'; by?: F.Owner; via?: 'order' | 'shop'; prop?: string; now?: boolean }): string {
+export function placeOrder(g: Save, w: WorldDef, o: { cat: string; room: string; owner: F.Owner; pay: 'wallet' | 'fund'; by?: F.Owner; via?: 'order' | 'shop'; prop?: string; now?: boolean; share?: number; due?: number }): string {
     const c = F.catOf(o.cat); if (!c || !furnishOn(w)) return 'That cannot be ordered here.';
     const era = eraOf(g); if (!F.forEra(c, era)) return 'Not in this era.';
     const name = F.catName(c, era); const money = moneyOn(g as any);
-    const price = money ? priceOfCat(g, c) : 0;
+    const price = money ? Math.max(1, Math.round(priceOfCat(g, c) * (o.share ?? 1))) : 0;
     if (money && o.pay === 'wallet' && g.player.money < price) return 'Not enough money in your wallet.';
     if (money && o.pay === 'fund' && houseOf(g as any).fund < price) return 'Not enough in the house fund.';
     if (money) { if (o.pay === 'wallet') walletAdd(g as any, -price, `Ordered: ${name}`); else fundAdd(g as any, -price, `Bought for the house: ${name}`); }
     const now = nowAbs(g);
     F.newOrder(G(g), { cat: c.id, name, room: o.room, owner: o.owner, price, paid: money ? o.pay : 'free', by: o.by ?? 'player', day: g.day, via: o.via ?? 'order',
-        due: o.now ? now : F.deliveryAt(now, c.size, H(`${g.day}|${c.id}|${F.ordersOf(G(g)).length}`)), ...(o.prop ? { prop: o.prop } : {}) });
+        due: o.due ?? (o.now ? now : F.deliveryAt(now, c.size, H(`${g.day}|${c.id}|${F.ordersOf(G(g)).length}`))), ...(o.prop ? { prop: o.prop } : {}) });
     return '';
 }
 
@@ -56,3 +56,20 @@ onDay.push((g, w) => {
     if (out.length) { saveGame(); notify(); }
     return out;
 });
+
+/* ---------- buying in person (a shop in Go out) ---------- */
+
+/** The shop you are looking around (set by its action; gone once you leave it). */
+export const SHOPPING = { kind: '' as F.ShopKind | '', place: '', day: -1 };
+export const shopRoll = (k: string) => H(k);
+/** Buys a thing here: small things (or big ones carried with someone who came along) go home with you, and stand in
+ *  their room; big ones come the next day. '' when done, else why not. */
+export function buyHere(g: Save, w: WorldDef, o: { cat: string; room: string; owner: F.Owner; share: number; carried: boolean }): string {
+    const c = F.catOf(o.cat); if (!c) return 'That is not here.';
+    const now = nowAbs(g);
+    const take = c.size === 'small' || o.carried;
+    const why = placeOrder(g, w, { cat: o.cat, room: o.room, owner: o.owner, pay: 'wallet', via: 'shop', share: o.share, due: take ? now : F.deliveryAt(now, 'small', H(`${g.day}|${c.id}|shop`)) });
+    if (why) return why;
+    if (take) { const x = F.ordersOf(G(g)).at(-1)!; x.state = 'here'; unpackOrder(g, x.id); }
+    return '';
+}

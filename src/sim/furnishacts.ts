@@ -8,7 +8,12 @@ import type { WorldDef, ActionDef } from '../core/world.js';
 import { actionMods, onAction } from './hooks.js';
 import { presentAt } from './people.js';
 import { addBond } from './social.js';
-import { furnishOn } from './furnishrun.js';
+import { furnishOn, houseRooms, eraOf } from './furnishrun.js';
+import { nowAbs, toast, notify, saveGame } from '../core/store.js';
+import { isOuting } from './places.js';
+import { outingOf } from './outing.js';
+import { onDay } from './hooks.js';
+import { SHOPPING, shopRoll } from './orders.js';
 import * as F from './furnish.js';
 
 const G = (g: Save) => g as unknown as F.GLike;
@@ -47,7 +52,45 @@ actionMods.push((g, w, list) => {
         const whose = x.owner !== 'house' && x.owner !== 'player' ? ` (${g.cast[x.owner]?.name}'s)` : '';
         add.push({ id: `x-fx-${afford}`, name: d.label(x.name), label: `${d.label(x.name)}${whose}`, icon: d.icon, cost: 0, minutes: d.minutes, home: true, effects: d.effects } as ActionDef);
     }
+    // out: a shop to look around (its shelves open in the phone)
+    if (isOuting(room)) { const kind = F.shopKindOf(outingOf(g)?.place ?? ''); if (kind) add.push({ id: 'x-fx-shop', name: 'Look around', label: `Look around the ${F.SHOP_NAMES[kind]}`, icon: '🛍️', cost: 0, minutes: 20, effects: {} } as ActionDef); }
+    // someone left something on the curb today: from the hallway or the front of the house
+    const curb = fxx(g).curb; const kind = houseRooms(g, w).find(r => r.id === room)?.kind;
+    if (curb && curb.day === g.day && (kind === 'hall' || kind === 'outdoor')) { const c = F.catOf(curb.cat); if (c) add.push({ id: 'x-fx-curb', name: 'Take it in', label: `Take in the ${F.catName(c, eraOf(g)).toLowerCase()} someone left on the curb`, icon: '🪑', cost: 0, minutes: 15, effects: { energy: -4 } } as ActionDef); }
+    // the storage room, once a week
+    if (kind === 'storage' && (fxx(g).rummaged ?? -99) <= g.day - 7) add.push({ id: 'x-fx-rummage', name: 'Rummage', label: 'Rummage through the old boxes', icon: '📦', cost: 0, minutes: 30, effects: { hygiene: -5 } } as ActionDef);
     return [...kept, ...add];
+});
+const fxx = (g: Save) => F.furnishOf(G(g));
+onAction.push((g, w, a) => {
+    if (a.id === 'x-fx-shop') {
+        const o = outingOf(g); const kind = F.shopKindOf(o?.place ?? ''); if (!o || !kind) return;
+        Object.assign(SHOPPING, { kind, place: o.place, day: g.day });
+        // its shelves: in the phone's shop app (a ui module, loaded when needed)
+        void import('../ui/phone.js').then(m => { (m as any).P.open = true; (m as any).P.app = 'order'; notify(); }).catch(() => { /* no phone */ });
+        return;
+    }
+    if (a.id === 'x-fx-curb') {
+        const f = fxx(g); const c = f.curb && F.catOf(f.curb.cat); if (!c) return; delete f.curb;
+        const rooms = houseRooms(g, w); const to = rooms.find(r => !r.owner && r.kind && c.rooms.includes(r.kind)) ?? rooms.find(r => r.id === g.player.loc)!;
+        const x = F.addFixture(G(g), { cat: c.id, room: to.id, owner: 'house', via: 'found', era: eraOf(g) });
+        if (x) setTimeout(() => toast(`The ${x.name.toLowerCase()} is the house's now (${to.name.toLowerCase()}). Move it in Storage → Furniture.`, 'success'), 50);
+        saveGame(); return;
+    }
+    if (a.id === 'x-fx-rummage') {
+        const f = fxx(g); f.rummaged = g.day; const room = g.player.loc; const r = shopRoll(`${g.day}|${nowAbs(g)}|rummage`);
+        let x: F.Fixture | null = null;
+        if (r < 0.35) { const ids = F.RUMMAGE_THINGS.filter(id => F.forEra(F.catOf(id)!, eraOf(g))); x = F.addFixture(G(g), { cat: ids[Math.floor(shopRoll(`${g.day}|t`) * ids.length)], room, owner: 'house', via: 'found', era: eraOf(g) }); }
+        else if (r < 0.7) x = F.addFixture(G(g), { name: F.RUMMAGE_DECOR[Math.floor(shopRoll(`${g.day}|d`) * F.RUMMAGE_DECOR.length)], room, owner: 'house', via: 'found' });
+        setTimeout(() => toast(x ? `Under the dust: ${x.name.toLowerCase()}. It is the house's now (move it in Storage → Furniture).` : 'Nothing worth keeping, just old boxes.', x ? 'success' : 'info'), 50);
+        saveGame(); return;
+    }
+});
+// now and then something is left on the curb (a day's chance)
+onDay.push((g, w) => {
+    if (!on(g, w)) return [];
+    if (shopRoll(`${g.world}|${g.day}|curb`) < 0.06) { fxx(g).curb = { cat: F.CURB[Math.floor(shopRoll(`${g.day}|curbwhat`) * F.CURB.length)], day: g.day }; }
+    return [];
 });
 // a game together: a little closer with everyone who played
 onAction.push((g, w, a) => {
