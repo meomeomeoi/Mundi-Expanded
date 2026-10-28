@@ -38,7 +38,6 @@ const about = (r: Resident) => { const c: any = charOf(r.avatar); return persona
 /** `loud`: you wrote, so a failure is shown (conversations without you only log it). */
 export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], topic = '', news: string[] = [], loud = false): Promise<C.Msg[]> {
     const ws = writers.map(a => g.cast[a]).filter(Boolean) as Resident[]; if (!ws.length) return [];
-    const now = nowAbs(g);
     const prompt = C.chatPrompt({
         chatName: c.name, when: `${weekday(g.day)}, ${hm(g.minutes)}`, lang: aiLangName(g.lang), voice: aiVoice(w), era: eraTextLine(g as any),
         members: c.members.map(a => g.cast[a]).filter(Boolean).map(r => ({ name: r.name, about: about(r) })), you: personaName(), youIn: c.you,
@@ -62,7 +61,11 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
         notify(); return [];
     }
     const out: C.Msg[] = [];
-    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, now + 1 + i + Math.floor(H(`${c2.id}|${now}|${i}`) * 2)); if (m) out.push(m); });
+    // [expanded] never ahead of the game's clock: with the clock moved only by what you do, "a minute or two later"
+    // stayed in the future (answers at 10:02 while it is 10:00). The answers end at the time they arrive, a minute apart
+    // backwards when there is room, never before the last message already in the chat (so after yours, at the same minute).
+    const at = nowAbs(g2); const after = c2.msgs.at(-1)?.at ?? -Infinity;
+    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, Math.max(after, at - (lines.length - 1 - i))); if (m) out.push(m); });
     if (out.length) social(g2).unread[unreadKey(c2.id)] = (social(g2).unread[unreadKey(c2.id)] ?? 0) + out.length;
     return out;
 }
