@@ -12,7 +12,7 @@ import { soloOf } from './lifeui.js';
 import { judgeLine, judgeReaction } from '../sim/mood.js';
 import { state, notify, esc, game, toast, ROOT_ID, saveGame, settings } from '../core/store.js';
 import { getWorld, worldFile, systemOn } from '../core/world.js';
-import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
+import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, currentChatId, groupTurnOn, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
 import { placeOf, isOuting } from '../sim/places.js';
 import { outingOf } from '../sim/outing.js';
 import { bgStyle } from './outing.js';
@@ -396,10 +396,22 @@ function setExpr(m, label, judge) {
         saveGame();
     } // in a world, how they react moves the bond
 }
+// [expanded] The labels are kept in the chat file, but never by writing it while SillyTavern is adding a line (a new
+// message sent meanwhile, the next member of a group turn): it saves the chat itself then, labels included (they are
+// on the lines in memory). Nor into another chat, if you switched while the answer was coming.
+function saveIfQuiet(chatId) {
+    if (currentChatId() !== chatId)
+        return;
+    if (state.generating || groupTurnOn())
+        return;
+    saveChat();
+}
 let classifying = -1;
 const TRIED = new Map();
 export function afterScene(_main) {
-    if (state.generating || classifying !== -1)
+    // [expanded] not between two members of one group turn: once the whole turn is over (one call for it, and nothing
+    // written to the chat while SillyTavern is still adding lines to it)
+    if (state.generating || classifying !== -1 || groupTurnOn())
         return;
     const list = chat();
     if (byModel(list))
@@ -416,6 +428,7 @@ export function afterScene(_main) {
             continue;
         TRIED.set(k, tries + 1);
         classifying = i;
+        const chatId = currentChatId();
         let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
             console.info(`[Mundi Expanded] expressions: SillyTavern's classifier for ${m.name}: ${label || '(nothing: tried again later)'}`);
@@ -423,7 +436,7 @@ export function afterScene(_main) {
                 return;
             ok = true;
             setExpr(m, label, true);
-            saveChat();
+            saveIfQuiet(chatId);
         }).catch(() => { }).finally(() => { classifying = -1; if (ok)
             notify();
         else
@@ -459,6 +472,7 @@ function byModel(list) {
     const people = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x) => String(x.label).toLowerCase()).filter(Boolean) }));
     const lines = list.filter((m) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1;
+    const chatId = currentChatId();
     const prompt = exprPrompt({ people, you: personaName(), lines });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
@@ -487,7 +501,7 @@ function byModel(list) {
             setExpr(m, label, !judged.has(who));
             judged.add(who); // the bond: once per person (their newest line)
         }
-        saveChat();
+        saveIfQuiet(chatId);
     }).finally(() => { classifying = -1; notify(); });
     return true;
 }

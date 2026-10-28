@@ -17,6 +17,7 @@ import {
     chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight,
     editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx,
     addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores,
+    currentChatId, groupTurnOn,
     scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat,
     persona, personas, personaThumb, usePersona,
 } from '../st/bridge.js';
@@ -377,10 +378,20 @@ function setExpr(m: any, label: string, judge: boolean) {
     const g = game(); const who = speakerOf(m);
     if (judge && once && g && who && g.cast[who]?.met) { judgeReaction(g, who, label); saveGame(); }   // in a world, how they react moves the bond
 }
+// [expanded] The labels are kept in the chat file, but never by writing it while SillyTavern is adding a line (a new
+// message sent meanwhile, the next member of a group turn): it saves the chat itself then, labels included (they are
+// on the lines in memory). Nor into another chat, if you switched while the answer was coming.
+function saveIfQuiet(chatId: string) {
+    if (currentChatId() !== chatId) return;
+    if (state.generating || groupTurnOn()) return;
+    saveChat();
+}
 let classifying = -1;
 const TRIED = new Map<string, number>();
 export function afterScene(_main: HTMLElement) {
-    if (state.generating || classifying !== -1) return;
+    // [expanded] not between two members of one group turn: once the whole turn is over (one call for it, and nothing
+    // written to the chat while SillyTavern is still adding lines to it)
+    if (state.generating || classifying !== -1 || groupTurnOn()) return;
     const list = chat();
     if (byModel(list)) return;   // [expanded] a model gives everyone here a face at once (Settings → Game)
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
@@ -388,14 +399,14 @@ export function afterScene(_main: HTMLElement) {
         if (m.is_user || m.is_system) continue;
         if (labeled(m)) continue;
         const k = `${i}|${textKey(m)}`; const tries = TRIED.get(k) ?? 0; if (tries >= 2) continue;
-        TRIED.set(k, tries + 1); classifying = i;
+        TRIED.set(k, tries + 1); classifying = i; const chatId = currentChatId();
         let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
             console.info(`[Mundi Expanded] expressions: SillyTavern's classifier for ${m.name}: ${label || '(nothing: tried again later)'}`);
             if (!label) return;
             ok = true;
             setExpr(m, label, true);
-            saveChat();
+            saveIfQuiet(chatId);
         }).catch(() => { /* tried again later */ }).finally(() => { classifying = -1; if (ok) notify(); else setTimeout(notify, 3000); });
         break;
     }
@@ -416,7 +427,7 @@ function byModel(list: any[]): boolean {
     const avatars = [...new Set([...presentAt(g, w, g.player.loc).map(r => r.avatar), ...pending.map(m => speakerOf(m)!)])].filter(a => g.cast[a] || charOf(a));
     const people: ExprWho[] = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x: any) => String(x.label).toLowerCase()).filter(Boolean) }));
     const lines = list.filter((m: any) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m: any) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
-    classifying = list.length - 1;
+    classifying = list.length - 1; const chatId = currentChatId();
     const prompt = exprPrompt({ people, you: personaName(), lines });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
@@ -434,7 +445,7 @@ function byModel(list: any[]): boolean {
             const who = speakerOf(m)!; const label = got[who]; if (!label) { MODEL_FAILED.add(`${list.indexOf(m)}|${textKey(m)}`); continue; }
             setExpr(m, label, !judged.has(who)); judged.add(who);   // the bond: once per person (their newest line)
         }
-        saveChat();
+        saveIfQuiet(chatId);
     }).finally(() => { classifying = -1; notify(); });
     return true;
 }

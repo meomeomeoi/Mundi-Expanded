@@ -6,6 +6,9 @@
 import { getContext } from '../../../../../st-context.js';
 // @ts-ignore
 import { getCurrentChatId, deleteMessage, updateMessageBlock, saveChatDebounced, getCharacters, setUserName, printCharacters, doNewChat, processDroppedFiles, deleteCharacterChatByName } from '../../../../../../script.js';
+// [expanded] the whole module too, for a flag older SillyTavern may not export (a missing name would break loading)
+// @ts-ignore
+import * as GCX from '../../../../../group-chats.js';
 // @ts-ignore
 import { groups, selected_group, openGroupById, openGroupChat, editGroup, getGroups, createNewGroupChat, getGroupPastChats, deleteGroupChat as stDeleteGroupChat } from '../../../../../group-chats.js';
 // @ts-ignore
@@ -208,6 +211,8 @@ export const allGroups = (): any[] => groups;
 export const groupOf = (id: string) => groups.find((g: any) => g.id === id) ?? null;
 export const selectedGroup = () => selected_group as string | null;
 export const currentChatId = () => String(getCurrentChatId() ?? '');
+/** [expanded] A group's turn is going on (members answer one after another; each one's end is not the turn's end). */
+export const groupTurnOn = () => !!(GCX as any).is_group_generating;
 
 // A save's name. No ":" in it: on Windows the file is saved without it, and SillyTavern then cannot find the chat
 // by the name it keeps in the group (a save made like that could not be loaded).
