@@ -1536,6 +1536,50 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-upd .mu-primary { padding: 7px 16px !important; }
 #mundi-root .mu-upd-link { font-size: 13px; color: inherit; opacity: .8; text-decoration: underline; }
 #mundi-root .mu-upd .mu-ibtn { margin: -4px -2px 0 0; }
+/* [expanded] The Relationships app (Mundi Expanded) */
+#mundi-root .mu-bd { gap: 10px; }
+#mundi-root .mu-bd-graph { width: 100%; height: auto; display: block; user-select: none; }
+#mundi-root .mu-bd-edge { cursor: pointer; transition: opacity .2s; }
+#mundi-root .mu-bd-edge line { stroke-linecap: round; }
+#mundi-root .mu-bd-edge .mu-bd-hit { stroke: transparent; stroke-width: 16; }
+#mundi-root .mu-bd-edge:hover line:first-child, #mundi-root .mu-bd-edge.is-on line:first-child { filter: drop-shadow(0 0 3px currentColor) brightness(1.2); }
+#mundi-root .mu-bd-edge.is-on line:first-child { stroke-width: 5; opacity: 1; }
+#mundi-root .mu-bd-edge.is-dim, #mundi-root .mu-bd-node.is-dim { opacity: .28; }
+#mundi-root .mu-bd-node { cursor: pointer; transition: opacity .2s; }
+#mundi-root .mu-bd-ring { fill: var(--bg2); stroke: var(--line); stroke-width: 2; }
+#mundi-root .mu-bd-node:hover .mu-bd-ring { stroke: var(--accent); }
+#mundi-root .mu-bd-node.is-on .mu-bd-ring { stroke: var(--accent); stroke-width: 3.5; }
+#mundi-root .mu-bd-node text { fill: var(--text); font-size: 10.5px; font-weight: 600; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
+#mundi-root .mu-bd-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 11px; color: var(--muted); }
+#mundi-root .mu-bd-legend span { display: inline-flex; align-items: center; gap: 4px; }
+#mundi-root .mu-bd-legend i, #mundi-root .mu-bd-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+#mundi-root .mu-bd-panel { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--bg2); border: 1px solid var(--line); }
+#mundi-root .mu-bd-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#mundi-root .mu-bd-title b { font-size: 15px; }
+#mundi-root .mu-bd-val { display: grid; gap: 4px; }
+#mundi-root .mu-bd-val input[type=range] { width: 100%; accent-color: var(--c, var(--accent)); }
+#mundi-root .mu-bd-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+#mundi-root .mu-bd-seg button { padding: 6px 4px; border-radius: 10px; font-size: 13px; }
+#mundi-root .mu-bd-seg button.is-on { background: var(--accent); color: #fff; }
+#mundi-root .mu-bd-hint { margin: 0; font-size: 12px; }
+#mundi-root .mu-bd-facts { display: grid; gap: 6px; }
+#mundi-root .mu-bd-fact { position: relative; display: grid; gap: 4px; padding: 9px 10px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+#mundi-root .mu-bd-fact.is-standing { border-left: 3px solid var(--accent); }
+#mundi-root .mu-bd-fact p { margin: 0; font-size: 13.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+#mundi-root .mu-bd-fact textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; font-size: 13.5px; }
+#mundi-root .mu-bd-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-right: 84px; }
+#mundi-root .mu-bd-meta small { color: var(--muted); font-weight: 600; }
+#mundi-root .mu-bd-tag { font-style: normal; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+#mundi-root .mu-bd-tag.is-ep { color: var(--muted); }
+#mundi-root .mu-bd-delta { font-style: normal; font-size: 11px; font-weight: 700; padding: 0 5px; border-radius: 6px; }
+#mundi-root .mu-bd-delta.is-up { color: #2ecc71; background: rgba(46, 204, 113, .12); }
+#mundi-root .mu-bd-delta.is-down { color: #e74c3c; background: rgba(231, 76, 60, .12); }
+#mundi-root .mu-bd-tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 0; opacity: .55; transition: opacity .15s; }
+#mundi-root .mu-bd-fact:hover .mu-bd-tools, #mundi-root .mu-bd-fact:focus-within .mu-bd-tools { opacity: 1; }
+#mundi-root .mu-bd-tools .mu-ibtn { width: 28px; height: 28px; }
+#mundi-root .mu-bd-row { display: flex; gap: 6px; }
+#mundi-root .mu-bd-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+@media (hover: none) { #mundi-root .mu-bd-tools { opacity: 1; } }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

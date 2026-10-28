@@ -48,6 +48,7 @@ export const exampleTag = (w, ex) => `${ex.from ?? w.id}:${ex.name}`;
 export const DEFAULT_APPS = [
     { id: 'messages', name: 'Messages', icon: 'chat', color: '#34c759', on: true },
     { id: 'people', name: 'People', icon: 'users', color: '#ff9f0a', on: true },
+    { id: 'bonds', name: 'Relationships', icon: 'heart', color: '#e0577a', on: true, home: true }, // [expanded]
     { id: 'jobs', name: 'Jobs', icon: 'briefcase', color: '#0a84ff', on: true },
     { id: 'bank', name: 'Bank', icon: 'wallet', color: '#5e5ce6', on: true },
     { id: 'homes', name: 'Homes', icon: 'home', color: '#ff375f', on: true },
@@ -88,7 +89,7 @@ export const SCENARIO_SYSTEMS_OFF = ['neighbors', 'social', 'crafting', 'events'
     'mentors', 'letters', 'legends', 'festivals', 'hobbies', 'reputation', 'bills', 'breakdowns', 'living'];
 // Life-Sim keeps to daily life: no groups to join, property to run or recipes to craft (those come with the RPG mode).
 export const LIFESIM_APPS_OFF = ['factions', 'assets', 'workshop'];
-export const appsShown = (w) => appsOf(w).filter(a => a.on && !(isScenario(w) && SCENARIO_APPS_OFF.includes(a.id)) && !(gameMode(w) === 'lifesim' && LIFESIM_APPS_OFF.includes(a.id)) && (!appSystem(a.id) || systemOn(w, appSystem(a.id))) && (!DEFAULT_APPS.find(d => d.id === a.id)?.rpg || (gameMode(w) === 'rpg' && !!w.rpg?.classes?.length)));
+export const appsShown = (w) => appsOf(w).filter(a => a.on && !(DEFAULT_APPS.find(d => d.id === a.id)?.home && !isScenario(w)) /* [expanded] */ && !(isScenario(w) && SCENARIO_APPS_OFF.includes(a.id)) && !(gameMode(w) === 'lifesim' && LIFESIM_APPS_OFF.includes(a.id)) && (!appSystem(a.id) || systemOn(w, appSystem(a.id))) && (!DEFAULT_APPS.find(d => d.id === a.id)?.rpg || (gameMode(w) === 'rpg' && !!w.rpg?.classes?.length)));
 const registry = new Map();
 export const BUILT_IN = ['modern', 'urban', 'medieval', 'house', 'manor'];
 // The RPG mode waits for a later update: while this is on, nothing of it can be chosen, made or played. Worlds made

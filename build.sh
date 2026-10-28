@@ -80,4 +80,6 @@ if [ -f tests/version.test.mjs ]; then
 node tests/version.test.mjs > /tmp/mundi-version-test.log 2>&1 || { cat /tmp/mundi-version-test.log; echo "VERSION TESTS FAILED"; exit 1; }
 echo "version: $(tail -1 /tmp/mundi-version-test.log)"
 fi
+# [expanded] the fork's own tests
+node tests/bonds.test.mjs || { echo "BONDS TESTS FAILED"; exit 1; }
 echo "build ok"

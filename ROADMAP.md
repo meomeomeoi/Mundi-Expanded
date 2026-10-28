@@ -10,7 +10,7 @@ Fork rules (to keep pulling upstream fixes cheap):
 - Saves stay compatible with upstream Mundi: new data goes under new keys, nothing upstream is renamed.
 - Upstream is a git remote (`upstream`); merge its releases when they bring something useful.
 
-## 1. Relationships between characters (in progress)
+## 1. Relationships between characters (first version: v0.2.0-x.1)
 
 Upstream tracks friendship and romance between **you** and each character. Ties between characters (sister of,
 friend of…) are fixed labels with a tone. This fork lets the characters' relationships change on their own.

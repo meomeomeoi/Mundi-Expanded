@@ -11,7 +11,7 @@ import { state, notify, esc, game, toast, saveGame, ROOT_ID, nowAbs, uiZoom } fr
 import { runPlans } from './plans.js';
 import { maybeBump } from './bump.js';
 import { rollAction, gradeName } from '../sim/dice.js';
-import { setPrompt } from '../st/bridge.js';
+import { setPrompt, chat } from '../st/bridge.js';   // [expanded] chat
 import { beforeTravel, beforeSleep } from '../sim/plans.js';
 import { getWorld, worldFile, systemOn, type WorldDef, isScenario } from '../core/world.js';
 import { openNow, pictureAt } from '../sim/daynight.js';
@@ -22,7 +22,8 @@ import { thumb } from '../st/bridge.js';
 import { pins, placeOf, travelMinutes, playerHomeId, isOuting, outingName } from '../sim/places.js';
 import { planOn, floorsOn, planTarget, unplaced, floorOf } from '../sim/plan.js';
 import { presentAt, whereNow } from '../sim/people.js';
-import { writeDiary, diaryOn, markDayStart } from '../sim/diary.js';
+import { writeDiary, diaryOn, markDayStart, dayStart } from '../sim/diary.js';
+import { bondsNight, changesNote } from '../sim/bondsnight.js';   // [expanded]
 import { openWork, diaryWaiting, diaryReady } from './relui.js';
 import { askAboutPlans } from './appts.js';
 import { doing, isDoing } from './doing.js';
@@ -427,6 +428,7 @@ async function sleep() {
     const until = w.sleep.until;
     const mins = g.minutes < until ? until - g.minutes : 1440 - g.minutes + until;
     const dayEnded = g.day;
+    const dayLines = { start: dayStart(g), end: chat().length };   // [expanded] the day's lines, for the relationships
     await endVisit(g, w);
     beforeSleep(g).forEach(m => toast(m, 'info'));
     g.asleep = true;
@@ -455,8 +457,15 @@ async function sleep() {
         setTimeout(() => diaryWaiting(dayEnded), 2600);   // after the night: "writing your diary…" until it is done
         writeDiary(g, w, dayEnded)
             .then(res => { markDayStart(g); saveGame(); refreshPrompt(); if (res.ok) toast(`Diary updated — day ${dayEnded}. Read it in the Journal.`, 'success'); diaryReady(dayEnded, res.changes, res.ok); })
-            .catch((e: any) => { diaryReady(dayEnded, [], false); toast(`The diary could not be written (${String(e?.message ?? e)}). The facts of the day are still in the Journal.`, 'warn'); });
-    } else markDayStart(g);
+            .catch((e: any) => { diaryReady(dayEnded, [], false); toast(`The diary could not be written (${String(e?.message ?? e)}). The facts of the day are still in the Journal.`, 'warn'); })
+            .finally(() => nightBonds(g, w, dayEnded, dayLines));   // [expanded] after the diary (one AI call at a time)
+    } else { markDayStart(g); nightBonds(g, w, dayEnded, dayLines); }   // [expanded] nightBonds
+}
+
+// [expanded] The relationships between characters at night (one AI call, Home only); never stops the night.
+async function nightBonds(g: Save, w: WorldDef, day: number, range: { start: number; end: number }) {
+    try { const note = changesNote(await bondsNight(g, w, day, range)); if (note) { refreshPrompt(); toast(note, 'info', { ms: 8000 }); } }
+    catch (e: any) { toast(`Relationships could not be updated tonight (${String(e?.message ?? e)}).`, 'warn'); }
 }
 
 // After a shift: time has passed; a short transition shows how it went.

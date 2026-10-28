@@ -151,7 +151,7 @@ export interface ExampleCharacter {
 }
 export const exampleTag = (w: WorldDef, ex: ExampleCharacter) => `${ex.from ?? w.id}:${ex.name}`;
 /** A phone app: which one (`id`), and how it is called and looks in this world. */
-export interface AppDef { id: string; name: string; icon: string; color: string; on: boolean; rpg?: boolean }
+export interface AppDef { id: string; name: string; icon: string; color: string; on: boolean; rpg?: boolean; /** [expanded] only in Home */ home?: boolean }
 export interface LoreEntry { keys: string[]; content: string; constant?: boolean }
 
 export interface WorldDef {
@@ -256,6 +256,7 @@ export interface WorldDef {
 export const DEFAULT_APPS: AppDef[] = [
     { id: 'messages', name: 'Messages', icon: 'chat', color: '#34c759', on: true },
     { id: 'people', name: 'People', icon: 'users', color: '#ff9f0a', on: true },
+    { id: 'bonds', name: 'Relationships', icon: 'heart', color: '#e0577a', on: true, home: true },   // [expanded]
     { id: 'jobs', name: 'Jobs', icon: 'briefcase', color: '#0a84ff', on: true },
     { id: 'bank', name: 'Bank', icon: 'wallet', color: '#5e5ce6', on: true },
     { id: 'homes', name: 'Homes', icon: 'home', color: '#ff375f', on: true },
@@ -296,7 +297,7 @@ export const SCENARIO_SYSTEMS_OFF: SystemId[] = ['neighbors', 'social', 'craftin
     'mentors', 'letters', 'legends', 'festivals', 'hobbies', 'reputation', 'bills', 'breakdowns', 'living'];
 // Life-Sim keeps to daily life: no groups to join, property to run or recipes to craft (those come with the RPG mode).
 export const LIFESIM_APPS_OFF = ['factions', 'assets', 'workshop'];
-export const appsShown = (w: WorldDef): AppDef[] => appsOf(w).filter(a => a.on && !(isScenario(w) && SCENARIO_APPS_OFF.includes(a.id)) && !(gameMode(w) === 'lifesim' && LIFESIM_APPS_OFF.includes(a.id)) && (!appSystem(a.id) || systemOn(w, appSystem(a.id)!)) && (!DEFAULT_APPS.find(d => d.id === a.id)?.rpg || (gameMode(w) === 'rpg' && !!w.rpg?.classes?.length)));
+export const appsShown = (w: WorldDef): AppDef[] => appsOf(w).filter(a => a.on && !(DEFAULT_APPS.find(d => d.id === a.id)?.home && !isScenario(w)) /* [expanded] */ && !(isScenario(w) && SCENARIO_APPS_OFF.includes(a.id)) && !(gameMode(w) === 'lifesim' && LIFESIM_APPS_OFF.includes(a.id)) && (!appSystem(a.id) || systemOn(w, appSystem(a.id)!)) && (!DEFAULT_APPS.find(d => d.id === a.id)?.rpg || (gameMode(w) === 'rpg' && !!w.rpg?.classes?.length)));
 const registry = new Map<string, WorldDef>();
 export const BUILT_IN = ['modern', 'urban', 'medieval', 'house', 'manor'];
 export type GameMode = 'lifesim' | 'rpg' | 'custom';
