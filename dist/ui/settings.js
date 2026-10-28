@@ -15,6 +15,7 @@ import { setSkin } from './skins.js';
 import { addonsTab } from './addons.js';
 import { lookPanelHtml, lookConfirmHtml } from './chatlook.js';
 import { regulatorSettingsHtml } from './regui.js'; // [expanded]
+import { youSettingsHtml } from './youpic.js'; // [expanded] 0.2.0.7
 import { DATE_FORMATS, fmtDate, fmtDateTime, fmtClock } from '../core/fmt.js';
 // Fonts: Mundi's default, the system's, or one of these (the world's style font is used when "world" is chosen).
 export const FONTS = [['default', 'Mundi (Nunito)', ''], ['system', 'System', 'system-ui, "Segoe UI", sans-serif'], ['inter', 'Inter', '"Inter", sans-serif'],
@@ -51,6 +52,7 @@ function tabInterface() {
             <div class="mu-field"><span>Characters</span><div class="mu-chips">${[['over', 'Over the box'], ['above', 'Above the box (whole)']].map(([id, label]) => `<button class="mu-chip ${(UI().spriteFit || 'over') === id ? 'is-on' : ''}" data-act="set-spritefit" data-v="${id}">${label}</button>`).join('')}</div><small class="mu-muted">${UI().spriteFit === 'above' ? 'Whole figures, standing on the dialogue box (smaller). H or the eye on the box hides it for a full look.' : 'Big, the dialogue box in front of them. H or the eye on the box hides it for a full look.'}</small></div>
             ${slider('Character size', 'spriteSize', 50, 160, '%')}${slider('Character width', 'spriteW', 60, 140, '%')}${slider('Character height (move up or down)', 'spriteY', -30, 30, 'vh')}
             ${check('Show the character card when there are no expression sprites', 'cardMode')}
+            ${youSettingsHtml() /* [expanded] */}
         </section>
         <section><h3>Chat look</h3><p class="mu-muted">Also in the scenario's side menu (Look) and the game menu. Saved in Mundi's own settings, apart from SillyTavern's.</p>${lookPanelHtml()}</section>
 `;

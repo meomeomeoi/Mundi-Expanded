@@ -2002,6 +2002,62 @@ body.mundi-open #toast-container { display: none !important; }
     backdrop-filter: blur(10px); cursor: pointer; }
 #mundi-root .mu-dlg-show:hover, #mundi-root .mu-dlg-show:focus-visible { opacity: 1; }
 #mundi-root .mu-dlg-show svg { width: 18px; height: 18px; }
+/* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
+   the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
+#mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }
+#mundi-root .mu-yp > * { pointer-events: auto; }
+@media (min-width: 1440px) { #mundi-root[data-dialogpos="center"] .mu-yp { bottom: 12px; height: min(44vh, 440px); } }
+#mundi-root[data-dialogpos="left"] .mu-yp { left: calc(min(760px, 100% - 340px) + 28px); bottom: 12px; height: min(36vh, 340px); }
+#mundi-root.dlg-hidden .mu-yp { bottom: 12px; height: min(40vh, 400px); }
+#mundi-root[data-mobile] .mu-yp { left: 6px; bottom: calc(min(44vh, 440px) + 14px); height: 20vh; }
+#mundi-root .mu-yp.is-full { aspect-ratio: 9 / 16; }
+
+#mundi-root .mu-yp-frame { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; padding: 0; border: 0; background: none; overflow: hidden; cursor: pointer; display: block; }
+#mundi-root .mu-yp-frame img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: 50% 0; transform: scale(1.35); transform-origin: 50% 6%; transition: transform .3s ease; }
+#mundi-root .mu-yp.is-full .mu-yp-frame img { object-fit: contain; object-position: 50% 100%; transform: none; }
+#mundi-root .mu-yp-gloss { display: none; }
+#mundi-root .mu-yp-name { flex: none; line-height: 1.35; font-weight: 700; font-size: 13px; align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the 2000s: glossy chrome, a bevel, a deep blue "screen" behind you, a highlight over the top half */
+#mundi-root .mu-yp.is-2000s .mu-yp-frame { padding: 5px; border-radius: 16px; background: linear-gradient(160deg, #f6f8fb 0%, #a3acb7 30%, #eef1f4 48%, #7d8792 68%, #dde2e7 100%); box-shadow: inset 0 1px 0 #fff, inset 0 -2px 3px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .55); }
+#mundi-root .mu-yp.is-2000s .mu-yp-frame img { border-radius: 11px; background: radial-gradient(120% 90% at 50% 15%, #3d6fb8 0%, #17325e 55%, #07142a 100%); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); transform: none; object-position: 50% 0; }
+#mundi-root .mu-yp.is-2000s:not(.is-full) .mu-yp-frame img { object-fit: cover; }
+#mundi-root .mu-yp.is-2000s .mu-yp-gloss { display: block; position: absolute; left: 5px; right: 5px; top: 5px; height: 38%; border-radius: 11px 11px 50% 50% / 11px 11px 18% 18%; background: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .03)); pointer-events: none; }
+#mundi-root .mu-yp.is-2000s .mu-yp-name { padding: 2px 14px; border-radius: 999px; color: #1b2430; text-shadow: 0 1px 0 rgba(255, 255, 255, .8); background: linear-gradient(180deg, #ffffff, #c4cbd3 55%, #e9edf1); box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .3), 0 2px 6px rgba(0, 0, 0, .4); font-family: Tahoma, Verdana, sans-serif; }
+
+/* the 2010s: a flat card, square-ish, a plain shadow, the name on a solid bar */
+#mundi-root .mu-yp.is-2010s { gap: 0; }
+#mundi-root .mu-yp.is-2010s .mu-yp-frame { border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--panel, #20242c) 92%, var(--accent, #4a8cff)); box-shadow: 0 2px 8px rgba(0, 0, 0, .4); }
+#mundi-root .mu-yp.is-2010s .mu-yp-name { align-self: stretch; padding: 5px 10px; border-radius: 0 0 4px 4px; background: var(--accent, #4a8cff); color: #fff; text-transform: uppercase; letter-spacing: .08em; font-size: 11px; box-shadow: 0 2px 8px rgba(0, 0, 0, .4); }
+
+/* now: no frame; a soft glow of the accent, fading out at the bottom; the name on frosted glass */
+#mundi-root .mu-yp.is-now .mu-yp-frame { overflow: visible; }
+#mundi-root .mu-yp.is-now .mu-yp-frame img { filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent, #4a8cff) 55%, transparent)); -webkit-mask-image: linear-gradient(to top, transparent 0, #000 22%); mask-image: linear-gradient(to top, transparent 0, #000 22%); transform: none; object-fit: contain; object-position: 50% 100%; }
+#mundi-root .mu-yp.is-now:not(.is-full) .mu-yp-frame { overflow: hidden; }
+#mundi-root .mu-yp.is-now:not(.is-full) .mu-yp-frame img { object-fit: cover; object-position: 50% 0; transform: scale(1.3); transform-origin: 50% 6%; }
+#mundi-root .mu-yp.is-now .mu-yp-name { padding: 3px 10px; border-radius: 10px; color: #fff; background: rgba(20, 22, 30, .42); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, .14); }
+
+#mundi-root .mu-yp-frame:hover img, #mundi-root .mu-yp.is-open .mu-yp-frame img { filter: brightness(1.06); }
+#mundi-root .mu-yp.is-now .mu-yp-frame:hover img { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--accent, #4a8cff) 75%, transparent)) drop-shadow(0 6px 14px rgba(0, 0, 0, .5)); }
+
+/* no sprites yet: a small round button to add them */
+#mundi-root .mu-yp-empty { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; opacity: .55; }
+#mundi-root .mu-yp-empty:hover { opacity: 1; }
+#mundi-root.dlg-hidden .mu-yp-empty { bottom: 12px; }
+
+/* the picker: beside the portrait */
+#mundi-root .mu-yp-pop { position: absolute; left: calc(100% + 10px); bottom: 0; width: min(430px, calc(100vw - 40px)); max-height: 72vh; overflow: auto; display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: var(--panel, #1c1f26); border: 1px solid var(--line, #333); box-shadow: var(--shadow, 0 10px 30px rgba(0, 0, 0, .5)); }
+#mundi-root .mu-yp:not(:has(.mu-yp-frame)) .mu-yp-pop { left: 0; bottom: 0; }
+#mundi-root[data-mobile] .mu-yp-pop { position: fixed; left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); }
+#mundi-root .mu-yp-pophead { display: flex; align-items: center; justify-content: space-between; }
+#mundi-root .mu-yp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 6px; }
+#mundi-root .mu-yp-grid button { display: grid; gap: 2px; padding: 3px; border-radius: 8px; }
+#mundi-root .mu-yp-grid button.is-on { outline: 2px solid var(--accent, #4a8cff); }
+#mundi-root .mu-yp-grid button[aria-disabled="true"] { opacity: .45; cursor: default; }
+#mundi-root .mu-yp-grid img { width: 100%; height: 66px; object-fit: cover; object-position: 50% 0; border-radius: 6px; background: rgba(255, 255, 255, .05); }
+#mundi-root .mu-yp-grid span { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-yp-tools { flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-yp-tools label.mu-file { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

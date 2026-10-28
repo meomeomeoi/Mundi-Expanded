@@ -1044,6 +1044,21 @@ export async function deleteSprite(avatar: string, label: string, spriteName: st
     if (!res.ok) throw new Error('Could not delete the image.');
 }
 
+// [expanded] 0.2.0.7: sprites in any folder (your portrait: "<persona> (Mundi)", an outfit as its subfolder)
+export async function spritesIn(folder: string): Promise<any[]> {
+    try { const r = await fetch(`/api/sprites/get?name=${encodeURIComponent(folder)}`, { headers: headers() }); const l = r.ok ? await r.json() : []; return Array.isArray(l) ? l : []; }
+    catch { return []; }
+}
+/** Uploads into a folder: a .zip (SillyTavern unpacks it: each image's name is its label) or one image for a label. */
+export async function uploadSpritesTo(folder: string, file: File, label?: string) {
+    const form = new FormData(); form.append('name', folder);
+    const zip = /\.zip$/i.test(file.name);
+    if (zip) form.append('avatar', file, file.name);
+    else { const l = label ?? file.name.replace(/\.[^.]+$/, '').toLowerCase(); form.append('label', l); form.append('avatar', file, `${l}.png`); form.append('spriteName', l); }
+    const res = await fetch(zip ? '/api/sprites/upload-zip' : '/api/sprites/upload', { method: 'POST', headers: headers(false), body: form });
+    if (!res.ok) throw new Error(`Could not upload ${file.name}.`);
+}
+
 /* ---------- events ---------- */
 
 export const on = (name: string, fn: (...a: any[]) => void) => {

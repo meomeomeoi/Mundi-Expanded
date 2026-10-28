@@ -124,6 +124,8 @@ function expressions() {
         const a = speakerOf(list[i]);
         if (a && !(a in out) && x?.mundi_expr && keyOk(list[i], 'mundi_exprk'))
             out[a] = x.mundi_expr;
+        if (list[i].is_user && !('__you' in out) && x?.mundi_expr && keyOk(list[i], 'mundi_exprk'))
+            out.__you = x.mundi_expr; // [expanded] your face (your own line read)
     }
     return out;
 }
@@ -161,6 +163,7 @@ import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM } from '../sim/exprs.js'; // [expanded]
 import { applyMoves, movePlaces } from '../sim/goes.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
+import { youPicHtml, youAuto, youLabels } from './youpic.js'; // [expanded] 0.2.0.7: your portrait
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
 function lineHtml(m, i, last, lastChar) {
@@ -250,7 +253,7 @@ export function sceneHtml() {
             </div>
         </section>
         ${sceneCard(g, w)}
-        ${portraitHtml()}${lightboxHtml()}${lookConfirmHtml()}
+        ${portraitHtml()}${youPicHtml(ex.__you ?? null) /* [expanded] */}${lightboxHtml()}${lookConfirmHtml()}
         ${extMenuHtml()}
         ${toolsHtml()}
         ${giftHtml() /* [expanded] */}
@@ -431,8 +434,8 @@ export function afterScene(_main) {
         return; // [expanded] a model gives everyone here a face at once (Settings → Game)
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
         const m = list[i];
-        if (m.is_user || m.is_system)
-            continue;
+        if (m.is_system || (m.is_user && !youAuto()))
+            continue; // [expanded] your line too, for your portrait's face
         if (labeled(m))
             continue;
         const k = `${i}|${textKey(m)}`;
@@ -483,6 +486,9 @@ function byModel(list) {
         return false;
     const avatars = [...new Set([...presentAt(g, w, g.player.loc).map(r => r.avatar), ...pending.map(m => speakerOf(m))])].filter(a => g.cast[a] || charOf(a));
     const people = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x) => String(x.label).toLowerCase()).filter(Boolean) }));
+    const youToo = youAuto();
+    if (youToo)
+        people.push({ avatar: '__you', name: personaName(), labels: youLabels() }); // [expanded] your portrait's face
     const lines = list.filter((m) => !m.is_system && !isFiller(m) && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1;
     const chatId = currentChatId();
@@ -490,7 +496,7 @@ function byModel(list) {
     // newest turn only (a line read again after a swipe undoes what its old text did)
     const newestLine = list.indexOf(pending[0]);
     const places = isScenario(w) && newestLine === list.length - 1 ? movePlaces(g, w) : undefined;
-    const prompt = exprPrompt({ people, you: personaName(), lines, places });
+    const prompt = exprPrompt({ people, you: personaName(), lines, places, youToo });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
         const R = await import('../sim/regulator.js');
@@ -498,7 +504,7 @@ function byModel(list) {
         const got = parseExprs(ans, people);
         console.info('[Mundi Expanded] expressions: answer', JSON.stringify(ans).slice(0, 400), '→', got);
         if (places) {
-            const mv = parseMoves(ans, people.filter(p => presentAt(g, w, g.player.loc).some(r => r.avatar === p.avatar)), places);
+            const mv = parseMoves(ans, people.filter(p => p.avatar !== '__you' && presentAt(g, w, g.player.loc).some(r => r.avatar === p.avatar)), places);
             const { told, changed } = applyMoves(g, w, newestLine, mv.moves, mv.follows);
             if (Object.keys(mv.moves).length || mv.follows.length)
                 console.info('[Mundi Expanded] moves:', mv);

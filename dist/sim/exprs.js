@@ -14,7 +14,7 @@ export function exprPrompt(p) {
     const all = [...new Set(p.people.flatMap(x => x.labels))];
     const own = p.people.filter(x => x.labels.length && x.labels.length < all.length);
     return [
-        `[The people here: ${p.people.map(x => x.name).join(', ')}. ${p.you} is the player: no label for them.]`,
+        `[The people here: ${p.people.map(x => x.name).join(', ')}. ${p.youToo ? `${p.you} is the player: their face too, from what they last said and did and what was said to them.` : `${p.you} is the player: no label for them.`}]`, // [expanded] 0.2.0.7: your portrait
         '[The last lines:]',
         ...p.lines.map(l => `${l.name}: ${l.text}`),
         `[For each of the people here: their face at the end of the last line, how they feel now. Those who did not speak too: how they react to what was said or done to them (teased, praised, ignored). What a line says about someone else is that person's, not the speaker's. Most of the time a face is neutral or mild; a strong one only when the moment shows it.]`,
