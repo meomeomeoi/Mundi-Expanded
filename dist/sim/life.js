@@ -1,6 +1,7 @@
 // Life-Sim systems: needs in words, aspirations, feelings that fade, the lifestyle shop (vehicles, furniture,
 // gear for working at home), quick gigs, the gym, college, things at home that break, scene lock, NPCs who
 // invite you, and who lets you into their home. All decided by the engine; the AI only narrates.
+import { passing } from './doors.js'; // [expanded]
 import { nowAbs } from '../core/store.js';
 import { courseOf, learning, canStudyHere, studiedToday, studySession, countUp, countOf, gainTrait } from './skills.js';
 import { priceOf } from './bills.js';
@@ -177,6 +178,8 @@ export function afterAction(g, w, a, success) {
 }
 /* ---------- who lets you in ---------- */
 export function doorAnswer(g, w, loc) {
+    if (passing(loc))
+        return { ok: true, text: '' }; // [expanded] a Home's door already answered
     if (!loc.startsWith('home:') || loc === playerHomeId)
         return { ok: true, text: '' };
     const r = g.cast[loc.slice(5)];

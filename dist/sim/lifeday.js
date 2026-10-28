@@ -1,7 +1,7 @@
 // [expanded] Profiles at runtime (rules in profile.ts): where a character with a profile is now (instead of
 // upstream's routine), whether they are asleep, what the scene is told, and making profiles from the cards.
 import { game, nowAbs } from '../core/store.js';
-import { isScenario } from '../core/world.js';
+import { isScenario, getWorld } from '../core/world.js';
 import { isWeekend } from './time.js';
 import { placeOn, extraRooms, isOuting } from './places.js';
 import { whereNow, OUT } from './people.js';
@@ -57,7 +57,9 @@ export function slotAt(g, w, r, at) {
     if (!isScenario(w))
         return null;
     const plan = planOf(g, w, r, Math.floor(at / 1440));
-    return plan ? plan[Math.floor((at % 1440) / 60)] : null;
+    const s = plan ? plan[Math.floor((at % 1440) / 60)] : null;
+    // woken up (by you): awake for a while, in their room
+    return s?.asleep && (P.lifexOf(G(g)).woke?.[r.avatar] ?? 0) > at ? { ...s, asleep: false, kind: 'room', act: 'just woken up, groggy' } : s;
 }
 /** For upstream's routine: where they are (null: no profile, upstream's routine decides). */
 export function lifeWhere(g, w, r, at) {
@@ -72,8 +74,11 @@ export function asleepNow(r, at) {
     const p = P.profileOf(G(g), r.avatar);
     if (!p)
         return null;
-    const day = Math.floor(at / 1440);
-    return P.asleepAt(p, Math.floor((at % 1440) / 60), isWeekend(day));
+    if ((P.lifexOf(G(g)).woke?.[r.avatar] ?? 0) > at)
+        return false;
+    const w = getWorld(g.world);
+    const s = w && slotAt(g, w, r, at);
+    return s ? s.asleep : P.asleepAt(p, Math.floor((at % 1440) / 60), isWeekend(Math.floor(at / 1440)));
 }
 /** For the scene: what the people here are doing, and the notes written for them. */
 export function lifeLines(g, w, present) {
@@ -96,6 +101,14 @@ export function lifeLines(g, w, present) {
         const p = P.profileOf(G(g), r.avatar);
         if (p?.ooc)
             out.push(`[OOC note about ${r.name}: ${p.ooc}]`);
+    }
+    const lx = P.lifexOf(G(g));
+    if (lx.atDoor && lx.atDoor.until > now && present.some(r => r.avatar === lx.atDoor.avatar))
+        out.push(`${g.cast[lx.atDoor.avatar]?.name} came to the door of their room to talk with {{user}} in the hallway, without inviting {{user}} in.`);
+    for (const r of present) {
+        const t = lx.woke?.[r.avatar];
+        if (t && t > now && t - now > 60)
+            out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`);
     }
     const elsewhere = houseNow(g, w, present);
     if (elsewhere)

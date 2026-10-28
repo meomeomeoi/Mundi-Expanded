@@ -22,3 +22,12 @@
 #mundi-root .mu-lp-ticks { margin-top: -2px; }
 #mundi-root .mu-lp-ticks i { font-style: normal; font-size: 10px; color: var(--muted); text-align: left; }
 #mundi-root .mu-lp-ticks .mu-lp-cells i:nth-child(6n+1) { margin-left: 2px; }
+#mundi-root .mu-door { max-width: 420px; }
+#mundi-root .mu-door-faces { display: flex; gap: 6px; }
+#mundi-root .mu-door-faces img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: top; filter: grayscale(.4) brightness(.8); }
+#mundi-root .mu-door-note { padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, .06); font-style: italic; }
+/* a sleeping face on the map */
+#mundi-root .faces { position: relative; }
+#mundi-root .faces img.is-asleep { filter: grayscale(.7) brightness(.65); }
+#mundi-root .faces img.is-asleep + i:empty { display: none; }
+#mundi-root .mu-plan-room .faces img.is-asleep, #mundi-root .mu-rooms .faces img.is-asleep { outline: 2px dashed rgba(160, 170, 255, .6); outline-offset: -2px; }

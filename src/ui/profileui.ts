@@ -30,8 +30,12 @@ function strip(g: Save, w: WorldDef, r: Resident, p: P.Profile, weekend: boolean
 const hourOpts = (sel: number) => Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === sel ? 'selected' : ''}>${hh(h)}</option>`).join('');
 
 /** In a person's page (Home). */
+const keyHtml = (g: Save, r: Resident) => `<label class="mu-check"><input type="checkbox" data-input="lp-key" data-who="${esc(r.avatar)}" ${(P.lifexOf(G(g)).keys ?? []).includes(r.avatar) ? 'checked' : ''}><span>Gave you a key to their room<small>You can go in when they are out (a partner always can).</small></span></label>`;
 export function profileHtml(g: Save, w: WorldDef, r: Resident): string {
     if (!isScenario(w)) return '';
+    return `${profileBody(g, w, r)}${keyHtml(g, r)}`;
+}
+function profileBody(g: Save, w: WorldDef, r: Resident): string {
     const p = P.profileOf(G(g), r.avatar);
     const busy = LV.busy ? 'disabled' : '';
     if (!p) return `<section class="mu-wc-sec mu-lp"><h4>Day and habits</h4>
@@ -135,6 +139,7 @@ Object.assign(INPUT, {
     'lp-act': (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.text = el.value.slice(0, 60); hand(x.p); saveGame(); } },
     'lp-actwhere': async (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.where = el.value; hand(x.p); await refresh(); } },
     'lp-ooc': (el) => { const x = prof(el); if (!x) return; x.p.ooc = el.value.slice(0, 400); saveGame(); },
+    'lp-key': (el) => { const g = game(); if (!g) return; const lx = P.lifexOf(G(g)); const a = el.dataset.who ?? ''; lx.keys = el.checked ? [...new Set([...(lx.keys ?? []), a])] : (lx.keys ?? []).filter(x => x !== a); saveGame(); notify(); },
     'lp-dinner': async (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).dinner = el.checked; await refresh(); },
     'lp-dinnerat': async (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).dinnerAt = Number(el.value); await refresh(); },
 });

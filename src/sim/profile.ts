@@ -23,7 +23,12 @@ export interface Profile {
     src?: 'gen' | 'rules' | 'hand';
     ov?: { wd?: Record<string, Kind>; we?: Record<string, Kind> };   // hours set by hand
 }
-export interface LifeX { profiles: Record<string, Profile>; dinner: boolean; dinnerAt: number; asked?: boolean }
+export interface LifeX {
+    profiles: Record<string, Profile>; dinner: boolean; dinnerAt: number; asked?: boolean;
+    keys?: string[];                          // who gave you a key to their room
+    woke?: Record<string, number>;            // woken up (by you): awake until (absolute minutes)
+    atDoor?: { avatar: string; until: number };   // came to their door to talk, without letting you in
+}
 export type GLike = { lifex?: LifeX };
 export const lifexOf = (g: GLike): LifeX => {
     const l = (g.lifex ??= { profiles: {}, dinner: true, dinnerAt: 20 } as LifeX);

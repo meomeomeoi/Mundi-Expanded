@@ -1,7 +1,7 @@
 // [expanded] Profiles at runtime (rules in profile.ts): where a character with a profile is now (instead of
 // upstream's routine), whether they are asleep, what the scene is told, and making profiles from the cards.
 import { game, nowAbs, type Save, type Resident } from '../core/store.js';
-import { isScenario, type WorldDef } from '../core/world.js';
+import { isScenario, getWorld, type WorldDef } from '../core/world.js';
 import { isWeekend } from './time.js';
 import { placeOn, extraRooms, isOuting } from './places.js';
 import { whereNow, OUT } from './people.js';
@@ -53,7 +53,9 @@ export function planOf(g: Save, w: WorldDef, r: Resident, day: number): P.Slot[]
 export function slotAt(g: Save, w: WorldDef, r: Resident, at: number): P.Slot | null {
     if (!isScenario(w)) return null;
     const plan = planOf(g, w, r, Math.floor(at / 1440));
-    return plan ? plan[Math.floor((at % 1440) / 60)] : null;
+    const s = plan ? plan[Math.floor((at % 1440) / 60)] : null;
+    // woken up (by you): awake for a while, in their room
+    return s?.asleep && (P.lifexOf(G(g)).woke?.[r.avatar] ?? 0) > at ? { ...s, asleep: false, kind: 'room', act: 'just woken up, groggy' } : s;
 }
 /** For upstream's routine: where they are (null: no profile, upstream's routine decides). */
 export function lifeWhere(g: Save, w: WorldDef, r: Resident, at: number): string | null {
@@ -63,8 +65,9 @@ export function lifeWhere(g: Save, w: WorldDef, r: Resident, at: number): string
 export function asleepNow(r: Resident, at: number): boolean | null {
     const g = game(); if (!g) return null;
     const p = P.profileOf(G(g), r.avatar); if (!p) return null;
-    const day = Math.floor(at / 1440);
-    return P.asleepAt(p, Math.floor((at % 1440) / 60), isWeekend(day));
+    if ((P.lifexOf(G(g)).woke?.[r.avatar] ?? 0) > at) return false;
+    const w = getWorld(g.world); const s = w && slotAt(g, w, r, at);
+    return s ? s.asleep : P.asleepAt(p, Math.floor((at % 1440) / 60), isWeekend(Math.floor(at / 1440)));
 }
 
 /** For the scene: what the people here are doing, and the notes written for them. */
@@ -79,6 +82,9 @@ export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     }).filter(Boolean);
     if (doing.length) out.push(`What they were doing when this moment began (it can change as the scene goes on): ${doing.join('; ')}.`);
     for (const r of present) { const p = P.profileOf(G(g), r.avatar); if (p?.ooc) out.push(`[OOC note about ${r.name}: ${p.ooc}]`); }
+    const lx = P.lifexOf(G(g));
+    if (lx.atDoor && lx.atDoor.until > now && present.some(r => r.avatar === lx.atDoor!.avatar)) out.push(`${g.cast[lx.atDoor.avatar]?.name} came to the door of their room to talk with {{user}} in the hallway, without inviting {{user}} in.`);
+    for (const r of present) { const t = lx.woke?.[r.avatar]; if (t && t > now && t - now > 60) out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`); }
     const elsewhere = houseNow(g, w, present);
     if (elsewhere) out.push(elsewhere);
     return out;

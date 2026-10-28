@@ -1,5 +1,6 @@
 // The world map: full screen, zoom and drag, a pin for every place. Hovering a pin opens a small card next to it
 // (what the place is, who is there; at your own place, what you can do). Clicking a pin goes there.
+import { doorFlow, sleepAttr } from './doors.js';   // [expanded]
 import { lex, appRef } from '../core/lexicon.js';
 import { showTransition } from './lifeui.js';
 import { lockedOut } from '../sim/bills.js';
@@ -172,7 +173,7 @@ function roomsHtml(g: Save, w: WorldDef) {
     const yours = list.filter(p => p.id === playerHomeId), rooms = list.filter(p => !p.home), beds = list.filter(p => p.home && p.id !== playerHomeId);
     const card = (p: any) => { const pic = p.home ? kindPic(p) : pictureAt(w, g.minutes, p.bg, p.bgs); const here = presentAt(g, w, p.id); const you = p.id === g.player.loc;
         return `<button class="mu-room ${you ? 'is-you' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
-            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`; };
+            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`; };
     const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3></div>`;
     // floors set in the creator (no picture of the plan): the rooms floor by floor, one block above the other
     if (floorsOn(w)) {
@@ -198,7 +199,7 @@ function planHtml(g: Save, w: WorldDef & { plan: NonNullable<WorldDef['plan']> }
     if (PV.at !== g.player.loc) { PV.at = g.player.loc; PV.floor = ''; }
     const floor = plan.floors.find(f => f.id === PV.floor) ?? plan.floors.find(f => f.id === floorOf(g, w, g.player.loc)) ?? plan.floors[0];
     const kindPic = (loc: string) => { const k = loc === playerHomeId ? w.homes.kinds[g.player.home.kind] : w.homes.kinds[w.homes.zones.find(z => z.id === g.cast[loc.slice(5)]?.home.zone)?.kind ?? '']; return k ? pictureAt(w, g.minutes, k.image, k.images) : ''; };
-    const faces = (loc: string) => { const here = presentAt(g, w, loc); return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : ''; };
+    const faces = (loc: string) => { const here = presentAt(g, w, loc); return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : ''; };
     const rooms = plan.rooms.filter(r => r.floor === floor.id).map(r => {
         const t = planTarget(g, w, r); const box = `left:${r.x}%;top:${r.y}%;width:${r.w}%;height:${r.h}%`;
         if (!t) return `<div class="mu-plan-room is-off" style="${box}"><b>${esc(r.id.startsWith('spot:') ? 'Empty bedroom' : w.places.find(p => p.id === r.id)?.name ?? '')}</b></div>`;
@@ -413,6 +414,7 @@ async function goTo(loc: string) {
     popFor = '';
     // Home: a plan somewhere out of the house: going there is going out (who comes, the background)
     if (isScenario(w) && isOuting(loc) && loc !== g.player.loc) { const { openGoOut } = await import('./outing.js'); openGoOut(outingName(loc)); return; }
+    if (await doorFlow(loc)) return;   // [expanded] a Home's bedroom doors: knock, asleep, a key
     const door = doorAnswer(g, w, loc);
     if (!door.ok) { toast(door.text, 'info'); notify(); return; }
     if (door.text) toast(door.text, 'info');

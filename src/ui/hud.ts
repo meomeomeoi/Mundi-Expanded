@@ -14,7 +14,7 @@ import { payOf, lockedOut } from '../sim/bills.js';
 import { needWord } from '../sim/life.js';
 import { lifeOverlays, soloOf } from './lifeui.js';
 import { game, esc, state, UI, saveSettings, notify, nowAbs, clockMode, onPhone, toast, saveGame } from '../core/store.js';
-import { lifeSetupHtml } from './profileui.js';   // [expanded]
+import { expandedOverlays } from './expanded.js';   // [expanded]
 import { getWorld, activeStatuses, systemOn, type StatusDef, type WorldDef, deviceLook, offScreenWork, isScenario } from '../core/world.js';
 import { levelChip } from './rpgui.js';
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -226,7 +226,7 @@ export function hudHtml() {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w) return '';
     // Home: no card of your own (no money, no needs); your persona is in the menu, as in a chat
-    return `${isScenario(w) ? '' : personaCard(g, w)}${houseBar(g, w)}${clockCard(g, w)}${corner(g, w)}${eventPanelHtml(g, w)}${hereBar(g, w)}${peopleColumn(g, w)}${actsColumn(g, w)}${phoneButton(w)}${bumpHtml()}${apptReminderHtml(g, w)}${conflictHtml(g, w)}${facePlanHtml()}${customModalHtml()}${skipAskHtml(g, w)}${personaPickHtml()}${isScenario(w) ? `${outingHtml()}${residentsHtml()}` : ''}${doingHtml()}${lifeOverlays()}${lifeSetupHtml() /* [expanded] */}`;
+    return `${isScenario(w) ? '' : personaCard(g, w)}${houseBar(g, w)}${clockCard(g, w)}${corner(g, w)}${eventPanelHtml(g, w)}${hereBar(g, w)}${peopleColumn(g, w)}${actsColumn(g, w)}${phoneButton(w)}${bumpHtml()}${apptReminderHtml(g, w)}${conflictHtml(g, w)}${facePlanHtml()}${customModalHtml()}${skipAskHtml(g, w)}${personaPickHtml()}${isScenario(w) ? `${outingHtml()}${residentsHtml()}` : ''}${doingHtml()}${lifeOverlays()}${expandedOverlays() /* [expanded] */}`;
 }
 
 Object.assign(ACT, {
