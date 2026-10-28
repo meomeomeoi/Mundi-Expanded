@@ -54,6 +54,7 @@ import { mentorLine } from './mentors.js';
 import { bondsPromptLines } from './bondsnight.js'; // [expanded]
 import { stockPromptLines } from './stocknight.js'; // [expanded]
 import { moneyPromptLines } from './moneynight.js'; // [expanded]
+import { activityLines } from './activityrun.js'; // [expanded]
 import './letters.js';
 import './journey.js';
 import { systemOn, blockSystem, isScenario, SCENARIO_STARTS } from '../core/world.js';
@@ -141,7 +142,7 @@ export function sceneBlocks() {
         world: [worldLine(g, w), festivalLine(g, w), realmLine(g, w), skiesLine(g, w), ...legendLines(g, w)],
         diary: diaryLines(g),
         memories: [...memoryLines(g, w, met, personaName()), ...placeMemoryLines(g, w, present)],
-        plans: planLines(g, present, w),
+        plans: [...planLines(g, present, w), ...activityLines(g, present)], // [expanded] activities, group plans
         focus: [eventLine(g, w), combatLine(g, w), prisonLine(g, w), ...towerLines(g, w), ...contractLines(g, w), ...institutionLines(g, w), focusLine(g, w, present), ...whyHereLines(g, w, present), ...questLines(g)],
         feelings: [feelingLine(g, met)],
         you: [g.player.bio ? `About {{user}} in this world: ${g.player.bio}` : '', sheetLine(g, w), afflictionLine(g, w), ...artifactLines(g, w), partyLine(g, w), standingLine(g, w), bountyLine(g, w), tradeLine(g, w), holdingsLine(g, w), habitLine(g, w), hobbyLine(g, w), petLine(g, w), mentorLine(g, w, present.map(r => r.avatar)), physiqueLine(g), aspirationOf(g) && systemOn(w, 'goals') ? `{{user}}'s life goal: ${aspirationOf(g).name.toLowerCase()}.` : ''],

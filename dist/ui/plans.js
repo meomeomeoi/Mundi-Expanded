@@ -22,6 +22,8 @@ import { dating } from '../sim/feed.js';
 import { icon } from './icons.js';
 import { featureOn } from '../sim/creator.js';
 import { ACT, INPUT } from './reg.js';
+import { planExtrasHtml } from './activityui.js'; // [expanded]
+import { runActs } from '../sim/activityrun.js'; // [expanded]
 export const PL = { card: '', kind: 'hangout', place: '', day: 0, time: 0, busy: '', face: '', title: '', out: '' };
 // Home: a plan can be somewhere out of the house, in your words ("__out" in the list, then the place you type)
 const OUT_PICK = '__out';
@@ -39,7 +41,7 @@ export function runPlans() {
     const w = g && getWorld(g.world);
     if (!g || !w)
         return false;
-    const news = planTick(g, w);
+    const news = [...planTick(g, w), ...runActs(g, w)]; // [expanded] activities
     tidyEvent(g);
     news.forEach(n => toast(n.text, n.kind));
     if (news.length)
@@ -107,6 +109,7 @@ export function planForm(g, w, avatar, face = false) {
     return `<section class="mu-ph-plan"><h4>Make plans</h4>
             <div class="mu-chips"><button class="mu-chip ${PL.kind === 'hangout' ? 'is-on' : ''}" data-act="pl-kind" data-v="hangout">Hang out</button>
                 <button class="mu-chip ${PL.kind === 'date' ? 'is-on' : ''}" data-act="pl-kind" data-v="date" ${canDate ? '' : `aria-disabled="true" title="${esc(lex(w, 'dateNeeds', String(b), String(DATE_BOND)))}"`}>Date</button></div>
+            ${planExtrasHtml(g, w, avatar) /* [expanded] */}
             <label class="mu-field"><span>Name (optional)</span><input type="text" maxlength="80" data-input="pl-title" data-focus="pltitle" placeholder="${esc(tr(lex(w, 'planTitleEg')))}" value="${esc(PL.title)}"><small class="mu-muted">Tells the story what this event is about.</small></label>
             <label class="mu-field"><span>Where</span><select data-input="pl-place">${places.map(p => `<option value="${esc(p.id)}" ${PL.place === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
             ${PL.place === OUT_PICK ? `<label class="mu-field"><span>Where out</span><input type="text" maxlength="80" data-input="pl-out" data-focus="plout" placeholder="${styleOf(w) === 'medieval' ? 'the market square, the village tavern, the riverbank…' : 'the beach, a café downtown, the cinema…'}" value="${esc(PL.out)}"></label>` : ''}

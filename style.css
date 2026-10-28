@@ -1640,6 +1640,12 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-gift { display: grid; gap: 10px; width: min(420px, 100%); padding: 14px; border-radius: 18px; }
 #mundi-root .mu-gift .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 #mundi-root .mu-gift-kind { grid-template-columns: 1fr 1fr; }
+/* [expanded] Plan form extras: activities, who else comes */
+#mundi-root .mu-ax-acts { flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-ax-acts .mu-chip { display: inline-flex; align-items: center; gap: 5px; }
+#mundi-root .mu-ax-acts .mu-chip svg { width: 14px; height: 14px; }
+#mundi-root .mu-ax-warn { color: var(--mu-warn, #e0a050); }
+#mundi-root label.mu-check.mu-ax { align-items: center; margin: 4px 0 8px; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

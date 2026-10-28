@@ -1,0 +1,6 @@
+/* [expanded] Plan form extras: activities, who else comes */
+#mundi-root .mu-ax-acts { flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-ax-acts .mu-chip { display: inline-flex; align-items: center; gap: 5px; }
+#mundi-root .mu-ax-acts .mu-chip svg { width: 14px; height: 14px; }
+#mundi-root .mu-ax-warn { color: var(--mu-warn, #e0a050); }
+#mundi-root label.mu-check.mu-ax { align-items: center; margin: 4px 0 8px; }
