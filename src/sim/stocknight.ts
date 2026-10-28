@@ -12,6 +12,7 @@ import { onExchange, bgAsk, perMessage, markRead } from './regulator.js';
 import * as S from './stock.js';
 import * as M from './money.js';
 import { money } from './needs.js';
+import { applyGifts, giftLines } from './gifts.js';
 
 const G = (g: Save) => g as unknown as S.GLike;
 const adults = (g: Save) => Object.values(g.cast).filter(r => !isMinor(g, r.avatar)).map(r => r.avatar);
@@ -41,16 +42,21 @@ export function hereOf(g: Save, w: WorldDef): string[] {
 }
 export function stockPromptLines(g: Save, w: WorldDef, present: string[]): string[] {
     if (!ready(g, w)) return [];
-    return S.stockLines(G(g), hereOf(g, w), present);
+    return [...S.stockLines(G(g), hereOf(g, w), present), ...giftLines(g, present)];
 }
 
 // The story, read for what happened to things. `fallback`: may use the main model (at night only).
+// (one call for things, gifts and, with money on, money)
 async function readLines(g: Save, text: string, fallback: boolean): Promise<S.Change[]> {
     if (!text.trim()) return [];
     const you = personaName();
-    const raw = await bgAsk(S.readPrompt(G(g), text, you), 300, S.READ_SYSTEM, fallback);
+    const extra = [...M.MONEY_READ, ...(M.moneyOn(g as any) ? M.MONEY_READ_PAY : []), M.ATTACH_NOTE];
+    const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 400, S.READ_SYSTEM, fallback);
     if (!raw) return [];
-    return S.applyRead(G(g), S.parseRead(G(g), raw, you), you);
+    const changes = S.applyRead(G(g), S.parseRead(G(g), raw, you), you);
+    const mops = M.parseMoney(g as any, raw, you, s => S.personOf(G(g), s, you));
+    const more = [...M.applyMoney(g as any, mops, you), ...applyGifts(g, mops, you)];
+    return [...changes, ...more.map(text => ({ kind: 'add' as const, text }))];
 }
 const asText = (lines: { name: string; user: boolean; text: string }[], cap: number) => {
     const you = personaName();

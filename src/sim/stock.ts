@@ -288,7 +288,7 @@ export function stockLines(g: GLike, here: string[], present: string[], you = '{
 /* ---------- reading the story (the mechanics model) ---------- */
 
 export const READ_SYSTEM = 'You keep the inventory of a house in an interactive fiction (a role-play story between consenting adults). You note only what clearly happened to things in the lines you are given, in a strict format. You never invent. Most exchanges change nothing: then you answer NONE.';
-export function readPrompt(g: GLike, lines: string, you: string): string {
+export function readPrompt(g: GLike, lines: string, you: string, extra: string[] = []): string {
     const stores = storesOf(g).filter(s => !isRoom(s) || itemsIn(g, s).length || roomWho(s) === PLAYER || g.cast[roomWho(s)]);
     const inv = stores.map(s => { const items = itemsIn(g, s); return `- ${storeName(g, s, you)}: ${items.length ? list(g, items, you, 30) : 'empty'}`; }).join('\n');
     const errs = stockOf(g).errands.map(e => `- ${ownerName(g, e.by, you)} is to bring ${e.item} for ${ownerName(g, e.forWho, you)}`).join('\n');
@@ -308,24 +308,27 @@ export function readPrompt(g: GLike, lines: string, you: string): string {
         'MOVE | from | to | thing | how many | whose (optional)   (taken to another place, or given to someone: whose = the new owner)',
         'ASK | who wants it | who is to bring it | thing   (someone asked someone to buy or bring something, and they agreed)',
         'DONE | who brought it | thing   (an open errand was done in these lines)',
+        ...extra,
         `"where" is one of: ${stores.map(s => storeName(g, s, you)).join(', ')}. Use the names of things as written above when they are there.`,
-        'If nothing happened to any thing, answer only: NONE',
+        'If nothing happened, answer only: NONE',
     ].join('\n');
 }
 
 export interface Op { op: 'use' | 'add' | 'move' | 'ask' | 'done'; a?: string; b?: string; thing: string; n: number; who?: string }
+// A person named in a reply: the player (by name, "you", "the player") or a housemate (full or first name).
+export function personOf(g: GLike, s: string, you: string): string | null {
+    const q = norm(s).replace(/^(the player|player)$/, norm(you)); if (!q) return null;
+    if (q === norm(you) || q === 'you' || q === 'я') return PLAYER;
+    const all = Object.values(g.cast);
+    const hit = all.filter(r => norm(r.name) === q);
+    if (hit.length === 1) return hit[0].avatar;
+    const loose = all.filter(r => norm(r.name).split(' ')[0] === q.split(' ')[0]);
+    return loose.length === 1 ? loose[0].avatar : null;
+}
 // Reads the reply into operations (names of storages and people resolved; anything unknown is dropped).
 export function parseRead(g: GLike, raw: string, you: string): Op[] {
     const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '');
-    const person = (s: string): string | null => {
-        const q = norm(s).replace(/^(the player|player)$/, norm(you)); if (!q) return null;
-        if (q === norm(you) || q === 'you' || q === 'я') return PLAYER;
-        const all = Object.values(g.cast);
-        const hit = all.filter(r => norm(r.name) === q);
-        if (hit.length === 1) return hit[0].avatar;
-        const loose = all.filter(r => norm(r.name).split(' ')[0] === q.split(' ')[0]);
-        return loose.length === 1 ? loose[0].avatar : null;
-    };
+    const person = (s: string) => personOf(g, s, you);
     const store = (s: string): string | null => {
         const q = norm(s); if (!q) return null;
         if (/fridge|refrigerator|холодильник/.test(q)) return FRIDGE;

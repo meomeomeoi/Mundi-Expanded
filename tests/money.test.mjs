@@ -104,4 +104,55 @@ test('scene line: wallet, fund, debts between the people here', () => {
     assert.ok(!l.join(' ').includes('Masha'), 'debts of people not here stay out');
 });
 
+
+test('gift limits: less each time that week, +8 a week, nothing above 80, bad ones in full', () => {
+    const g = game(); M.enable(g, true);
+    const give = (to, r, bond) => { const x = M.recordGift(g, 'player', to, 'x'); const d = M.giftDelta(g, to, r, bond, x.id); x.delta = d; return d; };
+    assert.equal(give('Kathie.png', 'loved', 40), 6);
+    assert.equal(give('Kathie.png', 'loved', 46), 2, 'second loved gift this week: 6/2=3, capped by the week (8-6=2)');
+    assert.equal(give('Kathie.png', 'liked', 48), 0, 'week cap reached');
+    assert.equal(give('Kathie.png', 'offended', 48), -6, 'a bad gift always counts in full');
+    assert.equal(give('Finn.png', 'loved', 79), 1, 'only up to 80');
+    assert.equal(give('Masha.png', 'loved', 85), 0, 'above 80: gifts alone do nothing');
+    g.day += 7;
+    assert.equal(give('Kathie.png', 'liked', 42), 3, 'a new week');
+    assert.equal(M.giftDelta(g, 'Kathie.png', 'meh', 10), 0);
+});
+
+test('the gift to rate: the open one from the last two days, else a new one', () => {
+    const g = game(); M.enable(g, true);
+    const a = M.recordGift(g, 'player', 'Kathie.png', 'pudding');
+    assert.equal(M.giftToRate(g, 'player', 'Kathie.png', 'pudding').id, a.id);
+    a.delta = 3;
+    assert.notEqual(M.giftToRate(g, 'player', 'Kathie.png', 'flowers').id, a.id, 'already rated: a new one');
+});
+
+test('money in the story: pay, lend, repay, the house fund; nothing with money off', () => {
+    const g = game(); M.enable(g, true);
+    const person = s => ({ gleb: 'player', kathie: 'Kathie.png', finn: 'Finn.png' })[s.toLowerCase()] ?? null;
+    const raw = `GIFT | Gleb | Kathie | pudding | loved
+PAY | Gleb | Finn | 20 | pizza
+LEND | Kathie | Gleb | 50 | rent
+REPAY | Gleb | Kathie | 30
+PAY | Finn | house fund | 40 | his share
+PAY | Gleb | Nobody | 10 | x
+GIFT | Finn | Kathie | flowers | sort of liked it`;
+    const ops = M.parseMoney(g, raw, 'Gleb', person);
+    assert.deepEqual(ops.map(o => o.op), ['gift', 'pay', 'lend', 'repay', 'pay', 'gift']);
+    assert.equal(ops.at(-1).rating, 'liked');
+    const notes = M.applyMoney(g, ops, 'Gleb');
+    assert.equal(g.player.money, 150 - 20 + 50 - 30);
+    assert.equal(M.houseOf(g).fund, 290);
+    assert.deepEqual(M.houseOf(g).debts.map(d => [d.from, d.to, d.amount]), [['player', 'Kathie.png', 20]]);
+    assert.equal(notes.length, 4);
+    const off = game(); M.applyMoney(off, M.parseMoney(off, 'PAY | Gleb | Finn | 20 | x', 'Gleb', person), 'Gleb');
+    assert.equal(off.player.money, 0, 'money off: the story moves no money');
+});
+
+test('you cannot pay what you do not have', () => {
+    const g = game(); M.enable(g, true);
+    M.applyMoney(g, [{ op: 'pay', from: 'player', to: 'Finn.png', amount: 9999 }], 'Gleb');
+    assert.equal(g.player.money, 150);
+});
+
 console.log(`money: ${n} tests passed`);

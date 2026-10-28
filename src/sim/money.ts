@@ -200,3 +200,92 @@ export function moneyLines(g: GLike, present: string[], fmt: (v: number) => stri
     if (debts.length) out.push(`Debts: ${debts.map(d => `${nameOf(g, d.from, you)} owes ${nameOf(g, d.to, you)} ${fmt(d.amount)}`).join('; ')}.`);
     return out;
 }
+
+/* ---------- gifts ---------- */
+
+export type Rating = 'loved' | 'liked' | 'meh' | 'disliked' | 'offended';
+export const RATINGS: Rating[] = ['loved', 'liked', 'meh', 'disliked', 'offended'];
+// What a gift does to the player's friendship (upstream's 0…100), before the limits below.
+export const GIFT_BASE: Record<Rating, number> = { loved: 6, liked: 3, meh: 0, disliked: -3, offended: -6 };
+// … and between two characters (steps on the relationships' scale, see bonds.ts).
+export const GIFT_STEP: Record<Rating, number> = { loved: 2, liked: 1, meh: 0, disliked: -1, offended: -2 };
+export const GIFT_WEEK_CAP = 8, GIFT_CEILING = 80;
+export const giftsTo = (g: GLike, to: string, from = PLAYER, days = 7) => houseOf(g).gifts.filter(x => x.to === to && x.from === from && g.day - x.day < days);
+// How much a gift from the player moves friendship: a good one counts less the more gifts that person got this week
+// (½, ¼…), all good ones together at most +8 a week, and none above 80 (the rest takes time together). A bad one
+// counts in full, always.
+export function giftDelta(g: GLike, to: string, rating: Rating, bond: number, exclude?: string): number {
+    const base = GIFT_BASE[rating];
+    if (base <= 0) return base;
+    if (bond >= GIFT_CEILING) return 0;
+    const week = giftsTo(g, to).filter(x => x.id !== exclude && x.delta !== undefined);
+    const earlier = week.length;
+    let d = Math.max(0, Math.round(base / 2 ** earlier));
+    const used = week.reduce((a, x) => a + Math.max(0, x.delta ?? 0), 0);
+    d = Math.min(d, Math.max(0, GIFT_WEEK_CAP - used), Math.max(0, GIFT_CEILING - bond));
+    return d;
+}
+export function recordGift(g: GLike, from: string, to: string, what: string): Gift {
+    const h = houseOf(g);
+    const x: Gift = { id: newId(h, 'g'), from, to, what: String(what).slice(0, 60), day: g.day };
+    h.gifts.push(x); if (h.gifts.length > 200) h.gifts.splice(0, h.gifts.length - 200);
+    return x;
+}
+// The last gift from `from` to `to` in the last two days that has no reaction yet (or a new one).
+export function giftToRate(g: GLike, from: string, to: string, what: string): Gift {
+    const open = houseOf(g).gifts.filter(x => x.from === from && x.to === to && x.delta === undefined && g.day - x.day <= 2);
+    return open.at(-1) ?? recordGift(g, from, to, what);
+}
+
+/* ---------- money in the story (read by the mechanics model) ---------- */
+
+export const MONEY_READ = [
+    'GIFT | who gave | to whom | the gift | loved, liked, meh, disliked or offended   (a gift was given; judge the reaction as it was played in the lines)',
+];
+export const MONEY_READ_PAY = [
+    'PAY | who paid | to whom (or "house fund") | amount | why   (money changed hands)',
+    'LEND | who lent | to whom | amount | why   (a loan: it will be owed)',
+    'REPAY | who paid back | to whom | amount',
+];
+export const ATTACH_NOTE = 'Lines in square brackets with 🎁 or 💰 were already handled by the game: do not write ADD, MOVE or PAY for them, but do write the GIFT line for a gift.';
+export interface MOp { op: 'gift' | 'pay' | 'lend' | 'repay'; from: string; to: string; thing?: string; amount?: number; rating?: Rating; why?: string }
+export function parseMoney(g: GLike, raw: string, you: string, person: (s: string) => string | null): MOp[] {
+    const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '');
+    const out: MOp[] = [];
+    const amount = (s: string | undefined) => { const n = parseFloat(String(s ?? '').replace(/[^\d.]/g, '')); return Number.isFinite(n) && n > 0 ? Math.min(n, 10000) : 0; };
+    for (const line of text.split('\n')) {
+        const p = line.trim().replace(/^[-*•]\s*/, '').split('|').map(x => x.trim());
+        const op = (p[0] ?? '').toUpperCase();
+        if (op === 'GIFT' && p.length >= 5) {
+            const from = person(p[1]), to = person(p[2]); const r = p[4].toLowerCase().match(/loved|liked|meh|disliked|offended/)?.[0] as Rating | undefined;
+            if (from && to && from !== to && r) out.push({ op: 'gift', from, to, thing: p[3], rating: r });
+        } else if ((op === 'PAY' || op === 'LEND' || op === 'REPAY') && p.length >= 4) {
+            const from = person(p[1]); const fund = /house fund|fund|общ/i.test(p[2]); const to = fund ? 'fund' : person(p[2]); const a = amount(p[3]);
+            if (from && to && from !== to && a && (op === 'PAY' || to !== 'fund')) out.push({ op: op.toLowerCase() as MOp['op'], from, to, amount: a, why: p[4] ?? '' });
+        }
+    }
+    return out.slice(0, 8);
+}
+// Applies the money side (wallet, fund, debts); gifts are only recorded here (their effect is the runtime's).
+export function applyMoney(g: GLike, ops: MOp[], you: string): string[] {
+    const notes: string[] = []; const on = moneyOn(g);
+    const nm = (a: string) => (a === 'fund' ? 'the house fund' : nameOf(g, a, you));
+    for (const o of ops) {
+        if (o.op === 'gift') continue;
+        if (!on) continue;
+        const a = o.amount!;
+        if (o.op === 'pay' || o.op === 'repay') {
+            if (o.from === PLAYER) { if (g.player.money < a) continue; walletAdd(g, -a, o.to === 'fund' ? 'Into the house fund' : `To ${nm(o.to)}${o.why ? `: ${o.why}` : ''}`); }
+            if (o.to === PLAYER) walletAdd(g, a, `From ${nm(o.from)}${o.why ? `: ${o.why}` : ''}`);
+            if (o.to === 'fund') fundAdd(g, a, `From ${nm(o.from)}`);
+            if (o.to !== 'fund') repay(g, o.from, o.to, a);
+            notes.push(`${nm(o.from)} ${o.op === 'repay' ? 'paid back' : 'paid'} ${nm(o.to)} ${a}`);
+        } else if (o.op === 'lend') {
+            if (o.from === PLAYER) { if (g.player.money < a) continue; walletAdd(g, -a, `Lent to ${nm(o.to)}`); }
+            if (o.to === PLAYER) walletAdd(g, a, `Borrowed from ${nm(o.from)}`);
+            addDebt(g, o.to, o.from, a, o.why ?? '');
+            notes.push(`${nm(o.from)} lent ${nm(o.to)} ${a}`);
+        }
+    }
+    return notes;
+}

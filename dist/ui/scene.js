@@ -148,6 +148,7 @@ function background(g, w) {
     const map = w.maps.find(m => m.id === p.map) ?? w.maps[0];
     return `background-image:url('${worldFile(w, pictureAt(w, g.minutes, map.image, map.images))}');background-size:420% auto;background-position:${p.x}% ${p.y}%`;
 }
+import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
@@ -232,7 +233,7 @@ export function sceneHtml() {
         : `<button class="mu-primary" data-act="send">Send</button>
                        <button data-act="continue" title="The character continues their last line" ${nobody ? 'disabled' : ''}>${icon('forward')}</button>
                        <button data-act="regenerate" title="Regenerate the last answer" ${nobody ? 'disabled' : ''}>${icon('redo')}</button>
-                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${diceButton(nobody)}${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
+                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${diceButton(nobody)}${giftButton(nobody) /* [expanded] */}${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
                 </div>
             </div>
         </section>
@@ -240,6 +241,7 @@ export function sceneHtml() {
         ${portraitHtml()}${lightboxHtml()}${lookConfirmHtml()}
         ${extMenuHtml()}
         ${toolsHtml()}
+        ${giftHtml() /* [expanded] */}
     </div>`;
 }
 // Scenario: a plain chat (one character, or a group made from it), in the scene's look: their sprites, the
@@ -450,7 +452,10 @@ Object.assign(ACT, {
         const raw = state.composer.trim();
         if (!raw)
             return;
-        const text = shapeLine(raw);
+        const gifted = withGift(shapeLine(raw));
+        if (gifted === null)
+            return; // [expanded] the 🎁 changes hands with the line
+        const text = gifted;
         const g0 = game();
         const w0 = g0 && getWorld(g0.world);
         // alone: nobody is called into the scene; the hidden narrator describes the place, the time and the feelings
