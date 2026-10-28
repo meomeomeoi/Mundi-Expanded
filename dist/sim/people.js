@@ -120,7 +120,17 @@ export function routineAt(g, w, r, at) {
         return eventSpot(g, w, r.avatar, at) ?? festivalSpot(g, w, at, { map: homeMapOf(g, w, r) }) ?? leisureSpot(g, w, r, day, start); // on a festival day, free time is spent there
     return w.places.some(p => p.id === target) && placeOn(g, w, target) ? target : isScenario(w) ? leisureSpot(g, w, r, day, start) : homeId;
 }
+// [expanded] Someone who walked off in the story (sim/goes.ts): where they went, for a while.
+export function goneTo(g, avatar) {
+    const x = g.social?.went?.[avatar];
+    return x && x.loc && nowAbs(g) < x.until ? x.loc : null;
+}
 export function whereNow(g, w, r) {
+    {
+        const gone = goneTo(g, r.avatar);
+        if (gone)
+            return gone;
+    } // [expanded] they walked off in the story
     if (isWith(g, r.avatar))
         return g.player.loc; // she came along with you
     const locked = lockedHere(g, r.avatar); // in the middle of a conversation with you

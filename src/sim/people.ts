@@ -96,7 +96,12 @@ export function routineAt(g: Save, w: WorldDef, r: Resident, at: number): string
     return w.places.some(p => p.id === target) && placeOn(g, w, target) ? target : isScenario(w) ? leisureSpot(g, w, r, day, start) : homeId;
 }
 
+// [expanded] Someone who walked off in the story (sim/goes.ts): where they went, for a while.
+export function goneTo(g: Save, avatar: string): string | null {
+    const x = (g as any).social?.went?.[avatar]; return x && x.loc && nowAbs(g) < x.until ? x.loc : null;
+}
 export function whereNow(g: Save, w: WorldDef, r: Resident): string {
+    { const gone = goneTo(g, r.avatar); if (gone) return gone; }   // [expanded] they walked off in the story
     if (isWith(g, r.avatar)) return g.player.loc;      // she came along with you
     const locked = lockedHere(g, r.avatar);            // in the middle of a conversation with you
     if (locked) return locked;

@@ -11,7 +11,7 @@ import { lockScene } from '../sim/life.js';
 import { soloOf } from './lifeui.js';
 import { judgeLine, judgeReaction } from '../sim/mood.js';
 import { state, notify, esc, game, toast, ROOT_ID, saveGame, settings } from '../core/store.js';
-import { getWorld, worldFile, systemOn, type WorldDef } from '../core/world.js';
+import { getWorld, worldFile, systemOn, isScenario, type WorldDef } from '../core/world.js';
 import type { Save } from '../core/store.js';
 import {
     chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight,
@@ -160,7 +160,9 @@ function background(g: Save, w: WorldDef) {
 }
 
 import { giftButton, giftHtml, withGift } from './giftui.js';   // [expanded]
-import { exprPrompt, parseExprs, EXPR_SYSTEM, type ExprWho } from '../sim/exprs.js';   // [expanded]
+import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM, type ExprWho } from '../sim/exprs.js';   // [expanded]
+import { applyMoves } from '../sim/goes.js';   // [expanded]
+import { commonRooms } from '../sim/lifeday.js';   // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m: any, i: number) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
@@ -435,13 +437,24 @@ function byModel(list: any[]): boolean {
     const people: ExprWho[] = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x: any) => String(x.label).toLowerCase()).filter(Boolean) }));
     const lines = list.filter((m: any) => !m.is_system && !isFiller(m) && String(m.mes ?? '').trim()).slice(-6).map((m: any) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1; const chatId = currentChatId();
-    const prompt = exprPrompt({ people, you: personaName(), lines });
+    // [expanded] in the house, the same call says who walked off and who goes along with you (sim/goes.ts), for the
+    // newest turn only (a line read again after a swipe undoes what its old text did)
+    const newestLine = list.indexOf(pending[0]);
+    const places = isScenario(w) && newestLine === list.length - 1 ? commonRooms(g, w) : undefined;
+    const prompt = exprPrompt({ people, you: personaName(), lines, places });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
         const R = await import('../sim/regulator.js');
         const ans = src === 'mech' ? await R.bgAsk(prompt, 1500, EXPR_SYSTEM) : await quiet(prompt, 1500, EXPR_SYSTEM);
         const got = parseExprs(ans, people);
         console.info('[Mundi Expanded] expressions: answer', JSON.stringify(ans).slice(0, 400), '→', got);
+        if (places) {
+            const mv = parseMoves(ans, people.filter(p => presentAt(g, w, g.player.loc).some(r => r.avatar === p.avatar)), places);
+            const { told, changed } = applyMoves(g, w, newestLine, mv.moves, mv.follows);
+            if (Object.keys(mv.moves).length || mv.follows.length) console.info('[Mundi Expanded] moves:', mv);
+            if (told.length) toast(told.join(' '), 'info');
+            if (changed) { saveGame(); void import('../sim/game.js').then(m => m.syncScene()).catch(() => { /* next move */ }); }   // who is in the scene now (a swipe may have undone a move)
+        }
         return got;
     })().catch((e) => { console.warn('[Mundi Expanded] expressions: the call failed', e); return {} as Record<string, string>; }).then(got => {
         const newest = pending[0];

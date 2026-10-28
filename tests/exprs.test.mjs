@@ -20,4 +20,19 @@ test('the answer: labels by person, first names, case, cut off, unknown → neut
     assert.deepEqual(E.parseExprs('no json at all', people), {});
 });
 
+test('moves: rooms by name, own room, out of the house, follows; nonsense left out', () => {
+    const places = [{ id: 'patio', name: 'Patio' }, { id: 'pool', name: 'Pool' }, { id: 'kitchen', name: 'Kitchen' }, { id: 'living', name: 'Living room' }];
+    assert.equal(E.placeIn('the patio', places), 'patio'); assert.equal(E.placeIn('Own room', places), 'own'); assert.equal(E.placeIn('out of the house', places), 'out');
+    assert.equal(E.placeIn('living', places), 'living'); assert.equal(E.placeIn('the moon', places), null);
+    const r = E.parseMoves('{"faces": {"Kathie": "joy"}, "moves": {"Kathie": "Patio", "Masha": "her room", "Nobody": "Pool", "Finn": "Narnia"}, "follows": ["Finn", "Kathie"]}', people, places);
+    assert.deepEqual(r.moves, { 'k.png': 'patio', 'm.png': 'own' }); assert.deepEqual(r.follows, ['f.png']);   // Kathie went: she does not follow
+    assert.deepEqual(E.parseMoves('{"faces": {}, "moves": {}, "follows": []}', people, places), { moves: {}, follows: [] });
+    assert.deepEqual(E.parseExprs('{"faces": {"Kathie": "joy"}, "moves": {"Kathie": "Patio"}}', people), { 'k.png': 'joy' });
+});
+test('the prompt asks for moves only with places', () => {
+    assert.doesNotMatch(E.exprPrompt({ people, you: 'Maya', lines: [] }), /moves/);
+    const p = E.exprPrompt({ people, you: 'Maya', lines: [], places: [{ id: 'patio', name: 'Patio' }] });
+    assert.match(p, /"Patio", "own room" or "out of the house"/); assert.match(p, /"faces": \{/); assert.match(p, /not Maya/);
+});
+
 console.log(`exprs: ${n} tests passed`);
