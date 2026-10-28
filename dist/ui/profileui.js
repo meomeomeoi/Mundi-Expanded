@@ -76,7 +76,7 @@ export function lifeSetupHtml() {
     return `<div class="mu-dlg-veil"></div><div class="mu-panel mu-dlg mu-glassdlg mu-lp-setup" role="dialog"><h3>${icon('calendar')} Their days</h3>
         <p>Each person here can have a profile: when they sleep, how much they keep to their room, the rooms they like and what they do. Without one they follow the house's ready routine (and tend to end up all in the same room).</p>
         <div class="mu-lp-faces">${people.map(r => `<img src="${esc(thumb(r.avatar))}" alt="" title="${esc(r.name)}">`).join('')}</div>
-        ${LV.busy ? `<p class="mu-muted">Writing: <b data-notr>${esc(LV.busy)}</b>…</p>` : `<small class="mu-muted">Making them reads each card: one short call per person (${people.length}), with the mechanics model if you set one (Settings → Game), else the main one. You can change everything later in This world → People.</small>`}
+        ${LV.busy ? `<p class="mu-muted">Writing: <b data-notr>${esc(LV.busy)}</b>…</p>` : `<small class="mu-muted">Making them reads each card: one short call per person (${people.length}) and one for their rooms, with the mechanics model if you set one (Settings → Game), else the main one. You can change everything later in This world → People.</small>`}
         <div class="mu-row mu-dlg-btns"><button data-act="lp-setup-later" ${LV.busy ? 'disabled' : ''}>Later</button><button data-act="lp-setup-self" ${LV.busy ? 'disabled' : ''}>I'll write them myself</button>
             <button class="mu-primary" data-act="lp-setup-gen" ${LV.busy ? 'disabled' : ''}>${icon('sparkles')}<span>Make them</span></button></div></div>`;
 }
@@ -94,6 +94,20 @@ async function genAll(g, w, avatars) {
             ok++;
         else
             guessed++;
+    }
+    // [expanded] 0.2.0.7: then their rooms, in one call for the house (from the cards and the profiles just made)
+    {
+        const F = await import('../sim/furnishrun.js');
+        if (F.furnishOn(w) && !F.fx(g).bedrooms) {
+            LV.busy = 'their rooms';
+            notify();
+            try {
+                await F.furnishBedrooms(g, w);
+            }
+            catch (e) {
+                console.warn('[Mundi Expanded] furnishing', e);
+            }
+        }
     }
     LV.busy = '';
     toast(guessed ? `Profiles ready (${ok} from the cards, ${guessed} guessed: the AI did not answer for them).` : `Profiles ready for ${ok} ${ok === 1 ? 'person' : 'people'}.`, guessed ? 'warn' : 'success');

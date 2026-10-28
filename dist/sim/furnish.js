@@ -196,3 +196,37 @@ export function parseFurnish(j, people, era) {
     }
     return out;
 }
+/** Without the model: things for a bedroom guessed from what is known of the person (card, profile). */
+export function guessBedroom(text, era) {
+    const t = String(text ?? '').toLowerCase();
+    const out = [];
+    const add = (id) => { const c = catOf(id); if (c && forEra(c, era) && !out.includes(id))
+        out.push(id); };
+    if (/gam(e|er|ing)|stream|esport|ranked|игр/.test(t)) {
+        add('pc');
+        add('console');
+    }
+    if (/read|book|novel|librar|poet|чита|книг/.test(t))
+        add('bookshelf');
+    if (/guitar|band|music|sing|song|гитар|музык/.test(t))
+        add('guitar');
+    if (/piano|synth|keyboard|compos/.test(t))
+        add('keyboard');
+    if (/vinyl|record/.test(t))
+        add('turntable');
+    if (/paint|draw|art|sketch|рису|художн/.test(t))
+        add('easel');
+    if (/sew|fashion|cloth|knit|шить|мод/.test(t))
+        add('sewing');
+    if (/yoga|fitness|gym|workout|run|athlet|sport|йог|спорт/.test(t))
+        add('yogamat');
+    if (/study|student|work|email|laptop|code|program|write|учеб|работ/.test(t)) {
+        add('desk');
+        add('laptop');
+    }
+    if (/makeup|beauty|vanity|cosmetic|макияж/.test(t))
+        add('vanity');
+    if (/movie|film|series|anime|tv|кино|сериал/.test(t))
+        add('tv');
+    return out.slice(0, 5);
+}

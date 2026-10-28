@@ -1,7 +1,7 @@
 // [expanded] The Furniture tab of the Storage app (Home): every room of the house and what stands in it. View only by
 // default; with editing on (phone Settings) things can be added from the catalog (those of the era that fit the room),
 // decor written in, things moved to another room or given another owner, and removed. Rules in sim/furnish.ts.
-import { saveGame, notify, esc, game, type Save } from '../core/store.js';
+import { saveGame, notify, esc, game, toast, type Save } from '../core/store.js';
 import { getWorld, type WorldDef } from '../core/world.js';
 import { thumb, personaThumb } from '../st/bridge.js';
 import { icon } from './icons.js';
@@ -9,9 +9,9 @@ import { ACT, INPUT } from './reg.js';
 import { refreshPrompt } from '../sim/prompt.js';
 import { bondsOf } from '../sim/bonds.js';
 import * as F from '../sim/furnish.js';
-import { furnishOn, houseRooms, seedCommon, eraOf, ownerName, type HouseRoom } from '../sim/furnishrun.js';
+import { furnishOn, houseRooms, seedCommon, eraOf, ownerName, fx, furnishBedrooms, type HouseRoom } from '../sim/furnishrun.js';
 
-export const FV = { room: '', decor: '' };
+export const FV = { room: '', decor: '', busy: false };
 const G = (g: Save) => g as unknown as F.GLike;
 const canEdit = (g: Save) => bondsOf(g as any).edit === true;
 const pic = (r: HouseRoom) => (r.owner === 'player' ? personaThumb() : r.owner ? thumb(r.owner) : '');
@@ -49,7 +49,11 @@ export function furnitureTab(g: Save, w: WorldDef): string {
     const edit = canEdit(g); const rooms = houseRooms(g, w);
     const room = rooms.find(r => r.id === FV.room);
     if (!room) {
-        return `<div class="mu-ph-list">${rooms.map(r => { const n = F.fixturesIn(G(g), r.id).length; const p = pic(r);
+        const done = !!(fx(g) as any).bedrooms;
+        const ask = !done || edit ? `<div class="mu-fx-setup">${!done ? '<p class="mu-muted">The bedrooms are empty. Furnish them from who lives there (one short call: the mechanics model, else the main one; a guess from the card if it fails).</p>' : ''}
+            <button class="${done ? 'mu-ghost' : 'mu-primary'}" data-act="fx-furnish" ${FV.busy ? 'disabled' : ''}>${icon('sparkles')}<span>${FV.busy ? 'Furnishing…' : done ? 'Furnish the bedrooms again' : 'Furnish the bedrooms'}</span></button>
+            ${done ? '<small class="mu-muted">Only what they got at the start is replaced; things bought, given or set by hand stay.</small>' : ''}</div>` : '';
+        return `${ask}<div class="mu-ph-list">${rooms.map(r => { const n = F.fixturesIn(G(g), r.id).length; const p = pic(r);
             return `<button class="mu-ph-row" data-act="fx-room" data-v="${esc(r.id)}">${p ? `<img src="${esc(p)}" alt="">` : `<i class="mu-fx-ic">${icon('home')}</i>`}
                 <span><b data-notr>${esc(r.name)}</b><small>${n ? `${n} thing${n === 1 ? '' : 's'}` : 'nothing yet'}</small></span></button>`; }).join('')}</div>`;
     }
@@ -65,6 +69,13 @@ const done = () => { saveGame(); refreshPrompt(); notify(); };
 const editing = () => { const g = game(); return g && canEdit(g) ? g : null; };
 const ownerFor = (g: Save, roomId: string): F.Owner => { const w = getWorld(g.world); const r = w ? houseRooms(g, w).find(x => x.id === roomId) : null; return r?.owner ?? 'house'; };
 Object.assign(ACT, {
+    'fx-furnish': async () => {
+        const g = game(); const w = g && getWorld(g.world); if (!g || !w || FV.busy) return;
+        FV.busy = true; notify();
+        try { const r = await furnishBedrooms(g, w); toast(r.guessed ? `Bedrooms furnished (${r.model} from the AI, ${r.guessed} guessed from the card).` : `Bedrooms furnished for ${r.model} ${r.model === 1 ? 'person' : 'people'}.`, r.guessed ? 'warn' : 'success'); }
+        catch (e: any) { toast(String(e?.message ?? e), 'error'); }
+        FV.busy = false; done();
+    },
     'fx-room': (el) => { FV.room = el.dataset.v ?? ''; FV.decor = ''; notify(); },
     'fx-add': (el) => { const g = editing(); if (!g || !FV.room) return; F.addFixture(G(g), { cat: el.dataset.cat!, room: FV.room, owner: ownerFor(g, FV.room), via: 'hand', era: eraOf(g) }); done(); },
     'fx-decor': () => { const g = editing(); if (!g || !FV.room || !FV.decor.trim()) return; if (F.addFixture(G(g), { name: FV.decor, room: FV.room, owner: ownerFor(g, FV.room), via: 'hand' })) { FV.decor = ''; done(); } },

@@ -57,3 +57,4 @@
 #mundi-root .mu-fx-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--bg2); color: var(--muted); }
 #mundi-root .mu-fx-more summary { cursor: pointer; font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
 #mundi-root .mu-st-tabs { flex-wrap: wrap; }
+#mundi-root .mu-fx-setup { display: grid; gap: 6px; margin-bottom: 10px; }

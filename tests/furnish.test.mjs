@@ -54,5 +54,10 @@ test('the starting furnishing: prompt and answer (bedroom things of the era only
     assert.deepEqual(r['k.png'].things, ['yogamat']); assert.equal(r['k.png'].decor[0].length, 60);
     assert.deepEqual(F.parseFurnish(null, people, 'now'), {});
 });
+test('a bedroom guessed without the model: from the card, only things of the era', () => {
+    assert.deepEqual(F.guessBedroom('A gamer who streams ranked matches; reads manga', 'now'), ['pc', 'console', 'bookshelf']);
+    assert.deepEqual(F.guessBedroom('morning yoga, emails on the laptop', '2000s'), ['yogamat', 'desk', 'laptop']);
+    assert.deepEqual(F.guessBedroom('', 'now'), []);
+});
 
 console.log(`furnish: ${n} tests passed`);
