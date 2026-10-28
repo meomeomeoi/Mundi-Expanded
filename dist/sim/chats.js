@@ -98,3 +98,47 @@ export function recentLines(c, now, nameOf, hours = 4, n = 6) {
     const m = c.msgs.filter(x => now - x.at <= hours * 60).slice(-n);
     return m.length ? [`In the "${c.name}" group chat lately (on their phones): ${m.map(x => `${nameOf(x.by)}: "${x.text.slice(0, 160)}"`).join(' / ')}`] : [];
 }
+/* ---------- conversations without you (part 4) ---------- */
+/** The hours of today's conversations (`freq`'s range, 9:00–23:00, apart). */
+export function dayTalks(freq, roll) {
+    const [lo, hi] = FREQS.find(f => f[0] === freq)?.[2] ?? [0, 0];
+    const n = lo + Math.floor(roll('n') * (hi - lo + 1));
+    const hours = [];
+    for (let i = 0; i < n * 4 && hours.length < n; i++) {
+        const h = 9 + Math.floor(roll(`h${i}`) * 14);
+        if (hours.every(x => Math.abs(x - h) >= 2))
+            hours.push(h);
+    }
+    return hours.sort((a, b) => a - b);
+}
+/** What a conversation is about: the weightiest recent thing (a little luck among close ones). */
+export function pickNews(news, roll) {
+    if (!news.length)
+        return null;
+    const total = news.reduce((s, n) => s + n.weight, 0);
+    let x = roll * total;
+    for (const n of news) {
+        x -= n.weight;
+        if (x < 0)
+            return n;
+    }
+    return news[news.length - 1];
+}
+/** Each one's answer to a call for everyone: by whether they are free, how they get along with the host, how social they are. */
+export function callAnswer(p, roll) {
+    if (!p.free)
+        return { yes: false, why: 'busy then' };
+    if (p.withHost <= -15 || p.grudge)
+        return { yes: false, why: 'not in the mood (and not keen on the host)' };
+    const chance = 0.2 + p.social / 250 + Math.max(0, p.withHost) / 200;
+    return roll < chance ? { yes: true, why: '' } : { yes: false, why: ['tired', 'has other things to do', 'not in the mood', 'wants a quiet evening'][Math.floor(roll * 97) % 4] };
+}
+/** Your answer, from what you wrote in the chat (yes, no, or nothing clear). */
+export function yourAnswer(text) {
+    const t = text.toLowerCase();
+    if (/\b(can'?t|cannot|not tonight|i'?ll pass|pass|no thanks|count me out)\b|не могу|не получится|без меня|пас\b/.test(t))
+        return 'no';
+    if (/\b(i'?m in|count me in|i'?ll come|i'?ll be there|sure|yes|yeah|ok(ay)?|down)\b|я за|приду|буду|иду|давай|ок\b|конечно/.test(t))
+        return 'yes';
+    return null;
+}

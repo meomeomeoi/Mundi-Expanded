@@ -12,7 +12,7 @@ export interface Chat { id: string; name: string; members: string[]; you: boolea
 export type Writer = 'main' | 'mech';
 export type Freq = 'off' | 'quiet' | 'calm' | 'lively';
 export const FREQS: [Freq, string, [number, number]][] = [['off', 'Off', [0, 0]], ['quiet', 'Quiet', [0, 1]], ['calm', 'Calm', [1, 2]], ['lively', 'Lively', [2, 3]]];
-export interface ChatsX { chats: Chat[]; writer: Writer; freq: Freq; seq: number }
+export interface ChatsX { chats: Chat[]; writer: Writer; freq: Freq; seq: number; talks?: { day: number; hours: number[]; done: number[] }; calls?: Call[] }
 export type GLike = { cast: Record<string, { avatar: string; name: string; met?: boolean }>; chatsx?: ChatsX };
 export const ME = 'me';
 export const HOUSE = 'house';
@@ -102,4 +102,42 @@ export function parseChat(text: string, writers: { avatar: string; name: string 
 export function recentLines(c: Chat, now: number, nameOf: (by: string) => string, hours = 4, n = 6): string[] {
     const m = c.msgs.filter(x => now - x.at <= hours * 60).slice(-n);
     return m.length ? [`In the "${c.name}" group chat lately (on their phones): ${m.map(x => `${nameOf(x.by)}: "${x.text.slice(0, 160)}"`).join(' / ')}`] : [];
+}
+
+/* ---------- conversations without you (part 4) ---------- */
+
+/** The hours of today's conversations (`freq`'s range, 9:00–23:00, apart). */
+export function dayTalks(freq: Freq, roll: (k: string) => number): number[] {
+    const [lo, hi] = FREQS.find(f => f[0] === freq)?.[2] ?? [0, 0];
+    const n = lo + Math.floor(roll('n') * (hi - lo + 1));
+    const hours: number[] = [];
+    for (let i = 0; i < n * 4 && hours.length < n; i++) { const h = 9 + Math.floor(roll(`h${i}`) * 14); if (hours.every(x => Math.abs(x - h) >= 2)) hours.push(h); }
+    return hours.sort((a, b) => a - b);
+}
+export interface News { kind: 'plan' | 'fight' | 'fridge' | 'errand' | 'money' | 'small'; who: string[]; text: string; weight: number }
+/** What a conversation is about: the weightiest recent thing (a little luck among close ones). */
+export function pickNews(news: News[], roll: number): News | null {
+    if (!news.length) return null;
+    const total = news.reduce((s, n) => s + n.weight, 0); let x = roll * total;
+    for (const n of news) { x -= n.weight; if (x < 0) return n; }
+    return news[news.length - 1];
+}
+
+/* ---------- open calls: "movie night at 9, who's in?" ---------- */
+
+export interface Call { id: string; chat: string; by: string; act: string; place: string; from: number; to: number; plan?: string; answers: Record<string, 'yes' | 'no'>; why: Record<string, string>; you?: 'yes' | 'no' }
+export interface CallWho { avatar: string; free: boolean; social: number; withHost: number; grudge?: boolean }
+/** Each one's answer to a call for everyone: by whether they are free, how they get along with the host, how social they are. */
+export function callAnswer(p: CallWho, roll: number): { yes: boolean; why: string } {
+    if (!p.free) return { yes: false, why: 'busy then' };
+    if (p.withHost <= -15 || p.grudge) return { yes: false, why: 'not in the mood (and not keen on the host)' };
+    const chance = 0.2 + p.social / 250 + Math.max(0, p.withHost) / 200;
+    return roll < chance ? { yes: true, why: '' } : { yes: false, why: ['tired', 'has other things to do', 'not in the mood', 'wants a quiet evening'][Math.floor(roll * 97) % 4] };
+}
+/** Your answer, from what you wrote in the chat (yes, no, or nothing clear). */
+export function yourAnswer(text: string): 'yes' | 'no' | null {
+    const t = text.toLowerCase();
+    if (/\b(can'?t|cannot|not tonight|i'?ll pass|pass|no thanks|count me out)\b|не могу|не получится|без меня|пас\b/.test(t)) return 'no';
+    if (/\b(i'?m in|count me in|i'?ll come|i'?ll be there|sure|yes|yeah|ok(ay)?|down)\b|я за|приду|буду|иду|давай|ок\b|конечно/.test(t)) return 'yes';
+    return null;
 }

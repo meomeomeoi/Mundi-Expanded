@@ -27,7 +27,7 @@ function recent(g: Save, a: string, b: string): number {
     return f ? Math.sign(f.delta!) : 0;
 }
 // Free at that hour of `day`: awake, in the house, not at work, not at the house's dinner.
-function freeAt(g: Save, w: WorldDef, r: Resident, day: number, h: number): boolean {
+export function freeAt(g: Save, w: WorldDef, r: Resident, day: number, h: number): boolean {
     const at = day * 1440 + h * 60 + 5;
     const s = slotAt(g, w, r, at);
     if (s) return s.kind === 'room' || s.kind === 'common';

@@ -41,4 +41,29 @@ test('the prompt names who writes, the era and what was said in person', () => {
     const p = C.chatPrompt({ chatName: 'House', when: 'Monday, 10:00', lang: 'English', voice: 'casual', era: 'It is the 2000s.', members: [{ name: 'Kathie', about: 'shy' }], you: 'Gleb', youIn: true, known: '[In person: …]', news: [], history: [{ name: 'Gleb', text: 'hi' }], writers: ['Kathie'] });
     assert.match(p, /by Kathie/); assert.match(p, /2000s/); assert.match(p, /In person/); assert.match(p, /Members: Kathie, Gleb/);
 });
+test('conversations a day: off 0, quiet 0-1, calm 1-2, lively 2-3, two hours apart, in the day', () => {
+    for (const [f, lo, hi] of [['off', 0, 0], ['quiet', 0, 1], ['calm', 1, 2], ['lively', 2, 3]]) {
+        const seen = new Set();
+        for (let d = 0; d < 200; d++) { const hs = C.dayTalks(f, (k) => H(`${d}|${k}`)); seen.add(hs.length); assert.ok(hs.length >= lo && hs.length <= hi, `${f}: ${hs.length}`); hs.forEach((h, j) => { assert.ok(h >= 9 && h <= 22); if (j) assert.ok(h - hs[j - 1] >= 2); }); }
+        assert.ok(seen.has(lo) && seen.has(hi), `${f} covers its range`);
+    }
+});
+test('the topic: weightier news more often', () => {
+    const news = [{ kind: 'plan', who: [], text: 'a', weight: 3 }, { kind: 'small', who: [], text: '', weight: 1 }];
+    let plan = 0; for (let i = 0; i < 400; i++) if (C.pickNews(news, i / 400).kind === 'plan') plan++;
+    assert.ok(Math.abs(plan / 400 - 0.75) < 0.02); assert.equal(C.pickNews([], 0.5), null);
+});
+test('calls: busy or at odds with the host say no; the social and close say yes more', () => {
+    assert.equal(C.callAnswer({ avatar: 'a', free: false, social: 100, withHost: 90 }, 0).yes, false);
+    assert.equal(C.callAnswer({ avatar: 'a', free: true, social: 100, withHost: -40 }, 0).yes, false);
+    const rate = (o) => { let k = 0; for (let i = 0; i < 400; i++) if (C.callAnswer({ avatar: 'a', free: true, ...o }, i / 400).yes) k++; return k / 400; };
+    assert.ok(rate({ social: 90, withHost: 70 }) > rate({ social: 10, withHost: 0 }) * 2);
+    assert.ok(C.callAnswer({ avatar: 'a', free: true, social: 0, withHost: 0 }, 0.99).why.length > 0);
+});
+test('your answer in the chat', () => {
+    assert.equal(C.yourAnswer("I'm in!"), 'yes'); assert.equal(C.yourAnswer('я за'), 'yes'); assert.equal(C.yourAnswer('sure, see you there'), 'yes');
+    assert.equal(C.yourAnswer("can't tonight, sorry"), 'no'); assert.equal(C.yourAnswer('не могу'), 'no');
+    assert.equal(C.yourAnswer('what movie?'), null);
+});
+
 console.log(`chats: ${n} tests passed`);

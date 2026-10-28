@@ -1856,6 +1856,10 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-faces { width: 32px; height: 32px; }
 #mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-faces img { width: 20px !important; height: 20px !important; border-radius: 2px; }
 #mundi-root .mu-ph-row > .mu-gc-faces, #mundi-root .mu-ph-chathead > .mu-gc-faces { flex: none; display: block; position: relative; }
+#mundi-root .mu-gc-call { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--accent, #2f8cff) 12%, transparent); }
+#mundi-root .mu-gc-call > span { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; font-size: 12px; }
+#mundi-root .mu-gc-call > span b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-gc-call button { flex: none; padding: 5px 10px !important; font-size: 12px; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

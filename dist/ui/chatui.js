@@ -9,6 +9,7 @@ import { social } from '../sim/social.js';
 import { hm, weekday } from '../sim/time.js';
 import * as C from '../sim/chats.js';
 import { chatsOf, nameOf, sendToChat, unreadKey, TYPING } from '../sim/chatrun.js';
+import { pendingCall, answerCall, callText } from '../sim/chatlife.js';
 export const GC = { draft: '', busy: false };
 const when = (g, at) => { const d = Math.floor(at / 1440); return d === g.day ? hm(at % 1440) : `${weekday(d).slice(0, 3)} ${hm(at % 1440)}`; };
 const faces = (c) => `<span class="mu-gc-faces">${c.members.slice(0, 3).map(a => `<img src="${esc(thumb(a))}" alt="">`).join('')}</span>`;
@@ -25,7 +26,7 @@ export function groupRowsHtml(g) {
     }).join('');
 }
 /** The chat (the phone's 'gchat' app; P.who is the chat's id). */
-export function gchatApp(g, _w, id) {
+export function gchatApp(g, w, id) {
     const c = C.chatById(g, id);
     if (!c)
         return '<p class="mu-muted mu-pad">This chat is gone.</p>';
@@ -38,6 +39,7 @@ export function gchatApp(g, _w, id) {
         : `<div class="mu-gc-line"><img src="${esc(thumb(m.by))}" alt=""><div class="mu-ph-msg mu-gc-msg" data-notr><b class="mu-gc-by">${esc(nameOf(g, m.by))}</b>${esc(m.text)}<small>${when(g, m.at)}</small></div></div>`).join('')}
             ${typing ? '<div class="mu-ph-msg is-typing"><i></i><i></i><i></i></div>' : ''}
             ${c.msgs.length ? '' : '<p class="mu-muted mu-pad">Nothing here yet. Say something to everyone.</p>'}</div>
+        ${(() => { const k = pendingCall(g, c.id); return k ? `<div class="mu-gc-call"><span>${icon('calendar')}<b data-notr>${esc(callText(g, w, k))}</b></span><button class="mu-primary" data-act="gc-call" data-id="${esc(k.id)}" data-v="yes">I'm in</button><button class="mu-ghost" data-act="gc-call" data-id="${esc(k.id)}" data-v="no">Can't</button></div>` : ''; })()}
         <div class="mu-ph-compose"><input type="text" placeholder="Message to ${esc(c.name)}" value="${esc(GC.draft)}" data-input="gc-draft" data-focus="gc-draft" ${GC.busy ? 'disabled' : ''}>
             <button class="mu-ibtn mu-primary" data-act="gc-send" data-id="${esc(c.id)}" aria-label="Send" ${GC.busy ? 'disabled' : ''}>${icon('send')}</button></div>`;
 }
@@ -51,6 +53,16 @@ async function send(id) {
     GC.busy = true;
     notify();
     try {
+        // an answer to the call waiting in this chat ("I'm in", "can't tonight")
+        const k = pendingCall(g, id);
+        const yes = k ? C.yourAnswer(text) : null;
+        if (k && yes) {
+            const why = answerCall(g, w, k.id, yes === 'yes');
+            if (why)
+                toast(why, 'info');
+            else if (yes === 'yes')
+                toast('You are going: it is in your plans.', 'success');
+        }
         const got = await sendToChat(g, w, id, text);
         const { P } = await import('./phone.js');
         const looking = P.open && P.app === 'gchat' && P.who === id;
@@ -69,6 +81,18 @@ async function send(id) {
 Object.assign(ACT, {
     'gc-open': async (el) => { const { P } = await import('./phone.js'); P.app = 'gchat'; P.who = el.dataset.id ?? C.HOUSE; GC.draft = ''; notify(); },
     'gc-send': (el) => send(el.dataset.id ?? C.HOUSE),
+    // the buttons: your answer, said in the chat too
+    'gc-call': async (el) => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!g || !w)
+            return;
+        const k = (chatsOf(g).calls ?? []).find(x => x.id === el.dataset.id);
+        if (!k)
+            return;
+        GC.draft = el.dataset.v === 'yes' ? "I'm in!" : "Can't make it, sorry.";
+        await send(k.chat);
+    },
 });
 Object.assign(INPUT, { 'gc-draft': (el) => { GC.draft = el.value; } });
 // Enter sends (upstream's Enter only knows its own message box)
