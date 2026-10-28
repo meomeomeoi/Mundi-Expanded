@@ -1,7 +1,7 @@
 // Statuses (life, energy, hunger…) and the actions that change them. Everything comes from the world's data:
 // which statuses exist, how fast they drop, what happens at zero and what each action costs and gives.
 import { eventActions } from './cityevents.js';
-import { onAction, decayMods } from './hooks.js';
+import { onAction, decayMods, actionMods } from './hooks.js';
 import { nowAbs, cfg } from '../core/store.js';
 import { billNews, cutReason, priceOf } from './bills.js';
 import { priceHere } from './worldstate.js';
@@ -158,7 +158,7 @@ export function actionsHere(g, w) {
     const pl = placeOf(g, w, g.player.loc);
     const wet = homeMode && !!pl && /bath|shower|wash|toilet|restroom/i.test(`${pl.id} ${pl.name}`);
     if (homeMode)
-        return all.filter(a => !earns(a)).filter(a => !wet || !a.anywhere || !!chosen?.includes(a.id)).map(a => (a.cost ? { ...a, cost: homeMoney && a.cost < 0 ? priceOf(g, a.cost) : 0 } : a)); // [expanded] earning keeps its pay
+        return actionMods.reduce((l, f) => f(g, w, l), all.filter(a => !earns(a)).filter(a => !wet || !a.anywhere || !!chosen?.includes(a.id)).map(a => (a.cost ? { ...a, cost: homeMoney && a.cost < 0 ? priceOf(g, a.cost) : 0 } : a))); // [expanded] earning keeps its pay; things in the room (0.2.0.7)
     return all.map(a => (a.cost ? { ...a, cost: a.cost > 0 ? Math.round(priceOf(g, a.cost) * here) : priceOf(g, a.cost) } : a));
 }
 // Water, power… of a kind of home, paid with the rent.

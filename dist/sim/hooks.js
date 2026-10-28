@@ -1,5 +1,7 @@
 export const onHour = [];
 export const onDay = [];
+// [expanded] The actions offered where you are, changed (things in the room: Mundi Expanded 0.2.0.7).
+export const actionMods = [];
 // After you do an action (habits, pets…).
 export const onAction = [];
 // Who you are seen as right now (an alter ego in disguise): facts, and so rumors, are about that name.

@@ -4,6 +4,8 @@ import type { WorldDef } from '../core/world.js';
 export const onHour: ((g: Save, w: WorldDef) => string[])[] = [];
 export const onDay: ((g: Save, w: WorldDef) => string[])[] = [];
 
+// [expanded] The actions offered where you are, changed (things in the room: Mundi Expanded 0.2.0.7).
+export const actionMods: ((g: Save, w: WorldDef, list: import('../core/world.js').ActionDef[]) => import('../core/world.js').ActionDef[])[] = [];
 // After you do an action (habits, pets…).
 export const onAction: ((g: Save, w: WorldDef, a: { id: string; tags?: string[]; name: string }) => void)[] = [];
 // Who you are seen as right now (an alter ego in disguise): facts, and so rumors, are about that name.

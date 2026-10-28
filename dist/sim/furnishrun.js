@@ -1,3 +1,4 @@
+import './furnishacts.js'; // what you can do with them (registers itself)
 import { isScenario, styleOf } from '../core/world.js';
 import { placeOn, extraRooms } from './places.js';
 import { ownRoom } from './lifeday.js';
@@ -46,6 +47,10 @@ export function seedCommon(g, w) {
         for (const cat of F.template(r.kind, era, first))
             F.addFixture(G(g), { cat, room: r.id, owner: 'house', via: 'start', era });
     }
+    // what you bought before in the world's shop (a PC, an easel, a treadmill, a coffee machine) is yours, in your room
+    for (const id of (g.life?.items ?? []))
+        if (F.catOf(id) && !F.fixturesIn(G(g), F.PLAYER_ROOM).some(x => x.cat === id))
+            F.addFixture(G(g), { cat: id, room: F.PLAYER_ROOM, owner: 'player', via: 'bought', era });
     return true;
 }
 /** For the scene: the things in the room you are in. */

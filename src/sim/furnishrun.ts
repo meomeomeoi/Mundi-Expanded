@@ -1,3 +1,4 @@
+import './furnishacts.js';   // what you can do with them (registers itself)
 // [expanded] Rooms and their things at runtime (rules in furnish.ts): which games have them (a modern Home: the
 // manor's would need a catalog of its own), the rooms of this game, the common rooms furnished from the house's
 // template the first time, and what the scene is told about the room you are in.
@@ -42,6 +43,8 @@ export function seedCommon(g: Save, w: WorldDef): boolean {
         const first = r.kind === 'bath' && !bath; if (r.kind === 'bath') bath = true;
         for (const cat of F.template(r.kind, era, first)) F.addFixture(G(g), { cat, room: r.id, owner: 'house', via: 'start', era });
     }
+    // what you bought before in the world's shop (a PC, an easel, a treadmill, a coffee machine) is yours, in your room
+    for (const id of ((g as any).life?.items ?? []) as string[]) if (F.catOf(id) && !F.fixturesIn(G(g), F.PLAYER_ROOM).some(x => x.cat === id)) F.addFixture(G(g), { cat: id, room: F.PLAYER_ROOM, owner: 'player', via: 'bought', era });
     return true;
 }
 
