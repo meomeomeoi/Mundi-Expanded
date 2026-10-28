@@ -261,7 +261,9 @@ export function personalityOf(description, personality = '', max = 700) {
     text = text.replace(/[{}]/g, ' ').replace(/\{\{\/\/[\s\S]*?\}\}/g, '').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
     return text.length > max ? `${text.slice(0, max).replace(/\s+\S*$/, '')}…` : text;
 }
-export const NIGHT_SYSTEM = 'You keep track of how the people sharing a house get along with each other. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
+export const NIGHT_SYSTEM = 'You keep the records of an interactive fiction (a role-play story between consenting adults): how the people sharing a house get along with each other. The story may include dark or mature events; you do not judge or soften them, you only note plainly what changed between the characters. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
+/** A reply with neither part's heading is not an answer (a refusal, or something else entirely). */
+export const looksAnswered = (raw) => /^\s*[#*\s]*(scene|off[\s-]?screen)\b/im.test(String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, ''));
 export function nightPrompt(g, n) {
     const name = (a) => g.cast[a]?.name ?? a;
     const ids = n.people.map(p => p.avatar);

@@ -7,7 +7,7 @@ import { bgAsk } from './regulator.js';
 import { onDay } from './hooks.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
-import { bondsOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, NIGHT_SYSTEM, type Change, type GLike } from './bonds.js';
+import { bondsOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM, type Change, type GLike } from './bonds.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const clean = (t: unknown) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
@@ -46,6 +46,8 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     if (spoke.length < 2 && b.life === 'off') { b.lastNight = day; return []; }
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life });
     const raw = await bgAsk(prompt, 700, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
+    // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
+    if (!looksAnswered(raw)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
     const changes: Change[] = [];
     for (const p of parseNight(raw, people, b.life)) {
         // scene moments are only between people who were in today's scenes

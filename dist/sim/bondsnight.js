@@ -7,7 +7,7 @@ import { bgAsk } from './regulator.js';
 import { onDay } from './hooks.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
-import { bondsOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, NIGHT_SYSTEM } from './bonds.js';
+import { bondsOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
 const G = (g) => g;
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 // The daily drift back toward where each pair started (no AI; runs as the day turns, also while you sleep).
@@ -54,6 +54,9 @@ export async function bondsNight(g, w, day, range) {
     }
     const prompt = nightPrompt(gl, { day, user: me, premise: String(g.cfg?.start?.text || w.scenario?.premise || ''), people, convo, spoke, life: b.life });
     const raw = await bgAsk(prompt, 700, NIGHT_SYSTEM); // the mechanics model when set, else the main one
+    // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
+    if (!looksAnswered(raw))
+        throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
     const changes = [];
     for (const p of parseNight(raw, people, b.life)) {
         // scene moments are only between people who were in today's scenes

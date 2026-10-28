@@ -230,4 +230,11 @@ test('facts about the player: written by the player, sent with the scene; the ni
     assert.equal(B.parseNight('SCENE\nGleb & Mia | +1 | x\nOFF-SCREEN\nNONE', people, 'calm').length, 0, 'the player is not one of the people');
 });
 
+test('a refusal is not an answer', () => {
+    assert.ok(B.looksAnswered('SCENE\nNONE\nOFF-SCREEN\nNONE'));
+    assert.ok(B.looksAnswered('<think>hm</think>**SCENE**\nNONE'));
+    assert.ok(!B.looksAnswered("I can't help with that request."));
+    assert.ok(!B.looksAnswered(''));
+});
+
 console.log(`bonds: ${n} tests passed`);

@@ -246,7 +246,9 @@ export interface NightInput {
     /** who spoke today among the people */ spoke: string[];
     life: Life;
 }
-export const NIGHT_SYSTEM = 'You keep track of how the people sharing a house get along with each other. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
+export const NIGHT_SYSTEM = 'You keep the records of an interactive fiction (a role-play story between consenting adults): how the people sharing a house get along with each other. The story may include dark or mature events; you do not judge or soften them, you only note plainly what changed between the characters. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
+/** A reply with neither part's heading is not an answer (a refusal, or something else entirely). */
+export const looksAnswered = (raw: string) => /^\s*[#*\s]*(scene|off[\s-]?screen)\b/im.test(String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, ''));
 
 export function nightPrompt(g: GLike, n: NightInput): string {
     const name = (a: string) => g.cast[a]?.name ?? a;
