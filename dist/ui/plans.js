@@ -24,6 +24,7 @@ import { featureOn } from '../sim/creator.js';
 import { ACT, INPUT } from './reg.js';
 import { planExtrasHtml } from './activityui.js'; // [expanded]
 import { runActs } from '../sim/activityrun.js'; // [expanded]
+import { housePlansHtml } from './cplanui.js'; // [expanded]
 export const PL = { card: '', kind: 'hangout', place: '', day: 0, time: 0, busy: '', face: '', title: '', out: '' };
 // Home: a plan can be somewhere out of the house, in your words ("__out" in the list, then the place you type)
 const OUT_PICK = '__out';
@@ -137,7 +138,7 @@ export function calendarApp(g, w, head) {
     return `${head}<div class="mu-ph-body">
         ${s.with.length ? `<section><h4>With you</h4>${s.with.map(c => `<div class="mu-ph-job mu-plan-row"><img src="${esc(thumb(c.avatar))}" alt=""><span><b data-notr>${esc(g.cast[c.avatar]?.name ?? '')}</b><small>${esc(fmt('Until {0}', hm(c.until % 1440)))}</small></span>
             <button class="mu-ghost" data-act="pc-bye" data-who="${esc(c.avatar)}">Say goodbye</button></div>`).join('')}</section>` : ''}
-        ${isScenario(w) ? housePartyHtml(g, w) : `${partyForm(g, w)}
+        ${isScenario(w) ? `${housePlansHtml(g, w) /* [expanded] */}${housePartyHtml(g, w)}` : `${partyForm(g, w)}
         ${cityEventsHtml(g, w)}
         ${festivalsHtml(g, w)}`}
         <section><h4>Coming up</h4>${list.length ? list.map(a => planRow(g, w, a)).join('') : '<p class="mu-muted">No plans. Open someone in People to invite them out.</p>'}</section>

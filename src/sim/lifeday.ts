@@ -8,6 +8,7 @@ import { whereNow, OUT } from './people.js';
 import { homeJobOf, onShift, npcOut } from './hometime.js';
 import { charOf } from '../st/bridge.js';
 import * as P from './profile.js';
+import { houseNotes, presentNotes } from './lifehooks.js';
 import { bondsOf, pairKey } from './bonds.js';
 
 const G = (g: Save) => g as unknown as P.GLike;
@@ -87,10 +88,12 @@ export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     if (lx.caught && lx.caught.until > now && present.some(r => r.avatar === lx.caught!.avatar)) { const n = g.cast[lx.caught.avatar]?.name; out.push(`${n} has just come back to their own room and found {{user}} inside, uninvited.${lx.caught.text ? ` How ${n} takes it: ${lx.caught.text}` : ''}`); }
     if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit!.avatar)) { const n = g.cast[lx.visit.avatar]?.name; out.push(`Late at night ${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`); }
     for (const r of present) { const t = lx.woke?.[r.avatar]; if (t && t > now && t - now > 60) out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`); }
+    for (const f of presentNotes) out.push(...f(g, w, present));
     const elsewhere = houseNow(g, w, present);
     if (elsewhere) out.push(elsewhere);
     return out;
 }
+
 
 /** Where everyone else in the house is right now (not when {{user}} is out of the house: they would not know). */
 export function houseNow(g: Save, w: WorldDef, present: Resident[]): string {
@@ -98,6 +101,7 @@ export function houseNow(g: Save, w: WorldDef, present: Resident[]): string {
     const here = new Set(present.map(r => r.avatar)); const now = nowAbs(g);
     const roomName = (id: string) => w.places.find(p => p.id === id)?.name.toLowerCase() ?? extraRooms(g).find(p => p.id === id)?.name.toLowerCase() ?? '';
     const parts = Object.values(g.cast).filter(r => r.met && !here.has(r.avatar)).slice(0, 10).map(r => {
+        for (const f of houseNotes) { const t = f(g, w, r); if (t) return t; }
         const loc = whereNow(g, w, r); const s = slotAt(g, w, r, now);
         if (loc === OUT || isOuting(loc)) return `${r.name}: out of the house`;
         const where = loc === `home:${r.avatar}` || (s && loc === ownRoom(r)) ? 'in their room' : loc === 'home:player' ? "in {{user}}'s room" : loc.startsWith('home:') ? `in ${g.cast[loc.slice(5)]?.name ?? 'someone'}'s room` : `in the ${roomName(loc)}`;

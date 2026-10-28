@@ -15,6 +15,7 @@ import { isOpen } from './daynight.js';
 import { placeOn, extraRooms } from './places.js';
 import { partySpot } from './houseparty.js';
 import { lifeWhere } from './lifeday.js';   // [expanded]
+import { cplanWhere } from './cplanrun.js';   // [expanded]
 
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 
@@ -105,6 +106,7 @@ export function whereNow(g: Save, w: WorldDef, r: Resident): string {
     if (left && nowAbs(g) < left.until) return left.loc;
     const party = partySpot(g, w, r.avatar);         // a scenario's house party: everyone in the common rooms
     if (party) return party;
+    { const cp = cplanWhere(g, w, r); if (cp) return cp; }   // [expanded] a plan of their own with others
     const brk = breakNow(g, w, r);                     // something interrupted her routine today (an errand, a cold…)
     if (brk) return brk.place;
     return routineAt(g, w, r, nowAbs(g));

@@ -8,6 +8,7 @@ import { whereNow, OUT } from './people.js';
 import { homeJobOf, onShift, npcOut } from './hometime.js';
 import { charOf } from '../st/bridge.js';
 import * as P from './profile.js';
+import { houseNotes, presentNotes } from './lifehooks.js';
 import { bondsOf, pairKey } from './bonds.js';
 const G = (g) => g;
 const FREE_TAGS = ['leisure', 'food', 'sport', 'outdoor'];
@@ -118,6 +119,8 @@ export function lifeLines(g, w, present) {
         if (t && t > now && t - now > 60)
             out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`);
     }
+    for (const f of presentNotes)
+        out.push(...f(g, w, present));
     const elsewhere = houseNow(g, w, present);
     if (elsewhere)
         out.push(elsewhere);
@@ -131,6 +134,11 @@ export function houseNow(g, w, present) {
     const now = nowAbs(g);
     const roomName = (id) => w.places.find(p => p.id === id)?.name.toLowerCase() ?? extraRooms(g).find(p => p.id === id)?.name.toLowerCase() ?? '';
     const parts = Object.values(g.cast).filter(r => r.met && !here.has(r.avatar)).slice(0, 10).map(r => {
+        for (const f of houseNotes) {
+            const t = f(g, w, r);
+            if (t)
+                return t;
+        }
         const loc = whereNow(g, w, r);
         const s = slotAt(g, w, r, now);
         if (loc === OUT || isOuting(loc))

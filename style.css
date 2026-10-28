@@ -1701,6 +1701,9 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .faces img.is-asleep { filter: grayscale(.7) brightness(.65); }
 #mundi-root .faces img.is-asleep + i:empty { display: none; }
 #mundi-root .mu-plan-room .faces img.is-asleep, #mundi-root .mu-rooms .faces img.is-asleep { outline: 2px dashed rgba(160, 170, 255, .6); outline-offset: -2px; }
+#mundi-root .mu-cp-faces { display: inline-flex; flex: none; }
+#mundi-root .mu-cp-faces img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; object-position: top; margin-right: -8px; border: 2px solid var(--panel, #121a2a); }
+#mundi-root .mu-cp-faces + span { margin-left: 12px; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

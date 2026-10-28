@@ -16,6 +16,7 @@ import { social, bondOf, isPartner, bump, livePlan, textFrom, type Appointment, 
 import { dating } from './feed.js';
 import { personaName } from '../st/bridge.js';
 import { asleepNow } from './lifeday.js';   // [expanded]
+import { socialCheck, afterYourPlan } from './cplanrun.js';   // [expanded]
 
 export const HANGOUT_BOND = 15;   // acquaintance: you can hang out
 export const DATE_BOND = 50;      // a date needs a good bond, a Spark match or being together
@@ -58,6 +59,7 @@ export function check(g: Save, w: WorldDef, avatar: string, place: string, from:
     }
     if (social(g).appts.some(a => a.avatar === avatar && livePlan(a) && overlaps(a, from, to)))
         return { ok: false, why: 'They already have plans with you then.' };
+    { const x = socialCheck(g, w, avatar, place, from, to, kind); if (x) return x; }   // [expanded] their own plans, and sometimes just no
     return yes;
 }
 
@@ -66,6 +68,7 @@ export function add(g: Save, avatar: string, place: string, from: number, kind: 
     const a: Appointment = { id: `a${nowAbs(g)}${Math.random().toString(36).slice(2, 6)}`, avatar, place, from, to: from + PLAN_LENGTH, kind, state: 'set', come };
     if (title.trim()) a.title = title.trim().slice(0, 80);
     s.appts.push(a);
+    afterYourPlan(g, a);   // [expanded] a plan of their own at that time is called off
     return a;
 }
 
