@@ -1,5 +1,37 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.7 · 2026-10-29
+
+Rooms and their things: what stands in each room, what it lets people do, and how the house gets more.
+
+- **Fixtures**, a layer of their own beside the house's consumables: things that stand in a room, belong to the house,
+  to a character or to you, and afford something (watch, play, play together, work, music, read, work out, cook,
+  coffee, bath…). A catalog of about forty with names per era (a CRT TV, a flat-screen, a smart TV), and free-text
+  decor. Common rooms start from a template; bedrooms are furnished by the mechanics model from cards and profiles
+  (a guess from the profile without one). Storage → Furniture shows and edits them; "Furnish the bedrooms" again.
+- **What they do**: the scene gets "This room's things"; activities need their thing (movie night needs a TV, the
+  workout something to work out with), plans and calls pick a room that has it, and your own actions here follow the
+  room (play the console, practise the guitar, make coffee). Profiles say what each activity needs. Someone who likes
+  something goes where the thing is, more often the more social they are; homebodies still stay in sometimes.
+- **Ordering online**: the phone's shop (Web shop, Online store, Marketplace by era). Small things come the next day,
+  big ones in two, between 10:00 and 17:00; the box waits in the hallway to be unpacked (or someone sets it up after
+  two days). Paid from your wallet with money on, free without.
+- **In person and found**: an electronics store, a furniture store and a flea market in Go out (today's assortment,
+  flea prices 40–70%); big things carried home with whoever came along, otherwise delivered. Now and then something
+  left on the curb; the storage room can be rummaged once a week.
+- **House purchases**: someone proposes in the house chat to buy something from the fund, for the house or their own
+  room. Who is awake and home answers by rules (how they get along with who asks, whether they would use it, the
+  price against the fund, a room of one's own is harder); the AI only words it. You answer with the buttons or in
+  your own words; you propose from the shop. Approved: ordered from the fund. Turned down for someone's own room: a
+  little sourness. Never / now and then / often, and "Proposal now", in the chat settings.
+- **The story**: the reader that notes food, gifts and money also notes big things brought in, carried to another
+  room or thrown out; a big gift (a guitar, a console) stands in its new owner's room.
+- **Your portrait**: your persona's sprites bottom left (a sprites folder "<persona> (Mundi)", uploaded from the
+  portrait as a .zip or images named by label). The face you pick, always neutral, or read from the story by the
+  expressions call (or SillyTavern's classifier on your line). Outfits by the room's dress code, a frame by era
+  (2000s glossy chrome, 2010s flat card, today a soft glow), hidden on phones unless you want it.
+- Tests: furnish 11.
+
 ## Mundi Expanded 0.2.0.6 · 2026-10-29
 
 A release of fixes found in play, and the things they led to.

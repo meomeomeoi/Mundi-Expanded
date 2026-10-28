@@ -1,12 +1,19 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.6';
+export const VERSION = '0.2.0.7';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.0.7', fork: true, title: 'Rooms and their things', items: [
+            ['home', 'Every room has its things now: a TV in the living room, a guitar and a PC in someone\'s bedroom, a coffee machine in the kitchen. The scene knows what is in the room, and what you can do here follows (no TV, no movie night). Bedrooms are furnished from who lives there; edit anything in Storage → Furniture.'],
+            ['users', 'They do what they like where the thing is: the gamer stays in with the PC, the social ones take the console to the living room. Homebodies still keep to their room now and then.'],
+            ['download', 'Getting things: order online from the phone (it comes in a day or two, a box in the hallway to unpack), buy in person at the electronics store, the furniture store or the flea market, find something left on the curb, rummage in the storage room. What happens in the story counts too, and a big gift stands in its new owner\'s room.'],
+            ['chat', 'House purchases: someone proposes in the house chat to buy something from the fund, for everyone or for their own room (harder). The house votes, you can too; you propose from the shop. How often: the chat settings.'],
+            ['user', 'Your portrait: your own sprites in the corner of the scene, in a frame of the house\'s era. The face you pick, always neutral, or read from the story with everyone else\'s. Click it to add sprites (a .zip or images), outfits follow the dress code.'],
+        ] },
     { v: '0.2.0.6', fork: true, title: 'Faces, footsteps and fixes', items: [
             ['users', 'Faces for everyone in the scene: once a turn is over, the mechanics model gives every person here an expression from their sprites, listeners too (teased, praised, ignored). Settings → Game → Facial expressions. A swipe is read again.'],
             ['map', 'People who walk off in the story really go: "I\'m heading out to the patio" takes them there for a while, and whoever agrees to come along follows you from room to room.'],

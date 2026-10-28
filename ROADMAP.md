@@ -103,7 +103,7 @@ lines in group turns. And what they led to: expressions by a model for everyone 
 the story really go, characters above the dialogue box, the mechanics model's thinking level, the scene prompt's
 blocks for the house, notes and texts, the phone skins redrawn.
 
-## 7. Rooms and their things (0.2.0.7, planned)
+## 7. Rooms and their things (0.2.0.7, done)
 
 - **Fixtures**, a layer of its own (not the consumables of `stock`): things that stand in a room, have an owner (the
   house, a character, you) and can do something. A catalog with what each one affords (watch, play, play together,
