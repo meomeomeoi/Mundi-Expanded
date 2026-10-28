@@ -6,7 +6,7 @@ import { loadAllWorlds } from './core/world.js';
 import { setLang } from './core/tr.js';
 import './core/saves.js'; // save safety: migrations, backups and repairs when a save is opened
 import { mount, openApp, closeApp } from './ui/app.js';
-import { patchLastLine } from './ui/scene.js';
+import { patchLastLine, GENACT } from './ui/scene.js';
 import { installSfx } from './ui/sfx.js';
 import { refreshPrompt, clearPrompt } from './sim/prompt.js';
 import { applyGameLore } from './sim/lore.js';
@@ -79,8 +79,9 @@ function follow() {
     const redraw = () => { if (state.open)
         notify(); };
     on('GENERATION_STARTED', (_type, _opts, dryRun) => { if (dryRun)
-        return; state.generating = true; redraw(); });
+        return; GENACT.at = Date.now(); state.generating = true; redraw(); });
     const done = () => {
+        GENACT.at = Date.now(); // [expanded] the expressions wait for a quiet moment after it
         state.generating = false;
         if (state.impersonating) { // the AI wrote the player's line into SillyTavern's box: bring it to Mundi's composer
             state.impersonating = false;

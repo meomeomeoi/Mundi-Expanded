@@ -388,10 +388,17 @@ function saveIfQuiet(chatId: string) {
 }
 let classifying = -1;
 const TRIED = new Map<string, number>();
+/** [expanded] When a generation last started or ended (index.ts). */
+export const GENACT = { at: 0 };
+const QUIET_MS = 2500;
+let quietTimer: ReturnType<typeof setTimeout> | null = null;
 export function afterScene(_main: HTMLElement) {
     // [expanded] not between two members of one group turn: once the whole turn is over (one call for it, and nothing
-    // written to the chat while SillyTavern is still adding lines to it)
+    // written to the chat while SillyTavern is still adding lines to it). Two signs: SillyTavern's group flag, and a
+    // quiet moment (the next member starts right after the one before, so 2.5 s without a generation is the turn's end)
     if (state.generating || classifying !== -1 || groupTurnOn()) return;
+    const since = Date.now() - GENACT.at;
+    if (since < QUIET_MS) { if (!quietTimer) quietTimer = setTimeout(() => { quietTimer = null; notify(); }, QUIET_MS - since + 50); return; }
     const list = chat();
     if (byModel(list)) return;   // [expanded] a model gives everyone here a face at once (Settings → Game)
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
