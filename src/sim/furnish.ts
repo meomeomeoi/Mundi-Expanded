@@ -85,7 +85,7 @@ export const catalogFor = (era: Era, kind?: RoomKind) => CATALOG.filter(c => for
 export type Owner = 'house' | string;   // 'house', 'player', or a character's avatar
 export type Via = 'start' | 'bought' | 'order' | 'shop' | 'found' | 'gift' | 'story' | 'hand';
 export interface Fixture { id: string; cat?: string; name: string; room: string; owner: Owner; via: Via; day: number; decor?: boolean }
-export interface FurnishX { items: Fixture[]; seq: number; started?: boolean }
+export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[] }
 export type GLike = { day: number; furnishx?: FurnishX };
 export function furnishOf(g: GLike): FurnishX {
     const f = (g.furnishx ??= { items: [], seq: 0 }); f.items ??= []; f.seq ??= 0; return f;
@@ -231,3 +231,31 @@ export function guessAfford(text: string): Afford | null {
     const t = String(text ?? ''); for (const [re, a] of NEEDS) if (re.test(t)) return a; return null;
 }
 export const isAfford = (s: unknown): s is Afford => typeof s === 'string' && s in AFFORDS;
+
+/* ---------- orders and deliveries ---------- */
+
+/** A thing on its way (ordered online, or big from a shop): it arrives at `due` (the house's minutes), waits as a box
+ *  in the hallway ('here'), and stands in `room` once unpacked. `prop`: the house's proposal it came from. */
+export interface Order { id: string; cat: string; name: string; room: string; owner: Owner; price: number; paid: 'wallet' | 'fund' | 'free'; by: Owner; day: number; due: number; state: 'coming' | 'here'; via: 'order' | 'shop'; prop?: string }
+export const ordersOf = (g: GLike) => (furnishOf(g).orders ??= []);
+/** When it comes: small things the next day, big ones the day after, sometime between 10:00 and 17:00. */
+export function deliveryAt(now: number, size: 'small' | 'big', roll: number): number {
+    const day = Math.floor(now / 1440) + (size === 'small' ? 1 : 2);
+    return day * 1440 + (10 + Math.floor(Math.max(0, Math.min(0.999, roll)) * 8)) * 60;
+}
+export function newOrder(g: GLike, o: Omit<Order, 'id' | 'state'>): Order {
+    const f = furnishOf(g); const x: Order = { ...o, id: `o${++f.seq}`, state: 'coming' };
+    ordersOf(g).push(x); return x;
+}
+/** The orders that have come by `now` (they become boxes in the hallway). */
+export function arrived(g: GLike, now: number): Order[] {
+    const out = ordersOf(g).filter(o => o.state === 'coming' && o.due <= now);
+    for (const o of out) o.state = 'here';
+    return out;
+}
+/** A box unpacked: the thing stands in its room. */
+export function unpack(g: GLike, id: string, era: Era): Fixture | null {
+    const o = ordersOf(g).find(x => x.id === id && x.state === 'here'); if (!o) return null;
+    furnishOf(g).orders = ordersOf(g).filter(x => x !== o);
+    return addFixture(g, { cat: o.cat, room: o.room, owner: o.owner, via: o.via, era });
+}

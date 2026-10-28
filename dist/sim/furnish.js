@@ -255,3 +255,30 @@ export function guessAfford(text) {
     return null;
 }
 export const isAfford = (s) => typeof s === 'string' && s in AFFORDS;
+export const ordersOf = (g) => (furnishOf(g).orders ??= []);
+/** When it comes: small things the next day, big ones the day after, sometime between 10:00 and 17:00. */
+export function deliveryAt(now, size, roll) {
+    const day = Math.floor(now / 1440) + (size === 'small' ? 1 : 2);
+    return day * 1440 + (10 + Math.floor(Math.max(0, Math.min(0.999, roll)) * 8)) * 60;
+}
+export function newOrder(g, o) {
+    const f = furnishOf(g);
+    const x = { ...o, id: `o${++f.seq}`, state: 'coming' };
+    ordersOf(g).push(x);
+    return x;
+}
+/** The orders that have come by `now` (they become boxes in the hallway). */
+export function arrived(g, now) {
+    const out = ordersOf(g).filter(o => o.state === 'coming' && o.due <= now);
+    for (const o of out)
+        o.state = 'here';
+    return out;
+}
+/** A box unpacked: the thing stands in its room. */
+export function unpack(g, id, era) {
+    const o = ordersOf(g).find(x => x.id === id && x.state === 'here');
+    if (!o)
+        return null;
+    furnishOf(g).orders = ordersOf(g).filter(x => x !== o);
+    return addFixture(g, { cat: o.cat, room: o.room, owner: o.owner, via: o.via, era });
+}

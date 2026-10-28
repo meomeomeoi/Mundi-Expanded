@@ -1,4 +1,5 @@
 import './furnishacts.js';   // what you can do with them (registers itself)
+import './orders.js';   // orders and deliveries (registers itself)
 // [expanded] Rooms and their things at runtime (rules in furnish.ts): which games have them (a modern Home: the
 // manor's would need a catalog of its own), the rooms of this game, the common rooms furnished from the house's
 // template the first time, and what the scene is told about the room you are in.
@@ -29,6 +30,11 @@ export function houseRooms(g: Save, w: WorldDef): HouseRoom[] {
     return [...beds, ...common];
 }
 export const roomName = (g: Save, w: WorldDef, id: string) => houseRooms(g, w).find(r => r.id === id)?.name ?? id;
+/** The hallway, where delivery boxes wait (the entrance hall, else the first common room). */
+export function hallOf(g: Save, w: WorldDef): string {
+    const rooms = houseRooms(g, w);
+    return (rooms.find(r => r.kind === 'hall') ?? rooms.find(r => /entrance|hall/i.test(`${r.id} ${r.name}`) && r.kind !== 'outdoor') ?? rooms.find(r => r.kind && r.kind !== 'bedroom'))?.id ?? '';
+}
 /** Whose a thing is, in words ("Masha", "you"). */
 export const ownerName = (g: Save, o: F.Owner, you = personaName()) => (o === 'house' ? 'the house' : o === 'player' ? you : g.cast[o]?.name ?? o);
 
@@ -56,7 +62,10 @@ export function roomPromptLines(g: Save, w: WorldDef): string[] {
     const rooms = houseRooms(g, w); const r = rooms.find(x => x.id === here); if (!r) return [];
     const name = r.id === F.PLAYER_ROOM ? "{{user}}'s room" : r.kind === 'bedroom' ? r.name : `the ${r.name.toLowerCase()}`;
     const line = F.roomLine(G(g), here, name, (o) => (o === 'player' ? '{{user}}' : ownerName(g, o)));
-    return line ? [line] : [];
+    // delivery boxes waiting in the hallway
+    const boxes = here === hallOf(g, w) ? F.ordersOf(G(g)).filter(o => o.state === 'here') : [];
+    const box = boxes.length ? `Delivery boxes waiting here, not unpacked yet: ${boxes.map(o => `${o.name} (${o.owner === 'player' ? "{{user}}'s" : o.owner === 'house' ? "for the house" : `${ownerName(g, o.owner)}'s`})`).join(', ')}.` : '';
+    return [line, box].filter(Boolean);
 }
 
 /* ---------- the bedrooms, furnished from who lives in them ---------- */

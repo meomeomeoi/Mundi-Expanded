@@ -65,5 +65,13 @@ test('what an activity needs, from its words (careful)', () => {
         'watching videos': null, 'listening to music with headphones': null, 'brewing fresh herbal tea': null, 'scrolling on the phone': null, 'giving thoughtful advice over coffee': 'coffee' };
     for (const [k, v] of Object.entries(t)) assert.equal(F.guessAfford(k), v, k);
 });
+test('orders: when they come, boxes in the hallway, unpacked into their room', () => {
+    assert.equal(F.deliveryAt(2 * 1440 + 600, 'small', 0), 3 * 1440 + 600); assert.equal(F.deliveryAt(2 * 1440 + 600, 'big', 0.999), 4 * 1440 + 17 * 60);
+    const g = G();
+    const o = F.newOrder(g, { cat: 'tv', name: 'Smart TV', room: 'living', owner: 'house', price: 400, paid: 'fund', by: 'player', day: 3, due: 5000, via: 'order' });
+    assert.deepEqual(F.arrived(g, 4999), []); assert.equal(F.arrived(g, 5000)[0], o); assert.equal(o.state, 'here'); assert.deepEqual(F.arrived(g, 6000), []);
+    const x = F.unpack(g, o.id, '2000s'); assert.equal(x.name, 'CRT TV'); assert.equal(x.room, 'living'); assert.equal(x.via, 'order');
+    assert.equal(F.ordersOf(g).length, 0); assert.equal(F.unpack(g, o.id, 'now'), null);
+});
 
 console.log(`furnish: ${n} tests passed`);

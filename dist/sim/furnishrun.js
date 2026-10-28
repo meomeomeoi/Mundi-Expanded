@@ -1,4 +1,5 @@
 import './furnishacts.js'; // what you can do with them (registers itself)
+import './orders.js'; // orders and deliveries (registers itself)
 import { isScenario, styleOf } from '../core/world.js';
 import { placeOn, extraRooms } from './places.js';
 import { ownRoom } from './lifeday.js';
@@ -26,6 +27,11 @@ export function houseRooms(g, w) {
     return [...beds, ...common];
 }
 export const roomName = (g, w, id) => houseRooms(g, w).find(r => r.id === id)?.name ?? id;
+/** The hallway, where delivery boxes wait (the entrance hall, else the first common room). */
+export function hallOf(g, w) {
+    const rooms = houseRooms(g, w);
+    return (rooms.find(r => r.kind === 'hall') ?? rooms.find(r => /entrance|hall/i.test(`${r.id} ${r.name}`) && r.kind !== 'outdoor') ?? rooms.find(r => r.kind && r.kind !== 'bedroom'))?.id ?? '';
+}
 /** Whose a thing is, in words ("Masha", "you"). */
 export const ownerName = (g, o, you = personaName()) => (o === 'house' ? 'the house' : o === 'player' ? you : g.cast[o]?.name ?? o);
 /** The first time: the common rooms get the house's template (only once; your edits stay). */
@@ -65,7 +71,10 @@ export function roomPromptLines(g, w) {
         return [];
     const name = r.id === F.PLAYER_ROOM ? "{{user}}'s room" : r.kind === 'bedroom' ? r.name : `the ${r.name.toLowerCase()}`;
     const line = F.roomLine(G(g), here, name, (o) => (o === 'player' ? '{{user}}' : ownerName(g, o)));
-    return line ? [line] : [];
+    // delivery boxes waiting in the hallway
+    const boxes = here === hallOf(g, w) ? F.ordersOf(G(g)).filter(o => o.state === 'here') : [];
+    const box = boxes.length ? `Delivery boxes waiting here, not unpacked yet: ${boxes.map(o => `${o.name} (${o.owner === 'player' ? "{{user}}'s" : o.owner === 'house' ? "for the house" : `${ownerName(g, o.owner)}'s`})`).join(', ')}.` : '';
+    return [line, box].filter(Boolean);
 }
 /* ---------- the bedrooms, furnished from who lives in them ---------- */
 const aboutOf = (g, avatar) => {
