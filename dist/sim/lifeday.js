@@ -109,6 +109,10 @@ export function lifeLines(g, w, present) {
         const n = g.cast[lx.caught.avatar]?.name;
         out.push(`${n} has just come back to their own room and found {{user}} inside, uninvited.${lx.caught.text ? ` How ${n} takes it: ${lx.caught.text}` : ''}`);
     }
+    if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit.avatar)) {
+        const n = g.cast[lx.visit.avatar]?.name;
+        out.push(`Late at night ${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`);
+    }
     for (const r of present) {
         const t = lx.woke?.[r.avatar];
         if (t && t > now && t - now > 60)

@@ -9,6 +9,7 @@ import { ACT, INPUT } from './reg.js';
 import { isWeekend } from '../sim/time.js';
 import * as P from '../sim/profile.js';
 import { commonRooms, ctxFor, makeProfile, slotAt } from '../sim/lifeday.js';
+import { OFTEN } from '../sim/knocks.js';
 
 const G = (g: Save) => g as unknown as P.GLike;
 export const LV = { busy: '', setup: false };
@@ -97,7 +98,11 @@ export function houseRulesHtml(g: Save): string {
     const lx = P.lifexOf(G(g));
     return `<label class="mu-check"><input type="checkbox" data-input="lp-dinner" ${lx.dinner ? 'checked' : ''}><span>Dinner together</span></label>
         ${lx.dinner ? `<label class="mu-field"><span>At</span><select data-input="lp-dinnerat">${[17, 18, 19, 20, 21].map(h => `<option value="${h}" ${h === lx.dinnerAt ? 'selected' : ''}>${hh(h)}</option>`).join('')}</select></label>` : ''}
-        <small class="mu-muted">${lx.dinner ? 'Whoever has a profile and is home and awake eats with the others.' : 'Off: everyone eats on their own, when they like.'}</small>`;
+        <small class="mu-muted">${lx.dinner ? 'Whoever has a profile and is home and awake eats with the others.' : 'Off: everyone eats on their own, when they like.'}</small>
+        <b>Night visits</b>
+        <div class="mu-bd-seg">${OFTEN.map(([id, label]) => `<button class="${id === (lx.visits ?? 'rare') ? 'is-on' : ''}" data-act="lp-visits" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">${(lx.visits ?? 'rare') === 'off' ? 'Nobody knocks at night.' : 'While you are awake in your room late at night, someone may knock: who and why follows from how close you are, romance and what happened that day.'}</small>
+        <label class="mu-check"><input type="checkbox" data-input="lp-locked" ${lx.locked ? 'checked' : ''}><span>Lock my door<small>Even your partner knocks first.</small></span></label>`;
 }
 
 /* ---------- actions ---------- */
@@ -126,6 +131,7 @@ Object.assign(ACT, {
     'lp-room': async (el) => { const x = prof(el); if (!x) return; const id = el.dataset.id!; x.p.rooms = x.p.rooms.includes(id) ? x.p.rooms.filter(r => r !== id) : [...x.p.rooms, id].slice(0, 4); hand(x.p); await refresh(); },
     'lp-actadd': (el) => { const x = prof(el); if (!x) return; x.p.acts.push({ text: '', where: 'room' }); hand(x.p); saveGame(); notify(); },
     'lp-actdel': async (el) => { const x = prof(el); if (!x) return; x.p.acts.splice(Number(el.dataset.i), 1); hand(x.p); await refresh(); },
+    'lp-visits': (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).visits = (el.dataset.v as any) || 'rare'; saveGame(); notify(); },
     'lp-setup-later': () => { const g = game(); if (!g) return; P.lifexOf(G(g)).asked = true; saveGame(); toast('You can make profiles any time in This world → People.', 'info'); notify(); },
     'lp-setup-self': () => { const g = game(); if (!g) return; P.lifexOf(G(g)).asked = true; saveGame(); ACT['open-world']?.(document.body, new Event('click')); },
     'lp-setup-gen': async () => { const c = gw(); if (!c || LV.busy) return; await genAll(c.g, c.w, Object.keys(c.g.cast)); P.lifexOf(G(c.g)).asked = true; saveGame(); notify(); },
@@ -140,6 +146,7 @@ Object.assign(INPUT, {
     'lp-actwhere': async (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.where = el.value; hand(x.p); await refresh(); } },
     'lp-ooc': (el) => { const x = prof(el); if (!x) return; x.p.ooc = el.value.slice(0, 400); saveGame(); },
     'lp-key': (el) => { const g = game(); if (!g) return; const lx = P.lifexOf(G(g)); const a = el.dataset.who ?? ''; lx.keys = el.checked ? [...new Set([...(lx.keys ?? []), a])] : (lx.keys ?? []).filter(x => x !== a); saveGame(); notify(); },
+    'lp-locked': (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).locked = el.checked; saveGame(); notify(); },
     'lp-dinner': async (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).dinner = el.checked; await refresh(); },
     'lp-dinnerat': async (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).dinnerAt = Number(el.value); await refresh(); },
 });

@@ -30,6 +30,12 @@ export interface LifeX {
     atDoor?: { avatar: string; until: number };   // came to their door to talk, without letting you in
     intr?: { loc: string; owners: string[]; at: number; from: number; left?: number; done?: boolean } | null;   // you went into an empty room
     caught?: { avatar: string; until: number; text: string } | null;   // and they found you there
+    visits?: 'off' | 'rare' | 'normal' | 'often';   // night visits (default rare)
+    locked?: boolean;                         // your door is locked (even a partner knocks)
+    knock?: { avatar: string; reason: string; at: number } | null;   // someone is knocking at your door now
+    visit?: { avatar: string; reason: string; until: number; door?: boolean } | null;   // and came in (or talks at the door)
+    nights?: Record<string, number>;          // the last night each one came
+    night?: number;                           // the last night someone came
 }
 export type GLike = { lifex?: LifeX };
 export const lifexOf = (g: GLike): LifeX => {
