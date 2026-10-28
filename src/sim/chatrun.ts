@@ -1,6 +1,6 @@
 // [expanded] Group chats at runtime (rules in chats.ts): who can answer now, writing the messages (the main model
 // by default, or the mechanics model), sending yours, and what the scene is told.
-import { nowAbs, notify, game, toast, type Save, type Resident } from '../core/store.js';
+import { nowAbs, notify, game, toast, saveGame, type Save, type Resident } from '../core/store.js';
 import { isScenario, aiVoice, type WorldDef } from '../core/world.js';
 import { aiLangName } from '../core/i18n.js';
 import { charOf, personaName, quiet } from '../st/bridge.js';
@@ -23,6 +23,42 @@ const pairValue = (g: Save, a: string, b: string) => bondsOf(g as any).pairs[pai
 export const closeness = (g: Save, author: string, a: string) => (author === C.ME ? bondOf(g, a) : pairValue(g, author, a));
 export const unreadKey = (id: string) => `chat:${id}`;
 export const TYPING: { chat: string; who: string[] } = { chat: '', who: [] };
+
+// [expanded] The answers are saved at once (nothing is lost if the page closes) but shown one by one, as if typed:
+// "Name is typing…" for a few real seconds by the message's length, then the message. Hidden messages are only hidden
+// on screen (the scene and the night still read them); after a reload everything shows. When you write again, what is
+// still waiting shows at once, so it never lands above your message.
+const HIDDEN = new WeakSet<object>();
+const QUEUE = new Map<string, { msgs: C.Msg[]; timer: ReturnType<typeof setTimeout> | null }>();
+/** The messages of a chat as the phone shows them now. */
+export const shownMsgs = (c: C.Chat): C.Msg[] => c.msgs.filter(m => !HIDDEN.has(m));
+/** Real milliseconds to "type" a message: a short pause and about 30 characters a second, at most 5 seconds. */
+export const typeMs = (text: string, first = false) => Math.min(5000, (first ? 500 : 900) + String(text ?? '').length * 33);
+function shown(chatId: string, m: C.Msg) {
+    HIDDEN.delete(m);
+    const g = game(); if (g) { const u = social(g).unread; u[unreadKey(chatId)] = (u[unreadKey(chatId)] ?? 0) + 1; saveGame(); }
+}
+function revealNext(chatId: string, first = false) {
+    const q = QUEUE.get(chatId);
+    if (!q || !q.msgs.length) { QUEUE.delete(chatId); if (TYPING.chat === chatId) { TYPING.chat = ''; TYPING.who = []; } notify(); return; }
+    const m = q.msgs[0];
+    TYPING.chat = chatId; TYPING.who = [m.by]; notify();
+    q.timer = setTimeout(() => { q.msgs.shift(); shown(chatId, m); revealNext(chatId); }, typeMs(m.text, first));
+}
+function reveal(chatId: string, msgs: C.Msg[]) {
+    if (!msgs.length) return;
+    for (const m of msgs) HIDDEN.add(m);
+    const q = QUEUE.get(chatId);
+    if (q) { q.msgs.push(...msgs); return; }   // already showing: these come after
+    QUEUE.set(chatId, { msgs: [...msgs], timer: null }); revealNext(chatId, true);
+}
+/** Shows at once what a chat still has waiting (you are writing in it). */
+export function flushChat(chatId: string) {
+    const q = QUEUE.get(chatId); if (!q) return;
+    if (q.timer) clearTimeout(q.timer);
+    for (const m of q.msgs) shown(chatId, m);
+    QUEUE.delete(chatId); if (TYPING.chat === chatId) { TYPING.chat = ''; TYPING.who = []; } notify();
+}
 
 /** The members as they are right now: awake, where (people side by side do not text each other). */
 export function peopleOf(g: Save, w: WorldDef, c: C.Chat): C.Who[] {
@@ -50,7 +86,7 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
         if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); ans = await bgAsk(prompt, 2500, C.CHAT_SYSTEM); }
         else ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
     } catch (e: any) { failed = String(e?.message ?? e); console.warn('[Mundi Expanded] group chat', e); }
-    finally { TYPING.chat = ''; TYPING.who = []; }
+    finally { if (TYPING.chat === c.id) { TYPING.chat = ''; TYPING.who = []; } }
     // [expanded] the answer can take a while: write into the save and the chat as they are NOW (the chat may have been
     // reloaded meanwhile; the objects from before the call would be lost), and never lose an answer silently
     const g2 = game() ?? g; const c2 = C.chatById(G(g2), c.id) ?? c;
@@ -66,12 +102,13 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
     // backwards when there is room, never before the last message already in the chat (so after yours, at the same minute).
     const at = nowAbs(g2); const after = c2.msgs.at(-1)?.at ?? -Infinity;
     lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, Math.max(after, at - (lines.length - 1 - i))); if (m) out.push(m); });
-    if (out.length) social(g2).unread[unreadKey(c2.id)] = (social(g2).unread[unreadKey(c2.id)] ?? 0) + out.length;
+    reveal(c2.id, out);   // unread counts grow as they show
     return out;
 }
 /** You write in a chat: who answers is decided, then their messages are written. */
 export async function sendToChat(g: Save, w: WorldDef, id: string, text: string): Promise<C.Msg[]> {
     const c = C.chatById(G(g), id); if (!c || !isScenario(w)) return [];
+    flushChat(id);
     const mine = C.post(c, C.ME, text, nowAbs(g)); if (!mine) return [];
     const who = C.answerers({ author: C.ME, authorRoom: g.player.loc, text, people: peopleOf(g, w, c), closeness: (a) => closeness(g, C.ME, a), roll: (k) => H(`${c.id}|${mine.at}|${c.msgs.length}|${k}`) });
     return who.length ? write(g, w, c, who, '', [], true) : [];

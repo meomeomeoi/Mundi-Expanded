@@ -8,7 +8,7 @@ import { ACT, INPUT } from './reg.js';
 import { social } from '../sim/social.js';
 import { hm, weekday } from '../sim/time.js';
 import * as C from '../sim/chats.js';
-import { chatsOf, nameOf, sendToChat, unreadKey, TYPING } from '../sim/chatrun.js';
+import { chatsOf, nameOf, sendToChat, unreadKey, TYPING, shownMsgs, typeMs } from '../sim/chatrun.js';
 import { pendingCall, answerCall, callText } from '../sim/chatlife.js';
 export const GC = { draft: '', busy: false };
 // making or editing one of your chats: its name and members (id '' = a new one)
@@ -22,7 +22,7 @@ export function groupRowsHtml(g) {
         return '';
     const s = social(g);
     return `${groupForm(g)}${chatsOf(g).chats.filter(c => c.you && c.members.length).map(c => {
-        const last = c.msgs.at(-1);
+        const last = shownMsgs(c).at(-1);
         const n = s.unread[unreadKey(c.id)] ?? 0;
         return `<button class="mu-ph-row mu-gc-row" data-act="gc-open" data-id="${esc(c.id)}">${faces(c)}<span><b data-notr>${esc(c.name)}</b><small data-notr>${last ? `${esc(nameOf(g, last.by))}: ${esc(last.text)}` : `${c.members.length + 1} people`}</small></span>${n ? `<em>${n}</em>` : last ? `<small>${when(g, last.at)}</small>` : ''}</button>`;
     }).join('')}`;
@@ -45,7 +45,7 @@ export function gchatApp(g, w, id) {
     const typing = TYPING.chat === c.id && TYPING.who.length ? `${TYPING.who.map(a => g.cast[a]?.name).filter(Boolean).join(', ')} ${TYPING.who.length > 1 ? 'are' : 'is'} typing…` : '';
     return `<div class="mu-ph-head is-chat"><button class="mu-ibtn mu-ghost" data-act="ph-go" data-app="messages" aria-label="Back">${icon('back')}</button>
             <span class="mu-ph-chathead mu-gc-head">${faces(c)}<span><b data-notr>${esc(c.name)}</b><small>${typing || esc([...c.members.map(a => g.cast[a]?.name ?? '?'), 'you'].join(', '))}</small></span></span>${c.id === C.HOUSE ? '<span></span>' : `<button class="mu-ibtn mu-ghost" data-act="gn-edit" data-id="${esc(c.id)}" aria-label="Edit the group">${icon('pen')}</button>`}</div>
-        <div class="mu-ph-thread mu-gc-thread" data-keep="ph-thread" data-bottom>${c.msgs.map(m => m.by === C.ME
+        <div class="mu-ph-thread mu-gc-thread" data-keep="ph-thread" data-bottom>${shownMsgs(c).map(m => m.by === C.ME
         ? `<div class="mu-ph-msg is-me" data-notr>${esc(m.text)}<small>${when(g, m.at)}</small></div>`
         : `<div class="mu-gc-line"><img src="${esc(thumb(m.by))}" alt=""><div class="mu-ph-msg mu-gc-msg" data-notr><b class="mu-gc-by">${esc(nameOf(g, m.by))}</b>${esc(m.text)}<small>${when(g, m.at)}</small></div></div>`).join('')}
             ${typing ? '<div class="mu-ph-msg is-typing"><i></i><i></i><i></i></div>' : ''}
@@ -75,12 +75,10 @@ async function send(id) {
                 toast('You are going: it is in your plans.', 'success');
         }
         const got = await sendToChat(g, w, id, text);
-        const { P } = await import('./phone.js');
-        const looking = P.open && P.app === 'gchat' && P.who === id;
-        if (looking)
-            social(g).unread[unreadKey(id)] = 0;
-        else if (got.length)
-            toast(`${C.chatById(g, id)?.name}: ${nameOf(g, got[0].by)}: ${got[0].text.slice(0, 60)}`, 'info');
+        // [expanded] told when the first answer shows (they appear one by one), unless you are looking at the chat then
+        if (got.length)
+            setTimeout(async () => { const { P } = await import('./phone.js'); if (!(P.open && P.app === 'gchat' && P.who === id))
+                toast(`${C.chatById(g, id)?.name}: ${nameOf(g, got[0].by)}: ${got[0].text.slice(0, 60)}`, 'info'); }, typeMs(got[0].text, true));
     }
     catch (e) {
         toast(String(e?.message ?? e), 'error');

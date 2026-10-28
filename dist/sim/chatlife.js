@@ -15,7 +15,7 @@ import { cplansOf, freeAt, joinPlan, storyOf } from './cplanrun.js';
 import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
-import { chatsOf, peopleOf, write, nameOf, unreadKey } from './chatrun.js';
+import { chatsOf, peopleOf, write, nameOf, typeMs } from './chatrun.js';
 import { presentNotes } from './lifehooks.js';
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -198,17 +198,14 @@ export const callText = (g, w, k) => `${nameOf(g, k.by)}: ${CP.cactOf(k.act)?.na
 function tell(g, c, msgs) {
     if (!msgs.length)
         return;
-    import('../ui/phone.js').then(({ P: ph }) => {
-        if (ph.open && ph.app === 'gchat' && ph.who === c.id)
-            social0(g, c.id);
-        else
+    saveGame();
+    notify();
+    // [expanded] told when the first message shows (they appear one by one), unless you are looking at the chat then
+    setTimeout(() => import('../ui/phone.js').then(({ P: ph }) => {
+        if (!(ph.open && ph.app === 'gchat' && ph.who === c.id))
             toast(`${c.name} · ${nameOf(g, msgs[0].by)}: ${msgs[0].text.slice(0, 70)}`, 'info');
-        saveGame();
-        notify();
-    }).catch(() => { saveGame(); });
+    }).catch(() => { }), typeMs(msgs[0].text, true));
 }
-const social0 = (g, id) => { const s = g.social; if (s?.unread)
-    s.unread[unreadKey(id)] = 0; };
 // The day's hours at midnight; a conversation when one comes.
 onDay.push((g, w) => {
     if (!isScenario(w))
