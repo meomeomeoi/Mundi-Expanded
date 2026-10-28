@@ -9,6 +9,7 @@ import { ACT, INPUT } from './reg.js';
 import { refreshPrompt } from '../sim/prompt.js';
 import { bondsOf } from '../sim/bonds.js';
 import * as S from '../sim/stock.js';
+import { furnitureTab } from './furnishui.js';   // [expanded] 0.2.0.7: the Furniture tab
 
 const SV = { tab: S.FRIDGE as string, adding: false, name: '', qty: 1 };
 const G = (g: Save) => g as unknown as S.GLike;
@@ -46,16 +47,16 @@ function errands(g: Save): string {
 }
 
 export function stockApp(g: Save, w: WorldDef, header: string): string {
-    void w;
     S.seed(G(g));
     const edit = canEdit(g);
     const stores = S.storesOf(G(g));
-    if (!stores.includes(SV.tab) && SV.tab !== 'rooms') SV.tab = S.FRIDGE;
+    if (!stores.includes(SV.tab) && SV.tab !== 'rooms' && SV.tab !== 'fx') SV.tab = S.FRIDGE;
     const lvl = S.foodLevel(G(g));
     const count = (s: string) => S.itemsIn(G(g), s).reduce((a, i) => a + i.qty, 0);
-    const tabs = `<div class="mu-bd-seg mu-st-tabs">${[[S.FRIDGE, 'Fridge'], [S.PANTRY, 'Pantry'], ['rooms', 'Rooms']].map(([id, l]) => `<button class="${SV.tab === id || (id === 'rooms' && S.isRoom(SV.tab)) ? 'is-on' : ''}" data-act="st-tab" data-v="${id}">${l}${id !== 'rooms' ? ` <small>${count(id)}</small>` : ''}</button>`).join('')}</div>`;
+    const tabs = `<div class="mu-bd-seg mu-st-tabs">${[[S.FRIDGE, 'Fridge'], [S.PANTRY, 'Pantry'], ['rooms', 'Rooms'], ['fx', 'Furniture']].map(([id, l]) => `<button class="${SV.tab === id || (id === 'rooms' && S.isRoom(SV.tab)) ? 'is-on' : ''}" data-act="st-tab" data-v="${id}">${l}${id !== 'rooms' && id !== 'fx' ? ` <small>${count(id)}</small>` : ''}</button>`).join('')}</div>`;
     let body = '';
-    if (SV.tab === 'rooms') {
+    if (SV.tab === 'fx') body = furnitureTab(g, w);
+    else if (SV.tab === 'rooms') {
         body = `<div class="mu-ph-list">${stores.filter(S.isRoom).map(s => `<button class="mu-ph-row" data-act="st-tab" data-v="${esc(s)}"><img src="${esc(pic(S.roomWho(s)))}" alt="">
             <span><b data-notr>${esc(S.storeName(G(g), s, you()))}</b><small>${S.itemsIn(G(g), s).length ? `${S.itemsIn(G(g), s).length} things` : 'nothing written down'}</small></span></button>`).join('')}</div>`;
     } else {

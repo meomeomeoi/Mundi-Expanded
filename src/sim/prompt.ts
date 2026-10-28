@@ -56,6 +56,7 @@ import { stockPromptLines } from './stocknight.js';   // [expanded]
 import { moneyPromptLines } from './moneynight.js';   // [expanded]
 import { activityLines } from './activityrun.js';   // [expanded]
 import { lifeLines, houseLines, oocLines, phoneLines } from './lifeday.js';   // [expanded]
+import { roomPromptLines } from './furnishrun.js';   // [expanded]
 import './letters.js';
 import './journey.js';
 import { systemOn, blockSystem, isScenario, SCENARIO_STARTS, type WorldDef } from '../core/world.js';
@@ -67,6 +68,7 @@ export const PROMPT_KEY = 'mundi_scene';
 export interface Block { id: string; name: string; desc: string; cut?: number }
 export const BLOCKS: Block[] = [
     { id: 'core', name: 'Scene basics', desc: 'World, day and time, weather, place, who is here, and the rules of the scene.' },
+    { id: 'room', name: 'This room\'s things', desc: 'In a Home: what stands in the room you are in, and whose it is (Mundi Expanded).', cut: 7 },   // [expanded]
     { id: 'house', name: 'The house now', desc: 'In a Home: the era, and where everyone else in the house is right now (Mundi Expanded). Dropped last.', cut: 10 },   // [expanded]
     { id: 'world', name: 'The mood around', desc: 'How busy it is here, the public mood and tension of the region, and its prices.', cut: 4 },
     { id: 'memories', name: 'Memories', desc: 'What the people here remember about you, and what happened earlier in this place.', cut: 9 },
@@ -158,7 +160,7 @@ export function sceneBlocks(): Built[] {
         romance: [romanceLine(g, met)],
         bonds: bondsPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         life: lifeLines(g, w, present),   // [expanded]
-        house: houseLines(g, w, present), ooc: oocLines(g, w, present), phone: phoneLines(g, w, present),   // [expanded]
+        house: houseLines(g, w, present), ooc: oocLines(g, w, present), phone: phoneLines(g, w, present), room: roomPromptLines(g, w),   // [expanded]
         stock: stockPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         money: moneyPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         family: [familyLine(g, present)],
