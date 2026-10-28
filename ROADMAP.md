@@ -72,28 +72,20 @@ friend of…) are fixed labels with a tone. This fork lets the characters' relat
 - Plan activities with effects, and group plans (one upstream plan per person, linked).
 - Go out: saved places and a starter set with Mundi's pictures.
 
-## 4. Life in the house (0.2.0.4, in discussion)
+## 4. Life in the house (0.2.0.4)
 
-What is wrong now (checked in the code):
+What was wrong (checked in the code): routines were one of four templates, picked at random for your cards; free
+time picked one of four leisure rooms by a hash, so everyone ended up together, and nobody spent the afternoon in
+their room; doors ignored the time, and nobody was ever asleep.
 
-- **Routines are random.** The Shared House has four routine templates (home, outworker, nightowl, early); a card that
-  is not one of the world's people gets one at random (`pick`), or `office`/`early` with a job, and `office` does not
-  exist in the house, so it silently falls back to `home`. A gamer can be an early bird in bed at 21:00.
-- **Everyone ends up together.** Free time picks one of the house's leisure rooms each hour by a hash, and the house
-  has only four (living room, dining room, entrance, pool); the templates also gather everyone for lunch at 13 and
-  dinner at 20. A bedroom is only ever used at night: nobody spends the afternoon alone in their room.
-- **Doors ignore the time.** Friendship 50+ walks into any bedroom at any hour, even when its owner is out ("you know
-  where the key is"); 15–49 when they are in; below 15 not at all. Nobody is ever asleep: at 3 a.m. the scene plays
-  them awake. Bedtimes are close together because the templates are.
-
-Planned (details being discussed):
-
-- Own routines per character: an editor in the Home setup (chronotype, bedtime, time in their room, favourite rooms,
-  weekends), and an optional generation from the card by the mechanics model at the start.
-- Time alone: "their room" as a step of the day, weighted by temperament; things in the room keep people there.
-- Sleep and doors: asleep is a state (the scene knows it), knocking instead of walking in, waking someone up, a key
-  only for a partner or someone who gave it.
-- Done ahead of it: the sprite menu as a ring around the face that stays on screen (0.2.0.3+).
+- Profiles instead of routines (sleep, sociability, rooms, things they do, OOC notes), made from the card; a day built
+  from them with variation; a 24-hour strip to edit; dinner together as a house rule.
+- The whole house at once: drawn to friends, away from enemies; the scene knows what everyone is doing.
+- Doors: knocking, sleep, waking, keys; breaking in at a risk, judged by the owner's personality and what you did.
+- Night visits to you, for reasons from the story.
+- The characters' own plans with each other (home and out), invitations to you, and refusals of your plans (busy,
+  outranked, sometimes just no, with another time suggested).
+- The sprite menu as a ring that stays on screen; money: your share of the house fund.
 
 ## Later (discussed, not designed yet)
 

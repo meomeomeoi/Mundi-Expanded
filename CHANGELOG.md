@@ -1,5 +1,30 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.4 · 2026-10-28
+
+- **Profiles** (Home): when a character sleeps (later at the weekend), how much of their free time they spend with
+  others, favourite rooms, things they do, and OOC notes for the AI (sent only when they are in the scene). Each day
+  is built from it, a little differently every day; favourites come up often but not always, never the same thing
+  three hours running. Made from the card by the mechanics model (or the main one, or a keyword guess); asked once at
+  the start of a Home (make them / later / I'll write them). This world → People → Day and habits: a 24-hour strip
+  for a weekday and a weekend, click an hour to set it by hand.
+- **Where they spend time**: drawn to close friends, away from people they cannot stand; dinner together is a house
+  rule (on by default, phone Settings). The scene is told what the people here are doing, and where everyone else in
+  the house is right now.
+- **Doors and sleep**: knocking (let in, come out to talk, not now: closeness, temperament, the hour, grudges);
+  people asleep (dimmed on the map), knocking may wake them, waking them on purpose for someone close; a key (a
+  checkbox on their page) or a partner lets you into an empty room. **Going in anyway**: if they come back you are
+  found, later they may notice; the reaction comes from their personality, how close you are and what you did there.
+- **Night visits**: while you are awake in your room at night someone may knock, for a reason that follows from the
+  story (romance, closeness, a fight that day, a grudge). Off / Rare (default) / Sometimes / Often; Lock my door.
+- **Their own plans**: pairs that get along make plans for the day (home or out; homebodies stay in), and may ask you
+  along (a text, and the Calendar). Your plans with them can be refused: busy with someone else (with another time
+  suggested, unless you clearly matter more, and then they cancel on the other), or sometimes just no.
+- **The sprite menu** is a ring around the face that stays on screen (it ran under the text box).
+- **Money**: what is yours in the house fund; taking more is a loan the house knows about.
+- Tests: profile 12, doors 8, knocks 5, cplans 7, money 14.
+
+
 ## Mundi Expanded 0.2.0.3 · 2026-10-28
 
 - **Money in a Home** (off by default; phone Settings → "Money in this house"): your wallet (upstream's) and the

@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.3';
+export const VERSION = '0.2.0.4';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,14 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.4', fork: true, title: 'Life in the house', items: [
+        ['calendar', 'Each person can have a profile: when they sleep, how much they keep to their room, the rooms they like and what they do. Made from their card (you are asked once at the start), edited in This world → People on a 24-hour strip.'],
+        ['users', 'People are drawn to the friends they like and keep away from the ones they cannot stand; dinner together is a house rule (phone Settings). The scene knows what everyone in the house is doing right now.'],
+        ['home', 'Bedroom doors: knock, and they let you in, come out to talk or say not now. People sleep, and you can wake someone you are close to. Going into an empty room is possible, at a risk.'],
+        ['moon', 'Night visits: late at night someone may knock at your door, for a reason (Off, Rare, Sometimes, Often).'],
+        ['heart', 'They make plans with each other, at home and out, and sometimes ask you along. They can also say no to you: busy with someone else, upset, or just not in the mood.'],
+        ['map', 'The menu on a character is a ring around them that stays on screen.'],
+    ] },
     { v: '0.2.0.3', fork: true, title: 'Money and plans', items: [
         ['wallet', 'Money in a Home, off by default (phone Settings): your wallet and the house fund, weekly shares and bills, paid groceries, and a job of yours with a "Go to work" button. A Money app shows it all.'],
         ['heart', 'Gifts: the 🎁 next to the message box gives a thing of yours or money to someone here. How it lands depends on how they react; gifts help friendship a little, never love, and not without limit.'],
