@@ -349,6 +349,20 @@ export async function setPresent(groupId, members, present) {
         g.disabled_members = off;
         dirty = true;
     }
+    // [expanded] the cards in a group turn (Settings → Game): the speaker's own (SillyTavern's "swap", as before), or
+    // everyone here joined (its "join", muted left out: the people in the room). Joined, every member of a turn gets the
+    // same beginning of the prompt, so a model with prompt caching reads it once for the whole turn.
+    const mode = ctx().extensionSettings?.mundi?.regulator?.joinCards ? 1 : 0;
+    if ((g.generation_mode ?? 0) !== mode) {
+        g.generation_mode = mode;
+        dirty = true;
+    }
+    // joined without a header, the cards run into one another: each gets its owner's name ({{char}} is each member here)
+    if (mode && !String(g.generation_mode_join_prefix ?? '').trim()) {
+        g.generation_mode_join_prefix = '[{{char}}]\n';
+        g.generation_mode_join_suffix = '\n';
+        dirty = true;
+    }
     if (dirty)
         await editGroup(g.id, true, false);
 }
