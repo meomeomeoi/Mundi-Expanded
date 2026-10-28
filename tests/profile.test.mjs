@@ -69,4 +69,36 @@ test('favourite rooms are chosen more', () => {
     for (let day = 1; day <= 40; day++) for (const s of P.dayPlan(p, ctx(day))) if (s.kind === 'common') c[s.loc] = (c[s.loc] ?? 0) + 1;
     assert.ok(c.pool > (c.gym ?? 0) * 1.8, JSON.stringify(c));
 });
+const slot = (kind, loc, act = 'x') => ({ kind, loc, act, asleep: kind === 'sleep' });
+const hc = (extra = {}) => ({ day: 5, weekend: false, own: { a: 'home:a', b: 'home:b', c: 'home:c' }, common: ['living', 'pool', 'kitchen'], names: { a: 'Ann', b: 'Bea', c: 'Cy' }, ...extra });
+const fill = (s) => Array.from({ length: 24 }, () => ({ ...s }));
+test('the house: someone you cannot stand makes one of you leave the room', () => {
+    const plans = { a: fill(slot('common', 'living')), b: fill(slot('common', 'living')) };
+    plans.a[9] = slot('room', 'home:a'); // a arrives at 10, b was already there
+    const v = () => -50;
+    const out = P.adjustHouse(plans, { a: P.cleanProfile({ acts: ['x'] }), b: P.cleanProfile({ acts: ['x'] }) }, v, hc());
+    for (let h = 0; h < 24; h++) assert.ok(!(out.a[h].loc === 'living' && out.b[h].loc === 'living'), `hour ${h} both in the living room`);
+    assert.notEqual(out.a[10].loc, 'living', 'the one who came later leaves');
+    assert.equal(plans.a[10].loc, 'living', 'the input is not changed');
+});
+test('the house: close friends draw each other out of their rooms, more for the social', () => {
+    const run = (social) => { let n = 0; for (let day = 1; day <= 30; day++) { const plans = { a: fill(slot('room', 'home:a')), b: fill(slot('common', 'pool')) }; const out = P.adjustHouse(plans, { a: P.cleanProfile({ social, acts: ['x'] }), b: P.cleanProfile({ acts: ['x'] }) }, () => 60, hc({ day })); n += out.a.filter(s => s.loc === 'pool').length; } return n / (30 * 24); };
+    const shy = run(0), warm = run(100);
+    assert.ok(shy > 0.1 && shy < 0.35, `shy ${shy}`); assert.ok(warm > shy + 0.2, `warm ${warm}`);
+    const plans = { a: fill(slot('room', 'home:a')), b: fill(slot('common', 'pool')) };
+    assert.ok(P.adjustHouse(plans, {}, () => 60, hc()).a.some(s => /keeping Bea company/.test(s.act)));
+    assert.ok(P.adjustHouse(plans, {}, () => 10, hc()).a.every(s => s.loc === 'home:a'), 'not for someone merely on good terms');
+});
+test('the house: not drawn where an enemy is; hours set by hand stay', () => {
+    const plans = { a: fill(slot('room', 'home:a')), b: fill(slot('common', 'pool')), c: fill(slot('common', 'pool')) };
+    const v = (x, y) => { const k = [x, y].sort().join(''); return k === 'ab' ? 60 : k === 'ac' ? -60 : 0; };
+    const out = P.adjustHouse(plans, {}, v, hc());
+    assert.ok(out.a.every(s => s.loc === 'home:a'), 'Cy is at the pool too');
+    const p = P.cleanProfile({ acts: ['x'] }); P.setHour(p, false, 12, 'common');
+    const q = { a: fill(slot('common', 'living')), b: fill(slot('common', 'living')) };
+    const o2 = P.adjustHouse(q, { a: p, b: P.cleanProfile({ social: 100, acts: ['x'] }) }, () => -60, hc());
+    assert.equal(o2.a[12].loc, 'living', 'set by hand: stays (the other one leaves)');
+    assert.notEqual(o2.b[12].loc, 'living');
+});
+
 console.log(`profile: ${n} tests passed`);

@@ -183,6 +183,50 @@ export function dayPlan(p, c) {
     }
     return out;
 }
+/* ---------- the whole house: drawn to friends, away from enemies ---------- */
+export const PULL = 45, PUSH = -30; // pair values: close friends draw each other, tense ones keep apart
+export function adjustHouse(plans, profiles, value, c) {
+    const out = Object.fromEntries(Object.entries(plans).map(([a, d]) => [a, d.map(x => ({ ...x }))]));
+    const who = Object.keys(out).sort();
+    const r = (a, k) => H(`${a}|${c.day}|${k}`);
+    const byHand = (a, h) => !!(c.weekend ? profiles[a]?.ov?.we : profiles[a]?.ov?.wd)?.[String(h)];
+    const free = (a, h) => { const s = out[a][h]; return !s.asleep && (s.kind === 'room' || s.kind === 'common') && !byHand(a, h); };
+    const awakeIn = (b, h, loc) => out[b][h].loc === loc && !out[b][h].asleep;
+    for (let h = 0; h < 24; h++) {
+        // away from people they cannot stand
+        for (const a of who) {
+            const s = out[a][h];
+            if (s.kind !== 'common' || !free(a, h))
+                continue;
+            const foe = who.find(b => b !== a && awakeIn(b, h, s.loc) && value(a, b) <= PUSH);
+            if (!foe)
+                continue;
+            const aWas = h > 0 && out[a][h - 1].loc === s.loc, bWas = h > 0 && out[foe][h - 1].loc === s.loc;
+            let leaves = aWas && !bWas ? foe : !aWas && bWas ? a : (profiles[a]?.social ?? 50) <= (profiles[foe]?.social ?? 50) ? a : foe;
+            if (!free(leaves, h))
+                leaves = leaves === a ? foe : a;
+            if (!free(leaves, h))
+                continue;
+            const was = out[leaves][h];
+            const elsewhere = c.common.filter(x => x !== was.loc && !who.some(b => b !== leaves && awakeIn(b, h, x) && value(leaves, b) <= PUSH));
+            out[leaves][h] = !elsewhere.length || r(leaves, `flee${h}`) < 0.6
+                ? { kind: 'room', loc: c.own[leaves], act: 'keeping to their room', asleep: false }
+                : { kind: 'common', loc: elsewhere[Math.floor(r(leaves, `alt${h}`) * elsewhere.length)], act: was.act, asleep: false };
+        }
+        // drawn to close friends who are out in the house (unless someone they cannot stand is there)
+        for (const a of who) {
+            const s = out[a][h];
+            if (s.kind !== 'room' || !free(a, h))
+                continue;
+            const friend = who.find(b => b !== a && (out[b][h].kind === 'common' || out[b][h].kind === 'meal') && value(a, b) >= PULL
+                && !who.some(x => x !== a && awakeIn(x, h, out[b][h].loc) && value(a, x) <= PUSH));
+            if (!friend || r(a, `pull${h}`) >= 0.2 + 0.4 * (profiles[a]?.social ?? 50) / 100)
+                continue;
+            out[a][h] = { kind: 'common', loc: out[friend][h].loc, act: c.names[friend] ? `keeping ${c.names[friend]} company` : 'with a friend', asleep: false };
+        }
+    }
+    return out;
+}
 /** Sets one hour by hand (null: back to the profile). */
 export function setHour(p, weekend, h, k) {
     const ov = (p.ov ??= {});

@@ -3,10 +3,12 @@
 import { game, nowAbs } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { isWeekend } from './time.js';
-import { placeOn, extraRooms } from './places.js';
+import { placeOn, extraRooms, isOuting } from './places.js';
+import { whereNow, OUT } from './people.js';
 import { homeJobOf, onShift, npcOut } from './hometime.js';
 import { charOf } from '../st/bridge.js';
 import * as P from './profile.js';
+import { bondsOf, pairKey } from './bonds.js';
 const G = (g) => g;
 const FREE_TAGS = ['leisure', 'food', 'sport', 'outdoor'];
 /** The house's rooms where people spend time (this game's, not bathrooms or the laundry). */
@@ -26,21 +28,30 @@ export function ctxFor(g, w, r, day) {
         out: (h) => npcOut(g) && onShift(j, day * 1440 + h * 60),
     };
 }
+// How two characters get along (Mundi Expanded's pair value; 0 when unknown). Read without creating anything.
+const pairValue = (g, a, b) => (bondsOf(g).pairs[pairKey(a, b)]?.v ?? 0);
 const memo = new Map();
-export function planOf(g, w, r, day) {
-    const p = P.profileOf(G(g), r.avatar);
-    if (!p)
-        return null;
-    const c = ctxFor(g, w, r, day);
-    const key = JSON.stringify([day, r.avatar, p, c.own, c.common, c.dinner, c.dinnerAt, homeJobOf(r), npcOut(g)]);
+/** Everyone's day at once (each from their profile, then drawn to friends and away from enemies). */
+export function housePlan(g, w, day) {
+    const lx = P.lifexOf(G(g));
+    const people = Object.values(g.cast).filter(r => lx.profiles[r.avatar]);
+    if (!people.length)
+        return {};
+    const ctxs = people.map(r => ctxFor(g, w, r, day));
+    const pairs = people.flatMap((a, i) => people.slice(i + 1).map(b => pairValue(g, a.avatar, b.avatar)));
+    const key = JSON.stringify([day, people.map(r => [r.avatar, lx.profiles[r.avatar], homeJobOf(r)]), ctxs.map(c => [c.own, c.common]), lx.dinner, lx.dinnerAt, npcOut(g), pairs]);
     let plan = memo.get(key);
     if (!plan) {
-        plan = P.dayPlan(p, c);
-        if (memo.size > 400)
+        const base = Object.fromEntries(people.map((r, i) => [r.avatar, P.dayPlan(lx.profiles[r.avatar], ctxs[i])]));
+        plan = P.adjustHouse(base, lx.profiles, (a, b) => pairValue(g, a, b), { day, weekend: isWeekend(day), own: Object.fromEntries(people.map((r, i) => [r.avatar, ctxs[i].own])), common: ctxs[0].common, names: Object.fromEntries(people.map(r => [r.avatar, r.name])) });
+        if (memo.size > 60)
             memo.clear();
         memo.set(key, plan);
     }
     return plan;
+}
+export function planOf(g, w, r, day) {
+    return housePlan(g, w, day)[r.avatar] ?? null;
 }
 export function slotAt(g, w, r, at) {
     if (!isScenario(w))
@@ -86,7 +97,29 @@ export function lifeLines(g, w, present) {
         if (p?.ooc)
             out.push(`[OOC note about ${r.name}: ${p.ooc}]`);
     }
+    const elsewhere = houseNow(g, w, present);
+    if (elsewhere)
+        out.push(elsewhere);
     return out;
+}
+/** Where everyone else in the house is right now (not when {{user}} is out of the house: they would not know). */
+export function houseNow(g, w, present) {
+    if (!isScenario(w) || isOuting(g.player.loc))
+        return '';
+    const here = new Set(present.map(r => r.avatar));
+    const now = nowAbs(g);
+    const roomName = (id) => w.places.find(p => p.id === id)?.name.toLowerCase() ?? extraRooms(g).find(p => p.id === id)?.name.toLowerCase() ?? '';
+    const parts = Object.values(g.cast).filter(r => r.met && !here.has(r.avatar)).slice(0, 10).map(r => {
+        const loc = whereNow(g, w, r);
+        const s = slotAt(g, w, r, now);
+        if (loc === OUT || isOuting(loc))
+            return `${r.name}: out of the house`;
+        const where = loc === `home:${r.avatar}` || (s && loc === ownRoom(r)) ? 'in their room' : loc === 'home:player' ? "in {{user}}'s room" : loc.startsWith('home:') ? `in ${g.cast[loc.slice(5)]?.name ?? 'someone'}'s room` : `in the ${roomName(loc)}`;
+        if (s?.asleep && loc === s.loc)
+            return `${r.name}: asleep ${where}`;
+        return `${r.name}: ${where}${s && loc === s.loc ? `, ${s.act}` : ''}`;
+    });
+    return parts.length ? `Elsewhere in the house right now (current; this overrides anything earlier in the chat about where they are): ${parts.join('; ')}.` : '';
 }
 /* ---------- making profiles ---------- */
 export const cardText = (avatar) => { const c = charOf(avatar); return c ? [c.description, c.personality].filter(Boolean).join('\n').replace(/{{char}}/g, c.name) : ''; };
