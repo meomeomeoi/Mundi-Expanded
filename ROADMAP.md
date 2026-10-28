@@ -32,8 +32,11 @@ friend of…) are fixed labels with a tone. This fork lets the characters' relat
   "Family and ties" line never contradicts this one; a tone changed by upstream (or by hand) re-anchors the value.
 - **For the AI:** standing facts and the latest episodes of the pairs in the scene, the value in words, within a
   token budget.
-- **On screen for you:** a Relationships app in the phone: a graph of the house (characters as nodes, relationships
-  as edges), and the facts of a pair or a person as editable blocks.
+- **On screen for you:** a Relationships app in the phone: a graph of the house (you in the middle, the characters
+  around, relationships as edges), statuses (sister, rival, ex… upstream's ties), and the facts of a pair or a person
+  as blocks. View only by default; editing (facts, statuses, values) is unlocked in the phone's Settings, per save.
+- **You are in it too:** your closeness with each character stays upstream's (shown as it is), but you can write facts
+  about you and them, and set statuses.
 
 ## Later (ideas, not designed yet)
 

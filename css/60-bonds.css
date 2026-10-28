@@ -29,7 +29,8 @@
 #mundi-root .mu-bd-fact.is-standing { border-left: 3px solid var(--accent); }
 #mundi-root .mu-bd-fact p { margin: 0; font-size: 13.5px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
 #mundi-root .mu-bd-fact textarea { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; font-size: 13.5px; }
-#mundi-root .mu-bd-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-right: 84px; }
+#mundi-root .mu-bd-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#mundi-root .mu-bd-meta.has-tools { padding-right: 84px; }
 #mundi-root .mu-bd-meta small { color: var(--muted); font-weight: 600; }
 #mundi-root .mu-bd-tag { font-style: normal; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
 #mundi-root .mu-bd-tag.is-ep { color: var(--muted); }
@@ -42,3 +43,16 @@
 #mundi-root .mu-bd-row { display: flex; gap: 6px; }
 #mundi-root .mu-bd-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
 @media (hover: none) { #mundi-root .mu-bd-tools { opacity: 1; } }
+#mundi-root .mu-bd-node.is-you .mu-bd-ring { stroke: var(--accent); stroke-dasharray: 3 3; }
+#mundi-root .mu-bd-edge.is-you line:first-child { stroke-linecap: butt; }
+#mundi-root .mu-bd-status { justify-self: start; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+#mundi-root .mu-bd-statusedit select { width: 100%; }
+#mundi-root .mu-bd-meter { position: relative; display: block; height: 6px; border-radius: 3px; margin: 6px 0 2px; background: linear-gradient(90deg, #e74c3c, #f39c12 30%, #9aa0a6 50%, #8bc34a 70%, #2ecc71); opacity: .85; }
+#mundi-root .mu-bd-meter i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line); }
+#mundi-root .mu-bd-set { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--bg2); border: 1px solid var(--line); }
+#mundi-root .mu-bd-set h4 { margin: 0; }
+#mundi-root .mu-brand-x { font-size: .42em; font-weight: 700; letter-spacing: .01em; vertical-align: .35em; opacity: .9; }
+
+/* [expanded] upstream fix: in an open list the chosen option drew dark text on a dark highlight (unreadable) */
+#mundi-root#mundi-root select option:checked { background: var(--accent); color: #fff; }
+#mundi-root#mundi-root select option:hover { background: color-mix(in srgb, var(--accent) 35%, var(--bg2)); color: var(--fg); }

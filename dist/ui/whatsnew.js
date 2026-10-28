@@ -6,8 +6,15 @@ import { tutorialOn, startTutorial } from './tutorial.js';
 import { icon } from './icons.js';
 import { ACT } from './reg.js';
 const S = () => settings();
-const REMOTE = 'https://raw.githubusercontent.com/tjalis/Mundi/main/manifest.json';
-const REPO = 'https://github.com/tjalis/Mundi';
+// [expanded] this fork's manifest and repository, and the folder it is installed in (Mundi-Expanded, or a renamed one)
+const REMOTE = 'https://raw.githubusercontent.com/meomeomeoi/Mundi-Expanded/main/manifest.json';
+const REPO = 'https://github.com/meomeomeoi/Mundi-Expanded';
+const FOLDER = (() => { try {
+    return decodeURIComponent(new URL('../../', import.meta.url).pathname.split('/').filter(Boolean).pop() ?? 'Mundi-Expanded');
+}
+catch {
+    return 'Mundi-Expanded';
+} })();
 /* ---------- the changelog, once after an update ---------- */
 // Someone who played before has seen the tour; someone new gets the welcome instead (and never this window).
 function seenVersion() {
@@ -56,7 +63,7 @@ export function updateHtml() {
         return ''; // not over the changelog
     return `<aside class="mu-upd mh-glass" role="status">
         <span class="mu-upd-ic">${icon('download')}</span>
-        <div><b>Mundi ${U.remote} is out</b><small>You have ${VERSION}.${U.help ? ' Update it in SillyTavern: Extensions → Manage extensions → Mundi → Update, then reload the page.' : ''}</small>
+        <div><b>Mundi Expanded ${U.remote} is out</b><small>You have ${VERSION}.${U.help ? ' Update it in SillyTavern: Extensions → Manage extensions → Mundi Expanded → Update, then reload the page.' : ''}</small>
             <div class="mu-row"><button class="mu-primary" data-act="upd-go" ${U.busy ? 'aria-disabled="true"' : ''}>${U.busy ? 'Updating…' : 'Update'}</button><a class="mu-upd-link" href="${REPO}" target="_blank" rel="noopener">What's new</a></div></div>
         <button class="mu-ibtn mu-ghost" data-act="upd-x" aria-label="Dismiss" title="Not now">${icon('x')}</button></aside>`;
 }
@@ -70,7 +77,7 @@ async function update() {
     let ok = false;
     for (const global of [false, true]) {
         try {
-            const r = await fetch('/api/extensions/update', { method: 'POST', headers, body: JSON.stringify({ extensionName: 'Mundi', global }) });
+            const r = await fetch('/api/extensions/update', { method: 'POST', headers, body: JSON.stringify({ extensionName: FOLDER, global }) });
             if (r.ok) {
                 ok = true;
                 break;
@@ -82,7 +89,7 @@ async function update() {
     if (ok) {
         S().updateDismissed = U.remote;
         saveSettings();
-        toast('Mundi updated. Reloading…', 'success');
+        toast('Mundi Expanded updated. Reloading…', 'success');
         setTimeout(() => location.reload(), 1200);
     }
     else {

@@ -193,4 +193,41 @@ test('night prompt: life setting and scenes', () => {
     assert.match(B.nightPrompt(g, { ...base, spoke: ['Mia.png'], life: 'calm' }), /no scenes with two of them today/);
 });
 
+
+test('status: set, flip, remove; between characters the tone follows the value and is not re-anchored', () => {
+    const g = game([]);
+    B.applyChange(g, ['Mia.png', 'Rin.png'], -3, 'x', 'scene'); B.applyChange(g, ['Mia.png', 'Rin.png'], -3, 'y', 'scene');   // -18: tense
+    B.setStatus(g, 'Mia.png', 'Rin.png', 'rival');
+    assert.deepEqual(g.living.ties, [{ a: 'Mia.png', b: 'Rin.png', type: 'rival', tone: 'tense' }]);
+    B.syncTies(g); assert.equal(B.valueOf(g, 'Mia.png', 'Rin.png'), -18, 'setting a status does not reset the value');
+    B.setStatus(g, 'Rin.png', 'Mia.png', 'mentor');
+    assert.equal(g.living.ties.length, 1); assert.equal(g.living.ties[0].a, 'Rin.png'); assert.equal(g.living.ties[0].type, 'mentor');
+    B.setStatus(g, 'Mia.png', 'Rin.png', '');
+    assert.equal(g.living.ties.length, 0); assert.equal(B.valueOf(g, 'Mia.png', 'Rin.png'), -18);
+    B.setStatus(g, 'Mia.png', 'Ghost.png', 'friend'); assert.equal(g.living.ties.length, 0, 'unknown people refused');
+});
+
+test('status with the player: kept as upstream writes it, tone kept or neutral, no value of ours', () => {
+    const g = game([{ a: '__you', b: 'Mia.png', type: 'friend', tone: 'close' }]);
+    B.setStatus(g, B.YOU, 'Mia.png', 'bestfriend');
+    assert.deepEqual(g.living.ties[0], { a: '__you', b: 'Mia.png', type: 'bestfriend', tone: 'close' });
+    B.setStatus(g, 'Rin.png', B.YOU, 'sibling');
+    assert.equal(g.living.ties[1].tone, 'neutral');
+    assert.deepEqual(Object.keys(B.bondsOf(g).pairs), []);
+});
+
+test('facts about the player: written by the player, sent with the scene; the night cannot touch the player', () => {
+    const g = game([]);
+    const f = B.addFact(g, [B.YOU, 'Mia.png'], 'They play co-op every Friday.');
+    assert.ok(f); assert.deepEqual(f.who, ['__you', 'Mia.png']);
+    assert.equal(B.applyChange(g, [B.YOU, 'Mia.png'], 1, 'x', 'scene'), null);
+    const lines = B.bondsLines(g, ['Mia.png']);
+    assert.match(lines.join('\n'), /\{\{user\}\} & Mia: They play co-op every Friday\./);
+    B.addFact(g, [B.YOU, 'Mia.png', 'Kai.png'], 'A trio fact with someone not here.');
+    const l2 = B.bondsLines(g, ['Mia.png']);
+    assert.ok(!l2.find(l => l.startsWith('{{user}}')).includes('trio fact'), 'not in the player line (Kai is not here)');
+    assert.ok(l2.some(l => l.startsWith('Mia about Kai') && l.includes('trio fact')), 'but it is what Mia knows about Kai');
+    assert.equal(B.parseNight('SCENE\nGleb & Mia | +1 | x\nOFF-SCREEN\nNONE', people, 'calm').length, 0, 'the player is not one of the people');
+});
+
 console.log(`bonds: ${n} tests passed`);

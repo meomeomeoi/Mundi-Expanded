@@ -41,10 +41,12 @@ export interface BondFact {
     id: string; who: string[]; text: string; kind: 'standing' | 'episode'; day: number;
     /** episodes: the step it moved the pair(s) by */ delta?: number; src: 'user' | 'scene' | 'offscreen';
 }
-export interface Bonds { pairs: Record<string, Pair>; facts: BondFact[]; life: Life; seq: number; decayDay?: number; lastNight?: number }
+export interface Bonds { pairs: Record<string, Pair>; facts: BondFact[]; life: Life; seq: number; decayDay?: number; lastNight?: number; /** the player may change relationships in the app (off: look only) */ edit?: boolean }
 export interface TieLike { a: string; b: string; type: string; tone: string }
 export interface CastLike { avatar: string; name: string }
 export interface GLike { day: number; cast: Record<string, CastLike>; living?: { ties?: TieLike[] }; bonds?: Bonds }
+/** The player in ties and facts (as upstream writes it). The player's own friendship and romance stay upstream's. */
+export const YOU = '__you';
 export interface Change { who: string[]; names: string[]; delta: number; text: string; src: 'scene' | 'offscreen' }
 
 export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
@@ -103,13 +105,37 @@ export function setValue(g: GLike, a: string, b: string, v: number) {
     writeBack(g, a, b, p);
 }
 
+/* ---------- status: upstream's ties (sister of, friend of, rival of…) ---------- */
+
+export const statusOf = (g: GLike, a: string, b: string): TieLike | null => tieOf(g, a, b) ?? null;
+// Sets (or, with an empty type, removes) the tie between two people, "a is <type> of b". Between characters the
+// tie's tone follows the pair's value; a tie with the player keeps its tone (or starts neutral).
+export function setStatus(g: GLike, a: string, b: string, type: string) {
+    if (a === b || (a !== YOU && !g.cast[a]) || (b !== YOU && !g.cast[b])) return;
+    const ties = ((g.living ??= {}).ties ??= []);
+    const i = ties.findIndex(t => (t.a === a && t.b === b) || (t.a === b && t.b === a));
+    const old = i >= 0 ? ties[i] : null;
+    const npc = a !== YOU && b !== YOU;
+    if (!type) {
+        if (i >= 0) ties.splice(i, 1);
+        if (npc) delete pairOf(g, a, b).seen;
+        return;
+    }
+    const tone = npc ? toneOf(pairOf(g, a, b).v) : old?.tone ?? 'neutral';
+    const t: TieLike = { a, b, type, tone };
+    if (i >= 0) ties.splice(i, 1, t); else ties.push(t);
+    if (npc) pairOf(g, a, b).seen = tone;   // our own write: not an outside change to re-anchor to
+}
+
 /* ---------- facts ---------- */
 
 const newId = (b: Bonds) => `b${(++b.seq).toString(36)}`;
 const cleanWho = (g: GLike, who: string[]) => [...new Set(who)].filter(a => !!g.cast[a]);
+// facts may also be about the player (written by the player; the night never writes them)
+const cleanWhoYou = (g: GLike, who: string[]) => [...new Set(who)].filter(a => a === YOU || !!g.cast[a]);
 
 export function addFact(g: GLike, who: string[], text: string, kind: BondFact['kind'] = 'standing', src: BondFact['src'] = 'user', delta?: number): BondFact | null {
-    const people = cleanWho(g, who); const t = text.trim();
+    const people = cleanWhoYou(g, who); const t = text.trim();
     if (people.length < 2 || people.length > 3 || !t) return null;
     const b = bondsOf(g);
     const f: BondFact = { id: newId(b), who: people, text: t, kind, day: g.day, src, ...(delta ? { delta } : {}) };
@@ -182,7 +208,16 @@ export function bondsLines(g: GLike, present: string[], budget = PROMPT_CHARS): 
         if (!push(`${name(a)} & ${name(b)}: ${wordOf(p.v)}.${parts.length ? ` ${parts.join(' ')}` : ''}`)) break;
         [...standing, ...recent].forEach(f => used.add(f.id));
     }
-    // 2) one here, one not: only what their relationship is (standing facts), so they can talk about each other
+    // 2) the player and the people here: what the player wrote about them (their closeness is upstream's line)
+    for (const a of here) {
+        if (full) break;
+        const fs = factsOfPair(g, YOU, a).filter(f => !used.has(f.id) && f.who.every(x => x === YOU || here.includes(x)));
+        if (!fs.length) continue;
+        const shown = [...fs.filter(f => f.kind === 'standing'), ...fs.filter(f => f.kind === 'episode').slice(-2)];
+        if (!push(`{{user}} & ${name(a)}: ${shown.map(fmtFact).join(' ')}`)) break;
+        shown.forEach(f => used.add(f.id));
+    }
+    // 3) one here, one not: only what their relationship is (standing facts), so they can talk about each other
     for (const a of here) for (const b of others) {
         if (full) break;
         const standing = factsOfPair(g, a, b).filter(f => f.kind === 'standing' && !used.has(f.id));
@@ -190,7 +225,7 @@ export function bondsLines(g: GLike, present: string[], budget = PROMPT_CHARS): 
         if (!push(`${name(a)} about ${name(b)} (not here): ${wordOf(valueOf(g, a, b))}. ${standing.map(fmtFact).join(' ')}`)) break;
         standing.forEach(f => used.add(f.id));
     }
-    return lines.length ? [`How the people here get along with each other (not with {{user}}):`, ...lines] : [];
+    return lines.length ? [`How the people here get along with each other:`, ...lines] : [];
 }
 
 /* ---------- the night: one AI call ---------- */

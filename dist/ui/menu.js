@@ -114,11 +114,11 @@ export function menuHtml() {
     return `<div class="mu-menu">
         <div class="mu-menu-bg" style="background-image:url('${cover()}')"></div>${slideshow()}
         <div class="mu-menu-shade"></div>
-        <header class="mu-brand"><h1>Mundi</h1><p>Open worlds inside SillyTavern</p></header>
+        <header class="mu-brand"><h1>Mundi <span class="mu-brand-x">Expanded</span></h1><p>Open worlds inside SillyTavern · a Home-focused fork of Mundi</p></header>
         <div class="mu-menu-body">${tab === 'load' ? loadView() : mainView()}</div>
         <div class="mu-menu-corner">
         </div>
-        <footer class="mu-menu-foot">Mundi ${VERSION.replace(/\.0$/, '')} · Sounds by Kenney (CC0)</footer>
+        <footer class="mu-menu-foot">Mundi Expanded · based on Mundi ${VERSION.replace(/\.0$/, '')} by Thales · Sounds by Kenney (CC0)</footer>
     </div>`;
 }
 Object.assign(ACT, {

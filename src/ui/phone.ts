@@ -43,7 +43,7 @@ import { personaName, personaThumb, translateTo, uploadUserFile } from '../st/br
 import { pickFile } from './cropper.js';
 import { openHelp } from './help.js';
 import { ACT, INPUT } from './reg.js';
-import { bondsApp } from './bondsui.js';   // [expanded]
+import { bondsApp, bondsSettingsHtml } from './bondsui.js';   // [expanded]
 
 type App = 'sheet' | 'quests' | 'grimoire' | 'party' | 'standing' | 'pets' | 'factions' | 'assets' | 'tower' | 'contracts' | 'workshop' | 'trophies' | 'blade' | 'soulbond' | 'health' | 'home' | 'messages' | 'thread' | 'people' | 'person' | 'jobs' | 'bank' | 'homes' | 'social' | 'post' | 'dating' | 'dprofile' | 'matches' | 'plans' | 'journal' | 'shop' | 'goals' | 'settings' | 'profile' | 'bonds';
 // Closing slides the phone away first (the dialogue box glides back at the same time), then it is gone.
@@ -143,7 +143,7 @@ function settingsApp() {
     const pics = WP.pick === 'chat' ? chatPictures() : WP.pick === 'gallery' ? galleryPictures() : [];
     const shown = pics ? pics.slice(0, WP.more ? 240 : 36) : [];
     const empty = WP.pick === 'chat' ? 'No pictures in this chat yet (Image Generation, attachments).' : 'No pictures in the Mundi gallery yet.';
-    return `${head('Settings', 'home')}<div class="mu-ph-body">
+    return `${head('Settings', 'home')}<div class="mu-ph-body">${bondsSettingsHtml() /* [expanded] */}
         <section class="mu-ph-wp"><h4>Wallpaper</h4>
             <div class="mu-ph-wp-now" style="${cur ? `background-image:${esc(cssUrl(cur))}` : ''}">${cur ? '' : '<small>Default</small>'}</div>
             <button class="mu-primary" data-act="wp-upload" ${WP.busy ? 'disabled' : ''}>${icon('upload')}<span>${WP.busy ? 'Uploading…' : 'Choose a picture from your computer'}</span></button>

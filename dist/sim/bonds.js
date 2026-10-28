@@ -30,6 +30,8 @@ export const LIVES = [
     ['calm', 'Calm', 'Most nights nothing happens; at most one small everyday moment between two of them.'],
     ['lively', 'Lively', 'Up to three moments a night, now and then a bigger one.'],
 ];
+/** The player in ties and facts (as upstream writes it). The player's own friendship and romance stay upstream's. */
+export const YOU = '__you';
 export const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 export const pairsIn = (who) => {
     const out = [];
@@ -99,11 +101,40 @@ export function setValue(g, a, b, v) {
     p.changed = g.day;
     writeBack(g, a, b, p);
 }
+/* ---------- status: upstream's ties (sister of, friend of, rival of…) ---------- */
+export const statusOf = (g, a, b) => tieOf(g, a, b) ?? null;
+// Sets (or, with an empty type, removes) the tie between two people, "a is <type> of b". Between characters the
+// tie's tone follows the pair's value; a tie with the player keeps its tone (or starts neutral).
+export function setStatus(g, a, b, type) {
+    if (a === b || (a !== YOU && !g.cast[a]) || (b !== YOU && !g.cast[b]))
+        return;
+    const ties = ((g.living ??= {}).ties ??= []);
+    const i = ties.findIndex(t => (t.a === a && t.b === b) || (t.a === b && t.b === a));
+    const old = i >= 0 ? ties[i] : null;
+    const npc = a !== YOU && b !== YOU;
+    if (!type) {
+        if (i >= 0)
+            ties.splice(i, 1);
+        if (npc)
+            delete pairOf(g, a, b).seen;
+        return;
+    }
+    const tone = npc ? toneOf(pairOf(g, a, b).v) : old?.tone ?? 'neutral';
+    const t = { a, b, type, tone };
+    if (i >= 0)
+        ties.splice(i, 1, t);
+    else
+        ties.push(t);
+    if (npc)
+        pairOf(g, a, b).seen = tone; // our own write: not an outside change to re-anchor to
+}
 /* ---------- facts ---------- */
 const newId = (b) => `b${(++b.seq).toString(36)}`;
 const cleanWho = (g, who) => [...new Set(who)].filter(a => !!g.cast[a]);
+// facts may also be about the player (written by the player; the night never writes them)
+const cleanWhoYou = (g, who) => [...new Set(who)].filter(a => a === YOU || !!g.cast[a]);
 export function addFact(g, who, text, kind = 'standing', src = 'user', delta) {
-    const people = cleanWho(g, who);
+    const people = cleanWhoYou(g, who);
     const t = text.trim();
     if (people.length < 2 || people.length > 3 || !t)
         return null;
@@ -195,7 +226,19 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
             break;
         [...standing, ...recent].forEach(f => used.add(f.id));
     }
-    // 2) one here, one not: only what their relationship is (standing facts), so they can talk about each other
+    // 2) the player and the people here: what the player wrote about them (their closeness is upstream's line)
+    for (const a of here) {
+        if (full)
+            break;
+        const fs = factsOfPair(g, YOU, a).filter(f => !used.has(f.id) && f.who.every(x => x === YOU || here.includes(x)));
+        if (!fs.length)
+            continue;
+        const shown = [...fs.filter(f => f.kind === 'standing'), ...fs.filter(f => f.kind === 'episode').slice(-2)];
+        if (!push(`{{user}} & ${name(a)}: ${shown.map(fmtFact).join(' ')}`))
+            break;
+        shown.forEach(f => used.add(f.id));
+    }
+    // 3) one here, one not: only what their relationship is (standing facts), so they can talk about each other
     for (const a of here)
         for (const b of others) {
             if (full)
@@ -207,7 +250,7 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
                 break;
             standing.forEach(f => used.add(f.id));
         }
-    return lines.length ? [`How the people here get along with each other (not with {{user}}):`, ...lines] : [];
+    return lines.length ? [`How the people here get along with each other:`, ...lines] : [];
 }
 /* ---------- the night: one AI call ---------- */
 // The "# Personality { … }" part of a card written with headed sections; otherwise the start of the description.
