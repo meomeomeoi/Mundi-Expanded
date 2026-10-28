@@ -350,26 +350,34 @@ export function patchLastLine() {
 }
 
 // After drawing: the newest character line gets its expression (once, using the Expressions extension).
+// [expanded] every recent character line gets one, not only the newest: in a group, several speak in one turn, and
+// stopping at the first line already done left the others (Kathie before Finn) neutral for good. One at a time,
+// newest first; each one done draws again, which takes the next.
+// [expanded] An empty answer is a failure, not an expression: SillyTavern answers its fallback ('' with none set) when
+// the classifier is not ready (the local model still loading or downloading), and that was kept as "no expression"
+// for good (null). Now such a line is tried again a little later, twice at most per session; lines left null by that
+// are tried again too.
 let classifying = -1;
+const TRIED = new WeakMap<object, number>();
 export function afterScene(_main: HTMLElement) {
-    if (state.generating) return;
+    if (state.generating || classifying !== -1) return;
     const list = chat();
-    // [expanded] every recent character line gets one, not only the newest: in a group, several speak in one turn, and
-    // stopping at the first line already done left the others (Kathie before Finn) neutral for good. One at a time,
-    // newest first; each one done draws again, which takes the next.
-    if (classifying !== -1) return;
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
         const m = list[i];
         if (m.is_user || m.is_system) continue;
-        if (m.extra?.mundi_expr !== undefined) continue;
-        classifying = i;
+        if (m.extra?.mundi_expr) continue;
+        const tries = TRIED.get(m) ?? 0; if (tries >= 2) continue;
+        TRIED.set(m, tries + 1); classifying = i;
+        let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
+            if (!label) return;
+            ok = true;
             m.extra = { ...(m.extra ?? {}), mundi_expr: label };
             // in a world, how they react moves the bond
             const g = game(); const who = speakerOf(m);
             if (g && who && g.cast[who]?.met) { judgeReaction(g, who, label); saveGame(); }
             saveChat();
-        }).catch(() => { m.extra = { ...(m.extra ?? {}), mundi_expr: null }; }).finally(() => { classifying = -1; notify(); });
+        }).catch(() => { /* tried again later */ }).finally(() => { classifying = -1; if (ok) notify(); else setTimeout(notify, 3000); });
         break;
     }
 }
