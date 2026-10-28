@@ -121,9 +121,11 @@ function expressions(): Record<string, string | null> {
     for (let i = list.length - 1; i >= 0 && i > list.length - 60; i--) {
         // [expanded] everyone's faces given by a model with that line (listeners too); a line still waiting for its
         // expression keeps the face from before (no flash of neutral)
-        const all = list[i].extra?.mundi_exprs; if (all) for (const [a, l] of Object.entries(all)) if (!(a in out)) out[a] = String(l);
+        // [expanded] only what was read from the text the line has now (a swipe keeps the line and changes its text)
+        const x = list[i].extra;
+        const all = x?.mundi_exprs; if (all && keyOk(list[i], 'mundi_exprsk')) for (const [a, l] of Object.entries(all)) if (!(a in out)) out[a] = String(l);
         const a = speakerOf(list[i]);
-        if (a && !(a in out) && list[i].extra?.mundi_expr) out[a] = list[i].extra.mundi_expr;
+        if (a && !(a in out) && x?.mundi_expr && keyOk(list[i], 'mundi_exprk')) out[a] = x.mundi_expr;
     }
     return out;
 }
@@ -361,8 +363,22 @@ export function patchLastLine() {
 // the classifier is not ready (the local model still loading or downloading), and that was kept as "no expression"
 // for good (null). Now such a line is tried again a little later, twice at most per session; lines left null by that
 // are tried again too.
+// [expanded] An expression belongs to the text it was read from: a swipe keeps the message and only changes its text,
+// so a label kept on the message stayed from the old swipe (and nothing was read again). Each label carries the key of
+// its text; a line whose text changed is read again. The bond reacts once per message (not again for each swipe).
+const textKey = (m: any) => { const t = String(m?.mes ?? ''); let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return `${t.length}.${(h >>> 0).toString(36)}`; };
+/** For showing: the label's key matches the text now (a label from before keys existed is still shown). */
+const keyOk = (m: any, k: string) => m?.extra?.[k] === undefined || m.extra[k] === textKey(m);
+/** For reading again: a label read from this very text. */
+const labeled = (m: any) => !!m?.extra?.mundi_expr && m.extra.mundi_exprk === textKey(m);
+function setExpr(m: any, label: string, judge: boolean) {
+    const once = !m.extra?.mundi_judged && !m.extra?.mundi_expr;   // a line labeled before (even without a key) was judged then
+    m.extra = { ...(m.extra ?? {}), mundi_expr: label, mundi_exprk: textKey(m), mundi_judged: true };
+    const g = game(); const who = speakerOf(m);
+    if (judge && once && g && who && g.cast[who]?.met) { judgeReaction(g, who, label); saveGame(); }   // in a world, how they react moves the bond
+}
 let classifying = -1;
-const TRIED = new WeakMap<object, number>();
+const TRIED = new Map<string, number>();
 export function afterScene(_main: HTMLElement) {
     if (state.generating || classifying !== -1) return;
     const list = chat();
@@ -370,18 +386,15 @@ export function afterScene(_main: HTMLElement) {
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
         const m = list[i];
         if (m.is_user || m.is_system) continue;
-        if (m.extra?.mundi_expr) continue;
-        const tries = TRIED.get(m) ?? 0; if (tries >= 2) continue;
-        TRIED.set(m, tries + 1); classifying = i;
+        if (labeled(m)) continue;
+        const k = `${i}|${textKey(m)}`; const tries = TRIED.get(k) ?? 0; if (tries >= 2) continue;
+        TRIED.set(k, tries + 1); classifying = i;
         let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
             console.info(`[Mundi Expanded] expressions: SillyTavern's classifier for ${m.name}: ${label || '(nothing: tried again later)'}`);
             if (!label) return;
             ok = true;
-            m.extra = { ...(m.extra ?? {}), mundi_expr: label };
-            // in a world, how they react moves the bond
-            const g = game(); const who = speakerOf(m);
-            if (g && who && g.cast[who]?.met) { judgeReaction(g, who, label); saveGame(); }
+            setExpr(m, label, true);
             saveChat();
         }).catch(() => { /* tried again later */ }).finally(() => { classifying = -1; if (ok) notify(); else setTimeout(notify, 3000); });
         break;
@@ -391,14 +404,14 @@ export function afterScene(_main: HTMLElement) {
 // [expanded] Expressions by a model (sim/exprs.ts): the recent character lines without one, and everyone in the scene,
 // in one call. Each line gets its speaker's label; the newest keeps everyone's (mundi_exprs), so a listener's face shows
 // too. Fails (no answer, nothing usable): those lines go to SillyTavern's classifier as before.
-const MODEL_FAILED = new WeakSet<object>();
+const MODEL_FAILED = new Set<string>();   // [expanded] by line and text: a swipe is asked again
 function byModel(list: any[]): boolean {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w || state.view !== 'scene') return false;
     let src: string = 'st'; try { src = (settings() as any).regulator?.expr ?? 'st'; } catch { /* default */ }
     if (src !== 'mech' && src !== 'main') return false;
     const pending: any[] = [];
-    for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) { const m = list[i]; if (!m.is_user && !m.is_system && !m.extra?.mundi_expr && !MODEL_FAILED.has(m) && speakerOf(m)) pending.push(m); }
+    for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) { const m = list[i]; if (!m.is_user && !m.is_system && !labeled(m) && !MODEL_FAILED.has(`${i}|${textKey(m)}`) && speakerOf(m)) pending.push(m); }
     if (!pending.length) return false;
     const avatars = [...new Set([...presentAt(g, w, g.player.loc).map(r => r.avatar), ...pending.map(m => speakerOf(m)!)])].filter(a => g.cast[a] || charOf(a));
     const people: ExprWho[] = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x: any) => String(x.label).toLowerCase()).filter(Boolean) }));
@@ -414,16 +427,13 @@ function byModel(list: any[]): boolean {
         return got;
     })().catch((e) => { console.warn('[Mundi Expanded] expressions: the call failed', e); return {} as Record<string, string>; }).then(got => {
         const newest = pending[0];
-        if (!Object.keys(got).length) { console.warn('[Mundi Expanded] expressions: nothing usable, SillyTavern\'s classifier takes these lines'); for (const m of pending) MODEL_FAILED.add(m); return; }
-        newest.extra = { ...(newest.extra ?? {}), mundi_exprs: got };
+        if (!Object.keys(got).length) { console.warn('[Mundi Expanded] expressions: nothing usable, SillyTavern\'s classifier takes these lines'); for (const m of pending) MODEL_FAILED.add(`${list.indexOf(m)}|${textKey(m)}`); return; }
+        newest.extra = { ...(newest.extra ?? {}), mundi_exprs: got, mundi_exprsk: textKey(newest) };
         const judged = new Set<string>();
         for (const m of pending) {
-            const who = speakerOf(m)!; const label = got[who]; if (!label) { MODEL_FAILED.add(m); continue; }
-            m.extra = { ...(m.extra ?? {}), mundi_expr: label };
-            // in a world, how they react moves the bond (once per person, their newest line)
-            if (!judged.has(who) && g.cast[who]?.met) { judged.add(who); judgeReaction(g, who, label); }
+            const who = speakerOf(m)!; const label = got[who]; if (!label) { MODEL_FAILED.add(`${list.indexOf(m)}|${textKey(m)}`); continue; }
+            setExpr(m, label, !judged.has(who)); judged.add(who);   // the bond: once per person (their newest line)
         }
-        if (judged.size) saveGame();
         saveChat();
     }).finally(() => { classifying = -1; notify(); });
     return true;
