@@ -11,7 +11,7 @@ import { whereNow, OUT } from './people.js';
 import { isSleeping } from './plans.js';
 import { foodLevel } from './stock.js';
 import { slotAt, commonRooms } from './lifeday.js';
-import { cplansOf, freeAt, joinPlan, storyOf } from './cplanrun.js';
+import { cplansOf, freeAt, joinPlan, storyOf, roomHas } from './cplanrun.js';
 import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
@@ -125,7 +125,8 @@ async function call(g, w, c, host) {
     const day = g.day, now = nowAbs(g);
     const hostR = g.cast[host];
     const rooms = commonRooms(g, w).map(x => x.id);
-    const acts = CP.CACTS.filter(a => a.room && rooms.includes(a.room) && a.id !== 'workout');
+    const has = roomHas(g, w); // [expanded] 0.2.0.7: a movie night needs a TV
+    const acts = CP.CACTS.filter(a => a.room && rooms.includes(a.room) && a.id !== 'workout' && (!a.needs || !has || has(a.room, a.needs)));
     if (!acts.length)
         return [];
     const act = acts[Math.floor(H(`${now}|cact`) * acts.length)];

@@ -59,5 +59,11 @@ test('a bedroom guessed without the model: from the card, only things of the era
     assert.deepEqual(F.guessBedroom('morning yoga, emails on the laptop', '2000s'), ['yogamat', 'desk', 'laptop']);
     assert.deepEqual(F.guessBedroom('', 'now'), []);
 });
+test('what an activity needs, from its words (careful)', () => {
+    const t = { 'gaming on the PC': 'game', 'playing board games with the others': 'game2', 'catching up on emails on the laptop': 'work', 'morning mobility and stretching routine': 'exercise',
+        'watching a movie': 'watch', 'reading a paperback novel': 'read', 'practicing guitar': 'music', 'brewing coffee': 'coffee', 'a long bubble bath': 'bath', 'sketching': 'craft',
+        'watching videos': null, 'listening to music with headphones': null, 'brewing fresh herbal tea': null, 'scrolling on the phone': null, 'giving thoughtful advice over coffee': 'coffee' };
+    for (const [k, v] of Object.entries(t)) assert.equal(F.guessAfford(k), v, k);
+});
 
 console.log(`furnish: ${n} tests passed`);

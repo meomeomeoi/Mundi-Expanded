@@ -13,10 +13,10 @@
 //
 // Pure logic (no SillyTavern), tested on its own; runtime in cplanrun.ts.
 export const CACTS = [
-    { id: 'movie', name: 'Movie night', room: 'living', hours: 2, story: 'watching a movie together' },
-    { id: 'games', name: 'Game night', room: 'living', hours: 2, story: 'playing games together' },
-    { id: 'cook', name: 'Cooking together', room: 'kitchen', hours: 2, story: 'cooking something together' },
-    { id: 'workout', name: 'Working out together', room: 'gym', hours: 1, story: 'working out together' },
+    { id: 'movie', name: 'Movie night', room: 'living', hours: 2, story: 'watching a movie together', needs: 'watch' },
+    { id: 'games', name: 'Game night', room: 'living', hours: 2, story: 'playing games together', needs: 'game2' },
+    { id: 'cook', name: 'Cooking together', room: 'kitchen', hours: 2, story: 'cooking something together', needs: 'cook' },
+    { id: 'workout', name: 'Working out together', room: 'gym', hours: 1, story: 'working out together', needs: 'exercise' },
     { id: 'swim', name: 'At the pool', room: 'pool', hours: 2, story: 'hanging out at the pool' },
     { id: 'cafe', name: 'Coffee out', out: 'a café downtown', hours: 2, story: 'out for coffee' },
     { id: 'dinner', name: 'Dinner out', out: 'a restaurant', hours: 3, story: 'out for dinner' },
@@ -56,7 +56,7 @@ export function makeDayPlans(m) {
             continue;
         // out of the house, or at home (homebodies stay in)
         const goOut = Math.min(a.social, b.social) >= 35 && m.roll(`out|${key}`) < Math.min(a.social, b.social) / 100 * 0.7;
-        const acts = CACTS.filter(x => (goOut ? !!x.out : !!x.room && m.rooms.includes(x.room)));
+        const acts = CACTS.filter(x => (goOut ? !!x.out : !!x.room && m.rooms.includes(x.room) && (!x.needs || !m.has || m.has(x.room, x.needs)))); // [expanded] a movie night needs a TV
         if (!acts.length)
             continue;
         const act = acts[Math.floor(m.roll(`act|${key}`) * acts.length)];

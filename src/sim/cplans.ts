@@ -14,12 +14,12 @@
 // Pure logic (no SillyTavern), tested on its own; runtime in cplanrun.ts.
 
 export type CAct = 'movie' | 'games' | 'cook' | 'workout' | 'swim' | 'cafe' | 'dinner' | 'drinks' | 'walk' | 'cinema' | 'mall';
-export interface CActDef { id: CAct; name: string; room?: string; out?: string; hours: number; story: string }
+export interface CActDef { id: CAct; name: string; room?: string; out?: string; hours: number; story: string; /** [expanded] 0.2.0.7: a thing the room must have for it */ needs?: string }
 export const CACTS: CActDef[] = [
-    { id: 'movie', name: 'Movie night', room: 'living', hours: 2, story: 'watching a movie together' },
-    { id: 'games', name: 'Game night', room: 'living', hours: 2, story: 'playing games together' },
-    { id: 'cook', name: 'Cooking together', room: 'kitchen', hours: 2, story: 'cooking something together' },
-    { id: 'workout', name: 'Working out together', room: 'gym', hours: 1, story: 'working out together' },
+    { id: 'movie', name: 'Movie night', room: 'living', hours: 2, story: 'watching a movie together', needs: 'watch' },
+    { id: 'games', name: 'Game night', room: 'living', hours: 2, story: 'playing games together', needs: 'game2' },
+    { id: 'cook', name: 'Cooking together', room: 'kitchen', hours: 2, story: 'cooking something together', needs: 'cook' },
+    { id: 'workout', name: 'Working out together', room: 'gym', hours: 1, story: 'working out together', needs: 'exercise' },
     { id: 'swim', name: 'At the pool', room: 'pool', hours: 2, story: 'hanging out at the pool' },
     { id: 'cafe', name: 'Coffee out', out: 'a café downtown', hours: 2, story: 'out for coffee' },
     { id: 'dinner', name: 'Dinner out', out: 'a restaurant', hours: 3, story: 'out for dinner' },
@@ -45,6 +45,7 @@ export interface MakeIn {
     likesYou: (a: string) => number;                // their friendship with you (0..100)
     busy?: (a: string, from: number, to: number) => boolean;   // already has plans with you
     roll: (k: string) => number;                    // 0–1
+    has?: (room: string, needs: string) => boolean; // [expanded] 0.2.0.7: the room has a thing for it (unset: anything goes)
 }
 export const MAX_A_DAY = 2;
 const PAIR_GOOD = 15, PAIR_CLOSE = 45;
@@ -70,7 +71,7 @@ export function makeDayPlans(m: MakeIn): CPlan[] {
         if (m.roll(`p|${key}`) >= pairChance(m.value(a.avatar, b.avatar), a.social, b.social, m.recent(a.avatar, b.avatar))) continue;
         // out of the house, or at home (homebodies stay in)
         const goOut = Math.min(a.social, b.social) >= 35 && m.roll(`out|${key}`) < Math.min(a.social, b.social) / 100 * 0.7;
-        const acts = CACTS.filter(x => (goOut ? !!x.out : !!x.room && m.rooms.includes(x.room!)));
+        const acts = CACTS.filter(x => (goOut ? !!x.out : !!x.room && m.rooms.includes(x.room!) && (!x.needs || !m.has || m.has(x.room!, x.needs))));   // [expanded] a movie night needs a TV
         if (!acts.length) continue;
         const act = acts[Math.floor(m.roll(`act|${key}`) * acts.length)];
         // an hour both are free, for as long as it lasts (out: the evening first)

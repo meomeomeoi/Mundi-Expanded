@@ -10,6 +10,7 @@
 //
 // Pure logic (no SillyTavern), tested on its own; the hook into upstream's routine in life.ts, the editor in lifeui.ts.
 import { looseJson } from './jsonfix.js';
+import { guessAfford, isAfford } from './furnish.js'; // [expanded] 0.2.0.7
 export const lifexOf = (g) => {
     const l = (g.lifex ??= { profiles: {}, dinner: true, dinnerAt: 20 });
     l.profiles ??= {};
@@ -38,7 +39,7 @@ const clamp = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number
 export function cleanProfile(x, rooms = [], src = 'hand') {
     const known = new Set(rooms);
     const where = (v) => { const s = String(v ?? '').trim(); return s === 'room' || s === 'common' ? s : known.has(s) ? s : 'common'; };
-    const acts = (Array.isArray(x?.acts) ? x.acts : []).map((a) => (typeof a === 'string' ? { text: a, where: 'room' } : { text: String(a?.text ?? ''), where: where(a?.where) }))
+    const acts = (Array.isArray(x?.acts) ? x.acts : []).map((a) => (typeof a === 'string' ? { text: a, where: 'room' } : { text: String(a?.text ?? ''), where: where(a?.where), ...(isAfford(a?.needs) ? { needs: a.needs } : {}) }))
         .map((a) => ({ ...a, text: a.text.replace(/\s+/g, ' ').trim().slice(0, 60) })).filter((a) => a.text).slice(0, 8);
     return {
         bed: clampH(x?.bed, 23), wake: clampH(x?.wake, 8), weekend: clamp(x?.weekend, 0, 3, 1), social: clamp(x?.social, 0, 100, 50),
@@ -89,7 +90,7 @@ Rooms of the house they can spend time in: ${rooms.map(r => `${r.id} (${r.name})
 Write ${name}'s habits at home as JSON:
 {"bed": hour 0-23 they go to sleep (after midnight is fine, e.g. 2), "wake": hour they get up, "weekend": how many hours later at the weekend (0-3),
  "social": 0-100 (0 = keeps to their room, 100 = always where the others are), "rooms": [up to 3 room ids they like],
- "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id}]}
+ "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id, "needs": only when it needs a thing, one of watch (a TV), game (a console or a computer), game2 (playing with someone), work (a computer or a desk), music (an instrument), read (books), exercise, craft, bath}]}
 Rules for "acts": at most two may be about their main hobby or trait; the rest must be ordinary, varied things anyone does (on the phone, a nap, tidying up, a call with family, a snack, doing nothing in particular). Do not make every habit about one interest. Use the card for the times: a night owl goes to bed late, an early riser early. JSON only.`;
 }
 /** The model's answer → a profile (null when it is not usable). */
@@ -139,12 +140,25 @@ export function dayPlan(p, c) {
         }
         return rooms[rooms.length - 1];
     };
+    // [expanded] 0.2.0.7: things they like doing that need a thing (a console, the PC, a TV) are done where that thing
+    // is: here if it is here, else they go there (their own room first). Homebodies do not always go: the less social,
+    // the more often they stay and do something they can do here instead.
+    const need = (a) => a.needs ?? guessAfford(a.text);
+    const doable = (loc, n) => !n || !c.has || c.has(loc, n);
     const pickAct = (h, loc, inRoom, last) => {
         const fits = p.acts.filter(a => (inRoom ? a.where === 'room' : a.where === 'common' || a.where === loc) && a.text !== last);
-        if (fits.length && r(`own${h}`) < 0.6)
-            return fits[Math.floor(r(`act${h}`) * fits.length)].text;
-        const pool = (inRoom ? POOL.room : POOL[loc] ?? POOL.common).filter(t => t !== last);
-        return pool[Math.floor(r(`gen${h}`) * pool.length)] ?? 'hanging around';
+        if (r(`own${h}`) < 0.6) {
+            const here = fits.filter(a => doable(loc, need(a)));
+            const moves = c.can && r(`mv${h}`) < 0.35 + 0.6 * p.social / 100
+                ? p.acts.filter(a => a.text !== last && !here.includes(a) && need(a) && !doable(loc, need(a)) && c.can(need(a)).length) : [];
+            const cands = [...here, ...moves];
+            if (cands.length) {
+                const a = cands[Math.floor(r(`act${h}`) * cands.length)];
+                return here.includes(a) ? { text: a.text } : { text: a.text, loc: c.can(need(a))[0] };
+            }
+        }
+        const pool = (inRoom ? POOL.room : POOL[loc] ?? POOL.common).filter(t => t !== last && (inRoom || doable(loc, guessAfford(t))));
+        return { text: pool[Math.floor(r(`gen${h}`) * pool.length)] ?? 'hanging around' };
     };
     for (let h = 0; h < 24; h++) {
         const forced = ov[String(h)];
@@ -165,10 +179,16 @@ export function dayPlan(p, c) {
             // free time: often they stay where they were; else their room or a common room, by how social they are
             const stay = prev && (prev.kind === 'room' || prev.kind === 'common') && !forced && r(`stay${h}`) < 0.45;
             const inRoom = forced === 'room' ? true : forced === 'common' ? false : stay ? prev.kind === 'room' : r(`where${h}`) < 0.15 + 0.7 * (1 - p.social / 100);
-            const loc = stay ? prev.loc : inRoom ? c.own : pickRoom(h);
+            let loc = stay ? prev.loc : inRoom ? c.own : pickRoom(h);
             const keep = stay && runs < 2 && r(`same${h}`) < 0.5; // the same thing at most two hours running
-            const act = keep ? prev.act : pickAct(h, loc, inRoom, prev?.act ?? '');
-            s = { kind: inRoom ? 'room' : 'common', loc, act, asleep: false };
+            let act = prev?.act ?? '';
+            if (!keep) {
+                const pa = pickAct(h, loc, inRoom, prev?.act ?? '');
+                act = pa.text;
+                if (pa.loc)
+                    loc = pa.loc;
+            } // [expanded] gone where the thing is
+            s = { kind: loc === c.own ? 'room' : 'common', loc, act, asleep: false };
         }
         runs = prev && s.act === prev.act ? runs + 1 : 1;
         out.push(s);

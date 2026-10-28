@@ -230,3 +230,28 @@ export function guessBedroom(text, era) {
         add('tv');
     return out.slice(0, 5);
 }
+/** What a thing someone does needs, from its words ("gaming on the PC": game; "reading": read); null: nothing.
+ *  Careful on purpose: "watching videos" (on the phone) or "listening to music" (headphones) need nothing. */
+const NEEDS = [
+    [/board ?games?|card games?|chess|pool table|billiards|darts|co-?op|playing .* together/i, 'game2'],
+    [/video ?games?|gaming|\bgames?\b|console|ranked|\bmmo|playing on the (pc|computer)/i, 'game'],
+    [/\btv\b|television|movies?|films?|series|\bshows?\b|anime|cartoons?|sitcom/i, 'watch'],
+    [/e-?mails?|laptop|computer|\bpc\b|homework|studying|\bstudy\b|coding|programming|spreadsheets?|work(ing)? (on|from)|essay|report/i, 'work'],
+    [/guitar|piano|keyboard|synth|singing|practi[cs](e|ing) (music|songs|scales)|record player|vinyl|karaoke|playing music|composing/i, 'music'],
+    [/\bread(ing)?\b|\bbooks?\b|novel|manga|comics?/i, 'read'],
+    [/work(ing)? ?out|exercis|yoga|stretch|treadmill|lifting|weights|cardio|mobility|push-?ups|\bgym\b/i, 'exercise'],
+    [/coffee|espresso|latte|cappuccino/i, 'coffee'],
+    [/\bcook(ing)?\b|\bbak(e|ing)\b|grill(ing)?/i, 'cook'],
+    [/\bbath\b|bubble bath|hot tub|soak(ing)?/i, 'bath'],
+    [/paint(ing)?|drawing|sketch|sew(ing)?|knit(ting)?|crafts?|woodwork|tinker/i, 'craft'],
+    [/laundry|washing (the )?clothes/i, 'laundry'],
+    [/make-?up|getting ready|doing (her|his|their) hair/i, 'dress'],
+];
+export function guessAfford(text) {
+    const t = String(text ?? '');
+    for (const [re, a] of NEEDS)
+        if (re.test(t))
+            return a;
+    return null;
+}
+export const isAfford = (s) => typeof s === 'string' && s in AFFORDS;

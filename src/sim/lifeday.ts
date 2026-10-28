@@ -1,7 +1,7 @@
 // [expanded] Profiles at runtime (rules in profile.ts): where a character with a profile is now (instead of
 // upstream's routine), whether they are asleep, what the scene is told, and making profiles from the cards.
 import { game, nowAbs, type Save, type Resident } from '../core/store.js';
-import { isScenario, getWorld, type WorldDef } from '../core/world.js';
+import { isScenario, getWorld, styleOf, type WorldDef } from '../core/world.js';
 import { isWeekend } from './time.js';
 import { placeOn, extraRooms, isOuting } from './places.js';
 import { whereNow, OUT } from './people.js';
@@ -9,6 +9,7 @@ import { homeJobOf, onShift, npcOut } from './hometime.js';
 import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
+import * as FU from './furnish.js';   // [expanded] 0.2.0.7
 import { houseNotes, presentNotes, phoneNotes } from './lifehooks.js';
 import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
@@ -29,10 +30,17 @@ export function ctxFor(g: Save, w: WorldDef, r: Resident, day: number): P.DayCtx
         avatar: r.avatar, day, weekend: isWeekend(day), own: ownRoom(r), common: rooms.map(x => x.id),
         kitchen: pick(rooms, /kitchen/), dining: pick(rooms, /dining/), dinner: lx.dinner, dinnerAt: lx.dinnerAt,
         out: (h) => npcOut(g) && onShift(j, day * 1440 + h * 60),
+        // [expanded] 0.2.0.7: where their things are (a modern Home with fixtures): their own room, the house's rooms
+        ...(furnished(g, w) ? {
+            can: (a: string) => FU.roomsFor(g as any, a as FU.Afford, r.avatar, ownRoom(r)).filter(x => x === ownRoom(r) || !x.startsWith('home:')),
+            has: (room: string, a: string) => FU.roomAffords(g as any, room, a as FU.Afford, r.avatar),
+        } : {}),
     };
 }
 // How two characters get along (Mundi Expanded's pair value; 0 when unknown). Read without creating anything.
 const pairValue = (g: Save, a: string, b: string) => (bondsOf(g as any).pairs[pairKey(a, b)]?.v ?? 0);
+// [expanded] 0.2.0.7: a house with its things set up (a modern Home whose rooms were furnished)
+const furnished = (g: Save, w: WorldDef) => isScenario(w) && styleOf(w) === 'modern' && !!(g as any).furnishx?.started;
 const memo = new Map<string, Record<string, P.Slot[]>>();
 // [expanded] A plan asked for again in the same piece of work (one drawing of the screen, one prompt) is the one just
 // made: whereNow asks for everyone's day for each person, dozens of times a drawing, and each time built a key out of
@@ -53,7 +61,7 @@ function housePlanNow(g: Save, w: WorldDef, day: number): Record<string, P.Slot[
     if (!people.length) return {};
     const ctxs = people.map(r => ctxFor(g, w, r, day));
     const pairs = people.flatMap((a, i) => people.slice(i + 1).map(b => pairValue(g, a.avatar, b.avatar)));
-    const key = JSON.stringify([day, people.map(r => [r.avatar, lx.profiles[r.avatar], homeJobOf(r)]), ctxs.map(c => [c.own, c.common]), lx.dinner, lx.dinnerAt, npcOut(g), pairs]);
+    const key = JSON.stringify([day, people.map(r => [r.avatar, lx.profiles[r.avatar], homeJobOf(r)]), ctxs.map(c => [c.own, c.common]), lx.dinner, lx.dinnerAt, npcOut(g), pairs, furnished(g, w) ? FU.furnishOf(g as any).items.map(x => `${x.room}|${x.cat ?? ''}|${x.owner}`) : 0]);
     let plan = memo.get(key);
     if (!plan) {
         const base = Object.fromEntries(people.map((r, i) => [r.avatar, P.dayPlan(lx.profiles[r.avatar], ctxs[i])]));

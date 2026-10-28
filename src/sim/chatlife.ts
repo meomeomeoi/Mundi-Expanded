@@ -11,7 +11,7 @@ import { whereNow, OUT } from './people.js';
 import { isSleeping } from './plans.js';
 import { foodLevel } from './stock.js';
 import { slotAt, commonRooms } from './lifeday.js';
-import { cplansOf, freeAt, joinPlan, storyOf } from './cplanrun.js';
+import { cplansOf, freeAt, joinPlan, storyOf, roomHas } from './cplanrun.js';
 import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
@@ -103,7 +103,8 @@ phoneNotes.push((g, _w, present) => {
 async function call(g: Save, w: WorldDef, c: C.Chat, host: string): Promise<C.Msg[]> {
     const day = g.day, now = nowAbs(g); const hostR = g.cast[host];
     const rooms = commonRooms(g, w).map(x => x.id);
-    const acts = CP.CACTS.filter(a => a.room && rooms.includes(a.room) && a.id !== 'workout'); if (!acts.length) return [];
+    const has = roomHas(g, w);   // [expanded] 0.2.0.7: a movie night needs a TV
+    const acts = CP.CACTS.filter(a => a.room && rooms.includes(a.room) && a.id !== 'workout' && (!a.needs || !has || has(a.room, a.needs))); if (!acts.length) return [];
     const act = acts[Math.floor(H(`${now}|cact`) * acts.length)];
     const fits = (r: any, h: number) => Array.from({ length: act.hours }, (_, k) => h + k).every(x => x < 24 && freeAt(g, w, r, day, x)) && !CP.takenBy(cplansOf(g), r.avatar, day * 1440 + h * 60, day * 1440 + (h + act.hours) * 60);
     const h0 = Math.floor(g.minutes / 60) + 2;

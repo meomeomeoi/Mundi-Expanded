@@ -17,8 +17,12 @@ import { slotAt, commonRooms } from './lifeday.js';
 import { houseNotes, presentNotes } from './lifehooks.js';
 import * as P from './profile.js';
 import * as C from './cplans.js';
+import { furnishOn } from './furnishrun.js';   // [expanded] 0.2.0.7
+import { roomAffords } from './furnish.js';   // [expanded] 0.2.0.7
 
 const G = (g: Save) => g as unknown as P.GLike & { lifex: P.LifeX & { cplans?: C.CPlan[] } };
+/** [expanded] 0.2.0.7: does a room have a thing for a plan (a modern Home with fixtures; else anything goes). */
+export const roomHas = (g: Save, w: WorldDef) => (furnishOn(w) && (g as any).furnishx?.started ? (room: string, needs: string) => roomAffords(g as any, room, needs as any) : undefined);
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
 export const cplansOf = (g: Save): C.CPlan[] => { const lx = P.lifexOf(G(g)) as P.LifeX & { cplans?: C.CPlan[] }; return (lx.cplans ??= []); };
 const pairValue = (g: Save, a: string, b: string) => bondsOf(g as any).pairs[pairKey(a, b)]?.v ?? 0;
@@ -43,7 +47,7 @@ export function makeToday(g: Save, w: WorldDef): C.CPlan[] {
         avatar: r.avatar, social: P.profileOf(G(g), r.avatar)?.social ?? 50, free: (h: number) => freeAt(g, w, r, day, h),
     }));
     const made = C.makeDayPlans({
-        day, people, rooms: commonRooms(g, w).map(x => x.id), value: (a, b) => pairValue(g, a, b), recent: (a, b) => recent(g, a, b),
+        day, people, rooms: commonRooms(g, w).map(x => x.id), value: (a, b) => pairValue(g, a, b), recent: (a, b) => recent(g, a, b), has: roomHas(g, w),   // [expanded] 0.2.0.7
         likesYou: (a) => (g.cast[a]?.met ? bondOf(g, a) : 0), busy: yourBusy(g), roll: (k) => H(`${g.world}|${day}|${k}`),
     });
     list.push(...made);

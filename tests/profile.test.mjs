@@ -101,4 +101,24 @@ test('the house: not drawn where an enemy is; hours set by hand stay', () => {
     assert.notEqual(o2.b[12].loc, 'living');
 });
 
+test('[0.2.0.7] things they like doing go where the thing is; homebodies still stay in sometimes', () => {
+    const base = { bed: 23, wake: 8, weekend: 1, rooms: [], ooc: '', acts: [{ text: 'gaming on the console', where: 'room' }, { text: 'reading a novel', where: 'room' }] };
+    // the console is in the living room; her own room has books
+    const has = (room, a) => (a === 'game' ? room === 'living' : a === 'read' ? room === 'home:k.png' : false);
+    const can = (a) => (a === 'game' ? ['living'] : a === 'read' ? ['home:k.png'] : []);
+    const count = (social) => { let away = 0, home = 0, nowhere = 0;
+        for (let d = 0; d < 40; d++) for (const s of P.dayPlan({ ...base, social }, ctx(d, { can, has, dinner: false }))) {
+            if (s.act === 'gaming on the console') { if (s.loc === 'living') away++; else nowhere++; }
+            if (s.act === 'reading a novel' && s.loc === 'home:k.png') home++;
+        } return { away, home, nowhere }; };
+    const hb = count(5), so = count(95);
+    assert.equal(hb.nowhere + so.nowhere, 0, 'never plays without the console');
+    assert.ok(hb.away > 0 && hb.home > 0, 'a homebody goes to the console now and then, and reads at home');
+    assert.ok(so.away > hb.away, 'the social one goes more often');
+    // no TV in the living room: nobody "watches TV" there
+    for (let d = 0; d < 20; d++) for (const s of P.dayPlan({ ...base, social: 90, acts: [] }, ctx(d, { can: () => [], has: () => false, dinner: false })))
+        assert.ok(!(s.loc === 'living' && /TV/.test(s.act)), s.act);
+    assert.equal(P.cleanProfile({ acts: [{ text: 'x', where: 'room', needs: 'watch' }, { text: 'y', where: 'room', needs: 'fly' }] }).acts.map(a => a.needs ?? '').join(','), 'watch,');
+});
+
 console.log(`profile: ${n} tests passed`);

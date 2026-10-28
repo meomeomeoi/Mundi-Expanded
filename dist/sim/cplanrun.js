@@ -17,7 +17,11 @@ import { slotAt, commonRooms } from './lifeday.js';
 import { houseNotes, presentNotes } from './lifehooks.js';
 import * as P from './profile.js';
 import * as C from './cplans.js';
+import { furnishOn } from './furnishrun.js'; // [expanded] 0.2.0.7
+import { roomAffords } from './furnish.js'; // [expanded] 0.2.0.7
 const G = (g) => g;
+/** [expanded] 0.2.0.7: does a room have a thing for a plan (a modern Home with fixtures; else anything goes). */
+export const roomHas = (g, w) => (furnishOn(w) && g.furnishx?.started ? (room, needs) => roomAffords(g, room, needs) : undefined);
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
@@ -47,7 +51,7 @@ export function makeToday(g, w) {
         avatar: r.avatar, social: P.profileOf(G(g), r.avatar)?.social ?? 50, free: (h) => freeAt(g, w, r, day, h),
     }));
     const made = C.makeDayPlans({
-        day, people, rooms: commonRooms(g, w).map(x => x.id), value: (a, b) => pairValue(g, a, b), recent: (a, b) => recent(g, a, b),
+        day, people, rooms: commonRooms(g, w).map(x => x.id), value: (a, b) => pairValue(g, a, b), recent: (a, b) => recent(g, a, b), has: roomHas(g, w), // [expanded] 0.2.0.7
         likesYou: (a) => (g.cast[a]?.met ? bondOf(g, a) : 0), busy: yourBusy(g), roll: (k) => H(`${g.world}|${day}|${k}`),
     });
     list.push(...made);

@@ -13,8 +13,18 @@ import { note as remember } from '../sim/facts.js';
 import { moneyOn } from '../sim/money.js';
 import { difficultyOf } from '../sim/bills.js';
 import * as A from '../sim/activities.js';
+import { furnishOn } from '../sim/furnishrun.js'; // [expanded] 0.2.0.7
+import { roomsFor } from '../sim/furnish.js'; // [expanded] 0.2.0.7
 import { PL } from './plans.js';
 export const AX = { act: '', with: [], treat: false, title: '' };
+// [expanded] 0.2.0.7: what a plan at home needs (a movie night needs a TV), and where it can be (rooms with one)
+const NEEDS = { movie: 'watch', games: 'game2', cook: 'cook', workout: 'exercise' };
+const needRooms = (g, w, id) => {
+    const n = NEEDS[id];
+    if (!n || !furnishOn(w) || !g.furnishx?.started)
+        return null;
+    return roomsFor(g, n, 'player').filter(r => r === 'home:player' || !r.startsWith('home:'));
+};
 const OUT_PICK = '__out'; // upstream's "somewhere out" in the place list
 const G = (g) => g;
 /** In upstream's plan form (Home only): the activity chips, who else comes, and who pays. */
@@ -24,7 +34,8 @@ export function planExtrasHtml(g, w, avatar) {
     const act = A.actOf(AX.act);
     const others = Object.values(g.cast).filter(r => r.met && r.avatar !== avatar && bondOf(g, r.avatar) >= HANGOUT_BOND);
     AX.with = AX.with.filter(a => others.some(r => r.avatar === a));
-    const blocked = act ? A.actBlocked(G(g), act) : '';
+    const rooms = act && act.home ? needRooms(g, w, act.id) : null; // [expanded]
+    const blocked = act ? A.actBlocked(G(g), act) || (rooms && !rooms.length ? `There is nothing for it in the house yet (${NEEDS[act.id] === 'watch' ? 'a TV' : NEEDS[act.id] === 'game2' ? 'a console or board games' : NEEDS[act.id] === 'cook' ? 'a stove' : 'something to work out with'}): get one, or plan something else.` : '') : '';
     return `<div class="mu-field mu-ax"><span>What for</span><div class="mu-chips mu-ax-acts">
             <button class="mu-chip ${!act ? 'is-on' : ''}" data-act="ax-act" data-v="">Just hang out</button>
             ${A.ACTIVITIES.map(a => `<button class="mu-chip ${AX.act === a.id ? 'is-on' : ''}" data-act="ax-act" data-v="${a.id}">${icon(a.icon)}<span>${esc(a.name)}</span></button>`).join('')}</div>
@@ -43,7 +54,10 @@ function pickAct(g, w, id) {
         PL.title = a?.name ?? '';
     if (!a)
         return;
-    if (a.home && pins(g, w).some(p => p.id === a.home))
+    const rooms = a.home ? needRooms(g, w, a.id) : null; // [expanded] where the thing for it is
+    if (rooms?.length && !rooms.includes(a.home))
+        PL.place = rooms[0];
+    else if (a.home && pins(g, w).some(p => p.id === a.home))
         PL.place = a.home;
     else if (a.out) {
         PL.place = OUT_PICK;
