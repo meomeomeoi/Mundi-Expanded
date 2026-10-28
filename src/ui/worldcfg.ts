@@ -28,6 +28,7 @@ import { openCreatorEdit, CW as CREATOR } from './creator.js';
 import { tabAiContext } from './aictx.js';
 import { warningsBanner } from './warnings.js';
 import { ACT, INPUT } from './reg.js';
+import { profileHtml } from './profileui.js';   // [expanded]
 
 type Tab = 'people' | 'homes' | 'house' | 'save' | 'lore' | 'ai' | 'rules';
 const TABS: [Tab, string][] = [['people', 'People'], ['homes', 'Households'], ['house', 'The house'], ['save', "Author's Note"], ['lore', 'Lorebooks'], ['ai', 'AI context'], ['rules', 'World']];
@@ -54,6 +55,7 @@ function personForm(g: Save, w: WorldDef): string {
         <label class="mu-field"><span>Lives in</span><select data-input="wc-zone">${w.homes.zones.map(z => opt(z.id, `${z.name} (${w.homes.kinds[z.kind]?.name ?? z.kind})`, r.home.zone === z.id)).join('')}</select></label>`}
         <label class="mu-check"><input type="checkbox" data-input="wc-met" ${r.met ? 'checked' : ''}><span>You know them<small>They show up by name, in People and in Messages.</small></span></label>
         ${tiesHtml(g, r.avatar)}
+        ${profileHtml(g, w, r) /* [expanded] day and habits */}
         ${WC.adv ? `<h4 class="mu-lib-advhead">Advanced settings</h4>
             <label class="mu-field"><span>Daily routine</span><select data-input="wc-routine">${tpl ? '' : opt('', 'Custom', true)}${Object.keys(w.cast.routineTemplates).map(k => opt(k, k, tpl === k)).join('')}</select></label>
             <div class="mu-field"><span>Where they go in their free time</span><div class="mu-chips">${leisure.map(p => `<button class="mu-chip ${r.leisure.includes(p.id) ? 'is-on' : ''}" data-act="wc-leisure" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>

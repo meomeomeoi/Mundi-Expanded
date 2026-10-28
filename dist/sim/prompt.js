@@ -55,6 +55,7 @@ import { bondsPromptLines } from './bondsnight.js'; // [expanded]
 import { stockPromptLines } from './stocknight.js'; // [expanded]
 import { moneyPromptLines } from './moneynight.js'; // [expanded]
 import { activityLines } from './activityrun.js'; // [expanded]
+import { lifeLines } from './lifeday.js'; // [expanded]
 import './letters.js';
 import './journey.js';
 import { systemOn, blockSystem, isScenario, SCENARIO_STARTS } from '../core/world.js';
@@ -71,6 +72,7 @@ export const BLOCKS = [
     { id: 'ties', name: 'Family and ties', desc: 'Who is whose sister, parent, roommate…', cut: 6 },
     { id: 'bonds', name: 'Between them', desc: 'How the people here get along with each other, and what is known about it (Mundi Expanded).', cut: 7 }, // [expanded]
     { id: 'money', name: 'Money', desc: 'Your wallet, the house fund, debts between the people here (Mundi Expanded; only with money on).', cut: 2 }, // [expanded]
+    { id: 'life', name: 'What they are doing', desc: 'In a Home: what the people here are doing (from their profiles), who is asleep, and your notes for each (Mundi Expanded).', cut: 5 }, // [expanded]
     { id: 'stock', name: 'The house\'s things', desc: 'What is in the fridge and pantry (in the kitchen) or in the room you are in, food running low, errands (Mundi Expanded).', cut: 3 }, // [expanded]
     { id: 'needs', name: 'How you feel', desc: 'Hunger, tiredness… only what stands out.', cut: 6 },
     { id: 'diary', name: 'Diary', desc: 'The last two days of your diary.', cut: 5 },
@@ -152,6 +154,7 @@ export function sceneBlocks() {
         ties: [...factionLines(g, w, present), tiesLine(g, present), (() => { const n = new Set(neighbors(g).map(r => r.avatar)); const near = present.filter(r => n.has(r.avatar)).map(r => r.name); return near.length && systemOn(w, 'neighbors') ? `Neighbors of {{user}} (they live in the same area): ${near.join(', ')}.` : ''; })()],
         romance: [romanceLine(g, met)],
         bonds: bondsPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
+        life: lifeLines(g, w, present), // [expanded]
         stock: stockPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
         money: moneyPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
         family: [familyLine(g, present)],

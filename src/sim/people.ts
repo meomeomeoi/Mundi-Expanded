@@ -14,6 +14,7 @@ import { breakNow } from './daylife.js';
 import { isOpen } from './daynight.js';
 import { placeOn, extraRooms } from './places.js';
 import { partySpot } from './houseparty.js';
+import { lifeWhere } from './lifeday.js';   // [expanded]
 
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 
@@ -78,6 +79,7 @@ export function routineAt(g: Save, w: WorldDef, r: Resident, at: number): string
     if (isScenario(w)) {
         const j = homeJobOf(r), out = npcOut(g);
         if (out && onShift(j, at)) return OUT;
+        { const lx = lifeWhere(g, w, r, at); if (lx) return lx === 'out' ? OUT : lx; }   // [expanded] a profile builds their day
         const shifted = !!SHIFTS.find(x => x.id === j.shift && x.from !== undefined) || j.shift === 'off';
         if (target === 'work' && shifted) return leisureSpot(g, w, r, day, start);   // their own hours replace the routine's
         if (target === 'home') return homeId;

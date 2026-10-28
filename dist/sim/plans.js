@@ -14,6 +14,7 @@ import { routineStep, routineAt, whereNow } from './people.js';
 import { social, bondOf, isPartner, bump, livePlan, textFrom } from './social.js';
 import { dating } from './feed.js';
 import { personaName } from '../st/bridge.js';
+import { asleepNow } from './lifeday.js'; // [expanded]
 export const HANGOUT_BOND = 15; // acquaintance: you can hang out
 export const DATE_BOND = 50; // a date needs a good bond, a Spark match or being together
 export const COME_BOND = 25; // "come over now"
@@ -25,6 +26,11 @@ const matched = (g, avatar) => dating(g).matches.includes(avatar);
 const close = (g, avatar, need) => isPartner(g, avatar) || bondOf(g, avatar) >= need;
 export const isWorking = (w, r, at) => routineStep(r, at)[1] === 'work' && !!w.occupations.find(o => o.id === r.occupation);
 export function isSleeping(r, at) {
+    {
+        const z = asleepNow(r, at);
+        if (z !== null)
+            return z;
+    } // [expanded] a profile's own bedtime
     const h = Math.floor((at % 1440) / 60);
     return routineStep(r, at)[1] === 'home' && (h < 7 || h >= 23);
 }
