@@ -354,10 +354,14 @@ let classifying = -1;
 export function afterScene(_main: HTMLElement) {
     if (state.generating) return;
     const list = chat();
-    for (let i = list.length - 1; i >= 0 && i > list.length - 6; i--) {
+    // [expanded] every recent character line gets one, not only the newest: in a group, several speak in one turn, and
+    // stopping at the first line already done left the others (Kathie before Finn) neutral for good. One at a time,
+    // newest first; each one done draws again, which takes the next.
+    if (classifying !== -1) return;
+    for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
         const m = list[i];
         if (m.is_user || m.is_system) continue;
-        if (m.extra?.mundi_expr !== undefined || classifying === i) break;
+        if (m.extra?.mundi_expr !== undefined) continue;
         classifying = i;
         expressionOf(cleanText(m.mes)).then(label => {
             m.extra = { ...(m.extra ?? {}), mundi_expr: label };
@@ -365,8 +369,7 @@ export function afterScene(_main: HTMLElement) {
             const g = game(); const who = speakerOf(m);
             if (g && who && g.cast[who]?.met) { judgeReaction(g, who, label); saveGame(); }
             saveChat();
-            if (label) notify();
-        }).finally(() => { classifying = -1; });
+        }).catch(() => { m.extra = { ...(m.extra ?? {}), mundi_expr: null }; }).finally(() => { classifying = -1; notify(); });
         break;
     }
 }
