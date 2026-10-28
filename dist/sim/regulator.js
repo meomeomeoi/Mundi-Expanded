@@ -85,7 +85,7 @@ export async function onUserMessage(id) {
     const st = regState(g);
     const from = Math.min(st.read ?? Math.max(0, id - 2), id);
     st.read = id;
-    const lines = list.slice(from, id).filter((x) => String(x?.mes ?? '').trim() && !x.extra?.mundi_diary).map(lineOf);
+    const lines = list.slice(from, id).filter((x) => String(x?.mes ?? '').trim() && !x.extra?.mundi_diary && !x.extra?.mundi_filler).map(lineOf); // [expanded] not "Send if empty" lines
     if (!lines.length || !lines.some(l => !l.user))
         return;
     busy = true;

@@ -213,6 +213,20 @@ export const selectedGroup = () => selected_group as string | null;
 export const currentChatId = () => String(getCurrentChatId() ?? '');
 /** [expanded] A group's turn is going on (members answer one after another; each one's end is not the turn's end). */
 export const groupTurnOn = () => !!(GCX as any).is_group_generating;
+/** [expanded] Which member of the group turn is answering (1, 2…; 0 outside a turn). index.ts counts them. */
+export const TURN = { member: 0 };
+/** [expanded] A line SillyTavern sent in your name by itself: in a group turn each member is a new generation with an
+ *  empty box, so a preset's "Send if empty" text ("(POV Character stays silent…)") is sent as yours before every member
+ *  after the first. It is not a message of yours: the game does not count it (time, reading the exchange, asks) and the
+ *  scene does not show it. Marked on the line (mundi_filler), so the answer stays the same later. */
+export function fillerAt(id: number): boolean {
+    const m = chat()[id]; if (!m?.is_user) return false;
+    if (m.extra?.mundi_filler) return true;
+    if (!(groupTurnOn() && TURN.member > 1)) return false;   // you cannot send anything yourself in the middle of a turn
+    m.extra = { ...(m.extra ?? {}), mundi_filler: true };
+    return true;
+}
+export const isFiller = (m: any) => !!m?.extra?.mundi_filler;
 
 // A save's name. No ":" in it: on Windows the file is saved without it, and SillyTavern then cannot find the chat
 // by the name it keeps in the group (a save made like that could not be loaded).

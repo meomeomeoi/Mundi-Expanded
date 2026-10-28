@@ -12,7 +12,7 @@ import { soloOf } from './lifeui.js';
 import { judgeLine, judgeReaction } from '../sim/mood.js';
 import { state, notify, esc, game, toast, ROOT_ID, saveGame, settings } from '../core/store.js';
 import { getWorld, worldFile, systemOn } from '../core/world.js';
-import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, currentChatId, groupTurnOn, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
+import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, currentChatId, groupTurnOn, isFiller, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
 import { placeOf, isOuting } from '../sim/places.js';
 import { outingOf } from '../sim/outing.js';
 import { bgStyle } from './outing.js';
@@ -194,7 +194,8 @@ function logHtml() {
         }
     let out = '';
     for (let i = from; i < list.length; i++)
-        out += lineHtml(list[i], i, i === list.length - 1, lastChar);
+        if (!isFiller(list[i]))
+            out += lineHtml(list[i], i, i === list.length - 1, lastChar); // [expanded] not SillyTavern's "Send if empty" lines
     return out || '<p class="mu-muted mu-pad">Say something, or just do something: write it in the box below.</p>';
 }
 // Sprites keep their size; with more people they stand closer and overlap. Who spoke last stands in front.
@@ -481,7 +482,7 @@ function byModel(list) {
         return false;
     const avatars = [...new Set([...presentAt(g, w, g.player.loc).map(r => r.avatar), ...pending.map(m => speakerOf(m))])].filter(a => g.cast[a] || charOf(a));
     const people = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x) => String(x.label).toLowerCase()).filter(Boolean) }));
-    const lines = list.filter((m) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
+    const lines = list.filter((m) => !m.is_system && !isFiller(m) && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1;
     const chatId = currentChatId();
     const prompt = exprPrompt({ people, you: personaName(), lines });

@@ -7,6 +7,7 @@ import { setLang } from './core/tr.js';
 import './core/saves.js';   // save safety: migrations, backups and repairs when a save is opened
 import { mount, openApp, closeApp } from './ui/app.js';
 import { patchLastLine, GENACT } from './ui/scene.js';
+import { fillerAt, TURN } from './st/bridge.js';   // [expanded]
 import { installSfx } from './ui/sfx.js';
 import { refreshPrompt, clearPrompt } from './sim/prompt.js';
 import { applyGameLore } from './sim/lore.js';
@@ -87,13 +88,17 @@ function follow() {
     on('GENERATION_STOPPED', done);
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });
-    on('MESSAGE_SENT', (id: number) => { const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user) void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
+    // [expanded] the members of a group turn, counted (a line sent in your name after the first one is SillyTavern's)
+    on('GROUP_WRAPPER_STARTED', () => { TURN.member = 0; });
+    on('GROUP_MEMBER_DRAFTED', () => { TURN.member++; });
+    on('GROUP_WRAPPER_FINISHED', () => { TURN.member = 0; });
+    on('MESSAGE_SENT', (id: number) => { if (fillerAt(id)) return; const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user) void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
     // [expanded] the regulator reads the exchange that just ended (when a mechanics model is set)
-    on('MESSAGE_SENT', (id: number) => { void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });
+    on('MESSAGE_SENT', (id: number) => { if (fillerAt(id)) return; void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });
     // Home: time passes with every message you send (Settings › This save can turn it off)
     on('MESSAGE_SENT', async (id: number) => {
         const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id];
-        if (!m?.is_user || m.is_system) return;
+        if (!m?.is_user || m.is_system || fillerAt(id)) return;
         const { homeTick } = await import('./sim/hometime.js');
         if (await homeTick()) redraw();
     });
