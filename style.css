@@ -1833,6 +1833,29 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-ph-head .mu-ph-chathead { background: transparent !important; border: 0 !important; }
 #mundi-root .is-skin-keypad .mu-ph-head .mu-ph-chathead :is(b, small) { color: #fff !important; }
 #mundi-root .is-skin-pda .mu-ph-head .mu-ph-chathead :is(b, small) { color: #143f8f !important; }
+/* [expanded] Group chats: rows in Messages, the chat with names, in each phone skin */
+#mundi-root .mu-gc-faces { position: relative; display: inline-flex; flex: none; width: 44px; height: 44px; }
+#mundi-root .mu-gc-faces img { position: absolute; width: 28px !important; height: 28px !important; border-radius: 50%; object-fit: cover; object-position: top; border: 2px solid var(--panel, #121a2a); }
+#mundi-root .mu-gc-faces img:nth-child(1) { left: 0; top: 0; z-index: 3; }
+#mundi-root .mu-gc-faces img:nth-child(2) { right: 0; top: 4px; z-index: 2; }
+#mundi-root .mu-gc-faces img:nth-child(3) { left: 8px; bottom: 0; z-index: 1; }
+#mundi-root .mu-gc-head { display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left; }
+#mundi-root .mu-gc-head > span:last-child { display: grid; min-width: 0; }
+#mundi-root .mu-gc-head small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; opacity: .8; }
+#mundi-root .mu-gc-line { display: flex; align-items: flex-end; gap: 6px; align-self: flex-start; max-width: 86%; }
+#mundi-root .mu-gc-line > img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: top; flex: none; }
+#mundi-root .mu-gc-line .mu-gc-msg { max-width: 100%; }
+#mundi-root .mu-gc-by { display: block; font-size: 11px; color: var(--accent, #2f8cff); margin-bottom: 1px; }
+/* old phones: one line each, the name in bold first, no faces */
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-line { max-width: 100%; align-self: stretch; }
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-line > img { display: none; }
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-by { display: inline; font-size: 12px; margin: 0 4px 0 0; }
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-by::after { content: ':'; }
+#mundi-root .is-skin-keypad .mu-gc-by { color: #1f5fbf; }
+#mundi-root .is-skin-pda .mu-gc-by { color: #c62828; }
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-faces { width: 32px; height: 32px; }
+#mundi-root .mu-phone:is(.is-skin-keypad, .is-skin-pda) .mu-gc-faces img { width: 20px !important; height: 20px !important; border-radius: 2px; }
+#mundi-root .mu-ph-row > .mu-gc-faces, #mundi-root .mu-ph-chathead > .mu-gc-faces { flex: none; display: block; position: relative; }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

@@ -1,6 +1,7 @@
 import { romOf } from '../sim/romance.js';
 // The phone (Modern world): messages, people, jobs, bank and homes. Opens over the map or the scene.
 import { skinClass, skinChrome } from './phoneskin.js';   // [expanded]
+import { groupRowsHtml, gchatApp } from './chatui.js';   // [expanded]
 import { askingFrom, answerAdvice } from '../sim/happenings.js';
 import { approvalOf, approvalWord } from '../sim/living.js';
 import { missingCourses, interviewChance, triedToday } from '../sim/skills.js';
@@ -48,7 +49,7 @@ import { bondsApp, bondsSettingsHtml } from './bondsui.js';   // [expanded]
 import { stockApp } from './stockui.js';   // [expanded]
 import { moneyApp } from './moneyui.js';   // [expanded]
 
-type App = 'sheet' | 'quests' | 'grimoire' | 'party' | 'standing' | 'pets' | 'factions' | 'assets' | 'tower' | 'contracts' | 'workshop' | 'trophies' | 'blade' | 'soulbond' | 'health' | 'home' | 'messages' | 'thread' | 'people' | 'person' | 'jobs' | 'bank' | 'homes' | 'social' | 'post' | 'dating' | 'dprofile' | 'matches' | 'plans' | 'journal' | 'shop' | 'goals' | 'settings' | 'profile' | 'bonds' | 'stock' | 'money';
+type App = 'sheet' | 'quests' | 'grimoire' | 'party' | 'standing' | 'pets' | 'factions' | 'assets' | 'tower' | 'contracts' | 'workshop' | 'trophies' | 'blade' | 'soulbond' | 'health' | 'home' | 'messages' | 'thread' | 'people' | 'person' | 'jobs' | 'bank' | 'homes' | 'social' | 'post' | 'dating' | 'dprofile' | 'matches' | 'plans' | 'journal' | 'shop' | 'goals' | 'settings' | 'profile' | 'bonds' | 'stock' | 'money' | 'gchat';
 // Closing slides the phone away first (the dialogue box glides back at the same time), then it is gone.
 let closeTimer = 0;
 export function closePhone() {
@@ -196,7 +197,7 @@ const contactName = (g: Save, r: { avatar: string; name: string }) => nicks(g)[r
 function messagesApp(g: Save) {
     const s = social(g);
     const list = met(g).filter(r => matchQ(g, r, true)).sort((a, b) => (s.threads[b.avatar]?.at(-1)?.at ?? 0) - (s.threads[a.avatar]?.at(-1)?.at ?? 0));
-    return `${head(appName('messages'), 'home')}${searchBox(T('searchMessages'))}<div class="mu-ph-list">${list.length ? list.map(r => {
+    return `${head(appName('messages'), 'home')}${searchBox(T('searchMessages'))}<div class="mu-ph-list">${groupRowsHtml(g) /* [expanded] group chats */}${list.length ? list.map(r => {
         const last = s.threads[r.avatar]?.at(-1);
         return `<button class="mu-ph-row" data-act="ph-thread" data-who="${esc(r.avatar)}"><img src="${esc(thumb(r.avatar))}" alt="">
             <span><b data-notr>${esc(contactName(g, r))}</b><small data-notr>${last ? esc(last.text) : ''}</small></span>${s.unread[r.avatar] ? `<em>${s.unread[r.avatar]}</em>` : last ? `<small>${day(g, last.at)}</small>` : ''}</button>`;
@@ -449,7 +450,7 @@ export function phoneHtml(): string {
     const g = game(); const w = g && getWorld(g.world);
     if (!P.open || !g || !w) { turn.opened = 0; return ''; }
     BOOK = deviceLook(w) === 'book'; BOARD = socialKind(w) === 'board'; LETTERS = messageKind(w) === 'letters'; LW = w;
-    const body = P.app === 'messages' ? messagesApp(g) : P.app === 'thread' ? threadApp(g) : P.app === 'people' ? peopleApp(g) : P.app === 'bonds' ? bondsApp(g, w, head(appName('bonds'), 'home')) /* [expanded] */ : P.app === 'stock' ? stockApp(g, w, head(appName('stock'), 'home')) /* [expanded] */ : P.app === 'money' ? moneyApp(g, w, head(appName('money'), 'home')) /* [expanded] */ : P.app === 'person' ? personApp(g, w)
+    const body = P.app === 'messages' ? messagesApp(g) : P.app === 'thread' ? threadApp(g) : P.app === 'people' ? peopleApp(g) : P.app === 'bonds' ? bondsApp(g, w, head(appName('bonds'), 'home')) /* [expanded] */ : P.app === 'stock' ? stockApp(g, w, head(appName('stock'), 'home')) /* [expanded] */ : P.app === 'money' ? moneyApp(g, w, head(appName('money'), 'home')) /* [expanded] */ : P.app === 'gchat' ? gchatApp(g, w, P.who) /* [expanded] */ : P.app === 'person' ? personApp(g, w)
         : P.app === 'jobs' ? jobsApp(g, w) : P.app === 'bank' ? bankApp(g, w) : P.app === 'homes' ? homesApp(g, w)
         : P.app === 'social' ? socialApp(g) : P.app === 'post' ? postApp(g) : P.app === 'dating' ? datingApp(g, w) : P.app === 'dprofile' ? datingProfileApp(g, w) : P.app === 'matches' ? matchesApp(g) : P.app === 'plans' ? calendarApp(g, w, head(appName('plans'), 'home')) : P.app === 'journal' ? journalApp(g, w, head(appName('journal'), 'home')) : P.app === 'shop' ? shopApp(g, w, head(appName('shop'), 'home')) : P.app === 'goals' ? goalsApp(g, w, hd('goals')) : P.app === 'sheet' ? sheetApp(g, w, hd('sheet')) : P.app === 'quests' ? questsApp(g, w, hd('quests')) : P.app === 'grimoire' ? grimoireApp(g, w, head(appName('grimoire'), 'home')) : P.app === 'party' ? partyApp(g, w, hd('party')) : P.app === 'standing' ? standingApp(g, w, hd('standing')) : P.app === 'pets' ? petsApp(g, w, hd('pets')) : P.app === 'factions' ? factionsApp(g, w, hd('factions')) : P.app === 'assets' ? holdingsApp(g, w, head(appName('assets'), 'home')) : P.app === 'tower' ? towerApp(g, w, hd('tower')) : P.app === 'contracts' ? contractsApp(g, w, hd('contracts')) : P.app === 'workshop' ? workshopApp(g, w, head(appName('workshop'), 'home')) : P.app === 'trophies' ? trophiesApp(g, w, hd('trophies')) : P.app === 'blade' ? bladeApp(g, w, hd('blade')) : P.app === 'soulbond' ? soulApp(g, w, hd('soulbond')) : P.app === 'health' ? healthApp(g, w, head(appName('health'), 'home')) : P.app === 'settings' ? settingsApp() : P.app === 'profile' ? profileApp(g, w, hd('profile', T('profile'))) : BOOK ? bookFront(g, w) : homeApp(g, w);
     if (BOOK) return bookHtml(g, w, body);

@@ -3,6 +3,7 @@
 // unlocked in the phone's Settings (per save), where the life-without-you setting lives too. Rules in sim/bonds.ts.
 import { houseRulesHtml } from './profileui.js';
 import { eraSettingsHtml } from './phoneskin.js';
+import { chatSettingsHtml } from './chatui.js';
 import { saveGame, notify, esc, game, type Save } from '../core/store.js';
 import { getWorld, isScenario, type WorldDef } from '../core/world.js';
 import { thumb, personaThumb, personaName } from '../st/bridge.js';
@@ -198,7 +199,7 @@ export function bondsSettingsHtml(): string {
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-money" ${(g as any).house?.on ? 'checked' : ''}><span>Money in this house</span></label>
         <small class="mu-muted">${(g as any).house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small>
-        ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}`;
+        ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}${chatSettingsHtml(g)}`;
 }
 
 /* ---------- actions ---------- */
