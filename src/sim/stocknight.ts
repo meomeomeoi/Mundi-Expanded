@@ -10,6 +10,8 @@ import { isMinor } from './family.js';
 import { placeOf, playerHomeId } from './places.js';
 import { onExchange, bgAsk, perMessage, markRead } from './regulator.js';
 import * as S from './stock.js';
+import * as M from './money.js';
+import { money } from './needs.js';
 
 const G = (g: Save) => g as unknown as S.GLike;
 const adults = (g: Save) => Object.values(g.cast).filter(r => !isMinor(g, r.avatar)).map(r => r.avatar);
@@ -85,8 +87,17 @@ export async function stockNight(g: Save, w: WorldDef, day: number, range: { sta
     for (const e of r.done) { notes.push(`${S.ownerName(G(g), e.by, you)} brought ${e.item} for ${S.ownerName(G(g), e.forWho, you)}`); note(g, '{0} brought {1} for {2}.', [S.ownerName(G(g), e.by, you), e.item, S.ownerName(G(g), e.forWho, you)], [e.by, e.forWho].filter(a => g.cast[a]), playerHomeId, 'life'); }
     for (const e of r.forgot) notes.push(`${S.ownerName(G(g), e.by, you)} forgot to bring ${e.item}`);
     for (const e of r.dropped) note(g, '{0} never brought {1} for {2}.', [S.ownerName(G(g), e.by, you), e.item, S.ownerName(G(g), e.forWho, you)], [e.by, e.forWho].filter(a => g.cast[a]), playerHomeId, 'life');
-    const shop = S.houseShop(G(g), day, adults(g));
-    if (shop) { const n = g.cast[shop.who]?.name ?? '?'; notes.push(`${n} did the grocery run`); note(g, '{0} did the grocery run for the house.', [n], [shop.who], playerHomeId, 'life'); }
+    if (M.moneyOn(g as any)) {   // with money: paid from the house fund, as much as it can buy
+        const who = S.shopDue(G(g), day, adults(g));
+        if (who) {
+            const n = g.cast[who]?.name ?? '?'; const r = M.payShop(g as any, 'house'); S.stockOf(G(g)).lastShop = day;
+            if (r.n) { notes.push(`${n} did the grocery run (${money(w, r.spent)} from the house fund)`); note(g, '{0} did the grocery run for the house.', [n], [who], playerHomeId, 'life'); }
+            else notes.push('the house fund is empty: nobody could buy food');
+        }
+    } else {
+        const shop = S.houseShop(G(g), day, adults(g));
+        if (shop) { const n = g.cast[shop.who]?.name ?? '?'; notes.push(`${n} did the grocery run`); note(g, '{0} did the grocery run for the house.', [n], [shop.who], playerHomeId, 'life'); }
+    }
     st.lastNight = day;
     saveGame();
     return notes;
@@ -95,9 +106,24 @@ export async function stockNight(g: Save, w: WorldDef, day: number, range: { sta
 // Back home from going out: from a shop, you bring the staples (and what you were asked to bring).
 export function backHome(g: Save, w: WorldDef, where: string) {
     if (!ready(g, w) || !S.SHOP_PLACE.test(where)) return;
-    const r = S.playerShopped(G(g));
     const you = personaName();
-    const parts = [r.n ? 'groceries for the house' : '', ...r.errands.map(e => `${e.item} for ${S.ownerName(G(g), e.forWho, you)}`)].filter(Boolean);
+    let parts: string[];
+    if (M.moneyOn(g as any)) {   // with money: the staples from the fund or your wallet, the errands from your wallet
+        const r = M.payShop(g as any, 'player'); S.stockOf(G(g)).lastShop = g.day;
+        const done: string[] = [], skipped: string[] = [];
+        for (const e of S.stockOf(G(g)).errands.filter(x => x.by === S.PLAYER)) {
+            const price = M.priceOfThing(e.item) * e.qty;
+            if (g.player.money < price) { skipped.push(e.item); continue; }
+            M.walletAdd(g as any, -price, `${e.item} for ${S.ownerName(G(g), e.forWho, you)}`); S.fulfil(G(g), e); done.push(`${e.item} for ${S.ownerName(G(g), e.forWho, you)}`);
+        }
+        parts = [r.n ? `groceries (${money(w, r.spent)} from ${r.from === 'fund' ? 'the house fund' : 'your wallet'})` : '', ...done];
+        if (!r.n && S.foodLevel(G(g)) !== 'ok') toast(`Not enough money ${r.from === 'fund' ? 'in the house fund' : 'in your wallet'} for groceries.`, 'warn');
+        if (skipped.length) toast(`You could not afford: ${skipped.join(', ')}.`, 'warn');
+    } else {
+        const r = S.playerShopped(G(g));
+        parts = [r.n ? 'groceries for the house' : '', ...r.errands.map(e => `${e.item} for ${S.ownerName(G(g), e.forWho, you)}`)];
+    }
+    parts = parts.filter(Boolean);
     if (parts.length) toast(`You brought home ${parts.join(', ')}.`, 'success', { ms: 7000 });
     saveGame();
 }

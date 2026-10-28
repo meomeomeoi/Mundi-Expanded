@@ -53,6 +53,7 @@ import { petLine } from './pets.js';
 import { mentorLine } from './mentors.js';
 import { bondsPromptLines } from './bondsnight.js'; // [expanded]
 import { stockPromptLines } from './stocknight.js'; // [expanded]
+import { moneyPromptLines } from './moneynight.js'; // [expanded]
 import './letters.js';
 import './journey.js';
 import { systemOn, blockSystem, isScenario, SCENARIO_STARTS } from '../core/world.js';
@@ -68,6 +69,7 @@ export const BLOCKS = [
     { id: 'family', name: 'Your children', desc: 'Your children\'s age and how to treat them. Always sent when they are here.' },
     { id: 'ties', name: 'Family and ties', desc: 'Who is whose sister, parent, roommate…', cut: 6 },
     { id: 'bonds', name: 'Between them', desc: 'How the people here get along with each other, and what is known about it (Mundi Expanded).', cut: 7 }, // [expanded]
+    { id: 'money', name: 'Money', desc: 'Your wallet, the house fund, debts between the people here (Mundi Expanded; only with money on).', cut: 2 }, // [expanded]
     { id: 'stock', name: 'The house\'s things', desc: 'What is in the fridge and pantry (in the kitchen) or in the room you are in, food running low, errands (Mundi Expanded).', cut: 3 }, // [expanded]
     { id: 'needs', name: 'How you feel', desc: 'Hunger, tiredness… only what stands out.', cut: 6 },
     { id: 'diary', name: 'Diary', desc: 'The last two days of your diary.', cut: 5 },
@@ -150,6 +152,7 @@ export function sceneBlocks() {
         romance: [romanceLine(g, met)],
         bonds: bondsPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
         stock: stockPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
+        money: moneyPromptLines(g, w, present.map(r => r.avatar)), // [expanded]
         family: [familyLine(g, present)],
         rumors: rumorLines(g, met),
         lore: activeWorldLore(g, w),

@@ -142,7 +142,9 @@ export function actionsHere(g, w) {
     const chosen = isScenario(w) ? g.cfg?.roomActs?.[g.player.loc] : undefined;
     // Home: no money, so nothing to earn or pay, and going out has its own button (Go out)
     const homeMode = isScenario(w);
-    const earns = (a) => a.cost < 0 || (a.roll?.success?.money ?? 0) > 0 || !!a.outing;
+    // [expanded] with money on in a Home, what earns at home (freelancing) is back: going out still has its own button
+    const homeMoney = homeMode && !!g.house?.on;
+    const earns = (a) => (a.cost < 0 && !(homeMoney && !a.outing)) || (a.roll?.success?.money ?? 0) > 0 || !!a.outing;
     const base = w.actions.filter(useful).filter(a => !homeMode || !earns(a)).filter(a => !isBlocked(g, a, w)).filter(a => a.id !== 'fix' || broken)
         .filter(a => homeMode || !a.needsItem || hasItem(g, a.needsItem)).filter(a => chosen || !(a.notTags ?? []).some(t => tags.includes(t))).filter(a => chosen ? (a.anywhere || chosen.includes(a.id)) : (a.home && atHome)
         || (a.place && a.place === g.player.loc)
@@ -156,7 +158,7 @@ export function actionsHere(g, w) {
     const pl = placeOf(g, w, g.player.loc);
     const wet = homeMode && !!pl && /bath|shower|wash|toilet|restroom/i.test(`${pl.id} ${pl.name}`);
     if (homeMode)
-        return all.filter(a => !earns(a)).filter(a => !wet || !a.anywhere || !!chosen?.includes(a.id)).map(a => (a.cost ? { ...a, cost: 0 } : a));
+        return all.filter(a => !earns(a)).filter(a => !wet || !a.anywhere || !!chosen?.includes(a.id)).map(a => (a.cost ? { ...a, cost: homeMoney && a.cost < 0 ? priceOf(g, a.cost) : 0 } : a)); // [expanded] earning keeps its pay
     return all.map(a => (a.cost ? { ...a, cost: a.cost > 0 ? Math.round(priceOf(g, a.cost) * here) : priceOf(g, a.cost) } : a));
 }
 // Water, power… of a kind of home, paid with the rent.

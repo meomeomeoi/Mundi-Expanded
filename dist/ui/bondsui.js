@@ -9,6 +9,7 @@ import { ACT, INPUT } from './reg.js';
 import { bondOf } from '../sim/social.js';
 import { friendTier, romanceTier, sysOn } from '../sim/romance.js';
 import { refreshPrompt } from '../sim/prompt.js';
+import { enableMoney } from '../sim/moneynight.js';
 import { TIE_TYPES } from '../sim/living.js';
 import { bondsOf, syncTies, pairOf, pairKey, pairsIn, setValue, toneOf, wordOf, addFact, editFact, removeFact, pinFact, factsOfPair, factsOfPerson, statusOf, setStatus, LIVES, YOU, } from '../sim/bonds.js';
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
@@ -204,7 +205,9 @@ export function bondsSettingsHtml() {
         <small class="mu-muted">${b.edit ? 'In Relationships you can edit facts, statuses and values; in Storage you can add, count, label, move and remove things.' : 'Off: Relationships and Storage only show; they change by themselves, with the story and night by night.'}</small>
         <b>Life without you</b>
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
-        <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small></section>`;
+        <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
+        <label class="mu-check"><input type="checkbox" data-input="bd-money" ${g.house?.on ? 'checked' : ''}><span>Money in this house</span></label>
+        <small class="mu-muted">${g.house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small></section>`;
 }
 /* ---------- actions ---------- */
 const done = () => { saveGame(); refreshPrompt(); notify(); };
@@ -264,6 +267,8 @@ Object.assign(ACT, {
 Object.assign(INPUT, {
     'bd-draft': (el) => { BV.draft = el.value; },
     'bd-addtext': (el) => { BV.addText = el.value; },
+    'bd-money': (el) => { const g = game(); if (!g)
+        return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
     'bd-unlock': (el) => { const g = game(); if (!g)
         return; bondsOf(G(g)).edit = !!el.checked; if (!el.checked)
         closeForms(); saveGame(); notify(); },

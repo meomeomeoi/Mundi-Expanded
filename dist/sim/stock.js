@@ -244,14 +244,20 @@ export function eatDay(g, day = g.day, people = Object.keys(g.cast)) {
         out.push({ kind: 'eat', text: 'The fridge and pantry are empty.' });
     return out;
 }
-// At night, when food is low and nobody went shopping lately, one housemate does the grocery run.
-export function houseShop(g, day = g.day, shoppers = Object.keys(g.cast)) {
+// Is a grocery run due tonight (food low, nobody shopped in the last two days)? Who goes, or null.
+export function shopDue(g, day = g.day, shoppers = Object.keys(g.cast)) {
     const s = stockOf(g);
     if (foodLevel(g) === 'ok' || !shoppers.length || (s.lastShop !== undefined && day - s.lastShop < 2))
         return null;
-    const who = shoppers[Math.floor(hash(`shop|${day}`) * shoppers.length)];
+    return shoppers[Math.floor(hash(`shop|${day}`) * shoppers.length)];
+}
+// At night, when food is low and nobody went shopping lately, one housemate does the grocery run (free: no money).
+export function houseShop(g, day = g.day, shoppers = Object.keys(g.cast)) {
+    const who = shopDue(g, day, shoppers);
+    if (!who)
+        return null;
     const n = restock(g);
-    s.lastShop = day;
+    stockOf(g).lastShop = day;
     return n ? { who, n } : null;
 }
 /* ---------- errands ---------- */

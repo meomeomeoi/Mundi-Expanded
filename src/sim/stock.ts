@@ -206,12 +206,16 @@ export function eatDay(g: GLike, day = g.day, people = Object.keys(g.cast)): Cha
     return out;
 }
 
-// At night, when food is low and nobody went shopping lately, one housemate does the grocery run.
-export function houseShop(g: GLike, day = g.day, shoppers = Object.keys(g.cast)): { who: string; n: number } | null {
+// Is a grocery run due tonight (food low, nobody shopped in the last two days)? Who goes, or null.
+export function shopDue(g: GLike, day = g.day, shoppers = Object.keys(g.cast)): string | null {
     const s = stockOf(g);
     if (foodLevel(g) === 'ok' || !shoppers.length || (s.lastShop !== undefined && day - s.lastShop < 2)) return null;
-    const who = shoppers[Math.floor(hash(`shop|${day}`) * shoppers.length)];
-    const n = restock(g); s.lastShop = day;
+    return shoppers[Math.floor(hash(`shop|${day}`) * shoppers.length)];
+}
+// At night, when food is low and nobody went shopping lately, one housemate does the grocery run (free: no money).
+export function houseShop(g: GLike, day = g.day, shoppers = Object.keys(g.cast)): { who: string; n: number } | null {
+    const who = shopDue(g, day, shoppers); if (!who) return null;
+    const n = restock(g); stockOf(g).lastShop = day;
     return n ? { who, n } : null;
 }
 
