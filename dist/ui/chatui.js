@@ -1,6 +1,6 @@
 // [expanded] Group chats in the phone (rules in sim/chats.ts): their rows at the top of Messages, the chat itself
 // (in every skin: bubbles with names on the smartphone, lines on the keypad phone and the PDA), and sending.
-import { esc, game, notify, saveGame, toast } from '../core/store.js';
+import { esc, game, notify, saveGame, toast, nowAbs } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { thumb } from '../st/bridge.js';
 import { icon } from './icons.js';
@@ -11,6 +11,8 @@ import * as C from '../sim/chats.js';
 import { chatsOf, nameOf, sendToChat, unreadKey, TYPING } from '../sim/chatrun.js';
 import { pendingCall, answerCall, callText } from '../sim/chatlife.js';
 export const GC = { draft: '', busy: false };
+// making or editing one of your chats: its name and members (id '' = a new one)
+export const GN = { open: false, id: '', name: '', members: [] };
 const when = (g, at) => { const d = Math.floor(at / 1440); return d === g.day ? hm(at % 1440) : `${weekday(d).slice(0, 3)} ${hm(at % 1440)}`; };
 const faces = (c) => `<span class="mu-gc-faces">${c.members.slice(0, 3).map(a => `<img src="${esc(thumb(a))}" alt="">`).join('')}</span>`;
 /** At the top of Messages (Home): the group chats you are in. */
@@ -19,11 +21,20 @@ export function groupRowsHtml(g) {
     if (!w || !isScenario(w))
         return '';
     const s = social(g);
-    return chatsOf(g).chats.filter(c => c.you && c.members.length).map(c => {
+    return `${groupForm(g)}${chatsOf(g).chats.filter(c => c.you && c.members.length).map(c => {
         const last = c.msgs.at(-1);
         const n = s.unread[unreadKey(c.id)] ?? 0;
         return `<button class="mu-ph-row mu-gc-row" data-act="gc-open" data-id="${esc(c.id)}">${faces(c)}<span><b data-notr>${esc(c.name)}</b><small data-notr>${last ? `${esc(nameOf(g, last.by))}: ${esc(last.text)}` : `${c.members.length + 1} people`}</small></span>${n ? `<em>${n}</em>` : last ? `<small>${when(g, last.at)}</small>` : ''}</button>`;
-    }).join('');
+    }).join('')}`;
+}
+function groupForm(g) {
+    if (!GN.open)
+        return `<button class="mu-ph-row mu-gc-new" data-act="gn-open">${icon('plus')}<span><b>New group</b><small>A chat with two to four people</small></span></button>`;
+    const people = Object.values(g.cast).filter(r => r.met);
+    return `<div class="mu-gc-form"><label class="mu-field"><span>${GN.id ? 'Group name' : 'New group'}</span><input type="text" maxlength="40" placeholder="Movie club, Gym bros…" value="${esc(GN.name)}" data-input="gn-name" data-focus="gn-name"></label>
+        <div class="mu-chips">${people.map(r => `<button class="mu-chip ${GN.members.includes(r.avatar) ? 'is-on' : ''}" data-act="gn-member" data-who="${esc(r.avatar)}" ${!GN.members.includes(r.avatar) && GN.members.length >= 4 ? 'aria-disabled="true"' : ''}><img src="${esc(thumb(r.avatar))}" alt=""><span data-notr>${esc(r.name)}</span></button>`).join('')}</div>
+        <small class="mu-muted">${GN.members.length < 2 ? 'Pick two to four people (you are in it too).' : `${GN.members.length + 1} people with you.`}</small>
+        <div class="mu-row">${GN.id ? `<button class="mu-ghost mu-danger" data-act="gn-del">${icon('trash')}<span>Delete</span></button>` : ''}<button class="mu-ghost" data-act="gn-close">Cancel</button><button class="mu-primary" data-act="gn-save" ${GN.members.length < 2 ? 'aria-disabled="true"' : ''}>${GN.id ? 'Save' : 'Create'}</button></div></div>`;
 }
 /** The chat (the phone's 'gchat' app; P.who is the chat's id). */
 export function gchatApp(g, w, id) {
@@ -33,7 +44,7 @@ export function gchatApp(g, w, id) {
     social(g).unread[unreadKey(c.id)] = 0;
     const typing = TYPING.chat === c.id && TYPING.who.length ? `${TYPING.who.map(a => g.cast[a]?.name).filter(Boolean).join(', ')} ${TYPING.who.length > 1 ? 'are' : 'is'} typing…` : '';
     return `<div class="mu-ph-head is-chat"><button class="mu-ibtn mu-ghost" data-act="ph-go" data-app="messages" aria-label="Back">${icon('back')}</button>
-            <span class="mu-ph-chathead mu-gc-head">${faces(c)}<span><b data-notr>${esc(c.name)}</b><small>${typing || esc([...c.members.map(a => g.cast[a]?.name ?? '?'), 'you'].join(', '))}</small></span></span><span></span></div>
+            <span class="mu-ph-chathead mu-gc-head">${faces(c)}<span><b data-notr>${esc(c.name)}</b><small>${typing || esc([...c.members.map(a => g.cast[a]?.name ?? '?'), 'you'].join(', '))}</small></span></span>${c.id === C.HOUSE ? '<span></span>' : `<button class="mu-ibtn mu-ghost" data-act="gn-edit" data-id="${esc(c.id)}" aria-label="Edit the group">${icon('pen')}</button>`}</div>
         <div class="mu-ph-thread mu-gc-thread" data-keep="ph-thread" data-bottom>${c.msgs.map(m => m.by === C.ME
         ? `<div class="mu-ph-msg is-me" data-notr>${esc(m.text)}<small>${when(g, m.at)}</small></div>`
         : `<div class="mu-gc-line"><img src="${esc(thumb(m.by))}" alt=""><div class="mu-ph-msg mu-gc-msg" data-notr><b class="mu-gc-by">${esc(nameOf(g, m.by))}</b>${esc(m.text)}<small>${when(g, m.at)}</small></div></div>`).join('')}
@@ -94,7 +105,39 @@ Object.assign(ACT, {
         await send(k.chat);
     },
 });
-Object.assign(INPUT, { 'gc-draft': (el) => { GC.draft = el.value; } });
+Object.assign(INPUT, { 'gc-draft': (el) => { GC.draft = el.value; }, 'gn-name': (el) => { GN.name = el.value; } });
+Object.assign(ACT, {
+    'gn-open': () => { Object.assign(GN, { open: true, id: '', name: '', members: [] }); notify(); },
+    'gn-close': () => { GN.open = false; notify(); },
+    'gn-member': (el) => { if (el.getAttribute('aria-disabled'))
+        return; const a = el.dataset.who; GN.members = GN.members.includes(a) ? GN.members.filter(x => x !== a) : [...GN.members, a].slice(0, 4); notify(); },
+    'gn-edit': async (el) => { const g = game(); const c = g && C.chatById(g, el.dataset.id ?? ''); if (!c)
+        return; Object.assign(GN, { open: true, id: c.id, name: c.name, members: [...c.members] }); const { P } = await import('./phone.js'); P.app = 'messages'; notify(); },
+    'gn-save': async (el) => {
+        if (el.getAttribute('aria-disabled'))
+            return;
+        const g = game();
+        if (!g)
+            return;
+        const names = GN.members.map(a => g.cast[a]?.name).filter(Boolean);
+        const name = GN.name.trim() || names.join(', ');
+        let c = GN.id ? C.chatById(g, GN.id) : null;
+        if (c) {
+            c.name = name.slice(0, 40);
+            c.members = [...GN.members];
+        }
+        else
+            c = C.newChat(g, name, GN.members, true, nowAbs(g));
+        GN.open = false;
+        saveGame();
+        const { P } = await import('./phone.js');
+        P.app = 'gchat';
+        P.who = c.id;
+        notify();
+    },
+    'gn-del': () => { const g = game(); if (!g || !GN.id)
+        return; const x = chatsOf(g); x.chats = x.chats.filter(c => c.id !== GN.id); GN.open = false; saveGame(); notify(); },
+});
 // Enter sends (upstream's Enter only knows its own message box)
 document.addEventListener?.('keydown', (e) => {
     const t = e.target;

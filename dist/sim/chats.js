@@ -142,3 +142,22 @@ export function yourAnswer(text) {
         return 'yes';
     return null;
 }
+/* ---------- the characters' own chats, without you (part 5) ---------- */
+export const HIDDEN_MAX = 3, CLOSE = 45;
+/** Three people who are all close to each other and have no chat of their own yet (null: none). */
+export function hiddenTrio(people, value, chats, roll) {
+    const ps = [...people].sort();
+    const trios = [];
+    for (let i = 0; i < ps.length; i++)
+        for (let j = i + 1; j < ps.length; j++)
+            for (let k = j + 1; k < ps.length; k++) {
+                const t = [ps[i], ps[j], ps[k]];
+                if (value(t[0], t[1]) >= CLOSE && value(t[0], t[2]) >= CLOSE && value(t[1], t[2]) >= CLOSE && !chats.some(c => !c.you && t.every(a => c.members.includes(a))))
+                    trios.push(t);
+            }
+    if (!trios.length || chats.filter(c => !c.you).length >= HIDDEN_MAX)
+        return null;
+    return roll('trio') < 0.2 ? trios[Math.floor(roll('which') * trios.length)] : null;
+}
+export function note(c, day, text) { (c.notes ??= []).push({ day, text: text.slice(0, 240) }); if (c.notes.length > 5)
+    c.notes.splice(0, c.notes.length - 5); }

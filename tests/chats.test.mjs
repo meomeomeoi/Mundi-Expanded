@@ -66,4 +66,14 @@ test('your answer in the chat', () => {
     assert.equal(C.yourAnswer('what movie?'), null);
 });
 
+test('their own chats: only three who are all close, one chat per trio, at most three, not every night', () => {
+    const close = (a, b) => ([a, b].includes('d') ? 10 : 60);
+    let made = 0; for (let d = 0; d < 300; d++) if (C.hiddenTrio(['a', 'b', 'c', 'd'], close, [], (k) => H(`${d}${k}`))) made++;
+    assert.ok(made > 30 && made < 100, `nights with a new chat: ${made}`);
+    for (let d = 0; d < 50; d++) { const t = C.hiddenTrio(['a', 'b', 'c', 'd'], close, [], (k) => H(`${d}${k}`)); if (t) assert.deepEqual(t, ['a', 'b', 'c']); }
+    const have = [{ id: 'x', name: '', members: ['a', 'b', 'c'], you: false, msgs: [] }];
+    for (let d = 0; d < 50; d++) assert.equal(C.hiddenTrio(['a', 'b', 'c', 'd'], close, have, (k) => H(`${d}${k}`)), null);
+    const c = { id: 'x', name: '', members: [], you: false, msgs: [] }; for (let i = 0; i < 8; i++) C.note(c, i, `n${i}`); assert.equal(c.notes.length, 5); assert.equal(c.notes[0].text, 'n3');
+});
+
 console.log(`chats: ${n} tests passed`);

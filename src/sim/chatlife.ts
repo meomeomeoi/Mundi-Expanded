@@ -16,6 +16,7 @@ import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
 import { chatsOf, peopleOf, write, nameOf, unreadKey } from './chatrun.js';
+import { presentNotes } from './lifehooks.js';
 
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
 const pairValue = (g: Save, a: string, b: string) => bondsOf(g as any).pairs[pairKey(a, b)]?.v ?? 0;
@@ -57,13 +58,18 @@ function topicFor(g: Save, w: WorldDef, n: C.News, opener: string): string {
 export async function startTalk(g: Save, w: WorldDef, force?: 'talk' | 'call'): Promise<C.Msg[]> {
     if (busy) return []; busy = true;
     try {
-        const c = C.chatById(g as any, C.HOUSE)!; const now = nowAbs(g);
+        const now = nowAbs(g);
         const news = newsOf(g, w); const n = C.pickNews(news, H(`${now}|news`))!;
+        // now and then in a chat of theirs (no messages: what they talked about), or in one of yours
+        const hidden = chatsOf(g).chats.filter(x => !x.you && x.members.every(a => g.cast[a]));
+        if (!force && hidden.length && H(`${now}|hid`) < 0.3) { hiddenTalk(g, hidden[Math.floor(H(`${now}|hw`) * hidden.length)], n); return []; }
+        const mine = chatsOf(g).chats.filter(x => x.you && x.id !== C.HOUSE && x.members.length >= 2);
+        const c = (!force && mine.length && H(`${now}|mine`) < 0.3) ? mine[Math.floor(H(`${now}|mw`) * mine.length)] : C.chatById(g as any, C.HOUSE)!;
         const ops = openers(g, w, c, n.who); if (!ops.length) return [];
         const opener = ops[Math.floor(H(`${now}|op`) * ops.length)];
         const social = P.profileOf(g as any, opener)?.social ?? 50;
         const hour = Math.floor(g.minutes / 60);
-        if (force === 'call' || (!force && hour <= 19 && social >= 45 && H(`${now}|call`) < 0.3)) { const m = await call(g, w, c, opener); if (m.length || force) return m; }
+        if (force === 'call' || (!force && c.id === C.HOUSE && hour <= 19 && social >= 45 && H(`${now}|call`) < 0.3)) { const m = await call(g, w, c, opener); if (m.length || force) return m; }
         const people = peopleOf(g, w, c);
         const room = people.find(p => p.avatar === opener)?.room ?? '';
         const rest = C.answerers({ author: opener, authorRoom: room, text: n.kind === 'small' ? 'hey' : `${n.text}?`, people, closeness: (a) => pairValue(g, opener, a), roll: (k) => H(`${now}|${k}|ans`), max: 4 });
@@ -71,6 +77,28 @@ export async function startTalk(g: Save, w: WorldDef, force?: 'talk' | 'call'): 
         tell(g, c, msgs); return msgs;
     } finally { busy = false; }
 }
+
+/* ---------- their own chats ---------- */
+
+// A conversation in a chat without you: no messages, a line of what it was about, and a little closeness.
+function hiddenTalk(g: Save, c: C.Chat, n: C.News) {
+    const who = names(g, c.members);
+    const about = n.kind === 'small' ? 'their day and nothing in particular' : n.kind === 'plan' ? `how it went (${n.text.replace(/\.$/, '')})` : n.kind === 'fight' ? `what happened ("${n.text.replace(/\.$/, '')}")` : n.kind === 'fridge' ? 'the empty fridge and who should go shopping' : n.kind === 'money' ? 'money being tight' : 'the house';
+    C.note(c, g.day, `${who} talked in their group chat about ${about}.`);
+    import('./bonds.js').then(b => { b.applyChange(g as any, c.members.slice(0, 3), n.kind === 'fight' ? 0 : 1, `${who} chatted in their own group chat about ${about}.`, 'offscreen'); saveGame(); }).catch(() => { /* later */ });
+}
+// At night: three close friends may start a chat of their own.
+onDay.push((g, w) => {
+    if (!isScenario(w)) return [];
+    const x = chatsOf(g);
+    const t = C.hiddenTrio(Object.keys(g.cast), (a, b) => pairValue(g, a, b), x.chats, (k) => H(`${g.world}|${g.day}|hid|${k}`));
+    if (t) { const c = C.newChat(g as any, 'Their chat', t, false, nowAbs(g)); C.note(c, g.day, `${names(g, t)} started a group chat of their own.`); }
+    return [];
+});
+presentNotes.push((g, _w, present) => {
+    const here = new Set(present.map(r => r.avatar));
+    return chatsOf(g).chats.filter(c => !c.you && c.notes?.length && c.members.filter(a => here.has(a)).length >= 1).map(c => `${names(g, c.members)} have a group chat of their own, without {{user}}${c.members.every(a => here.has(a)) ? '' : ` (${names(g, c.members.filter(a => here.has(a)))} here ${c.members.filter(a => here.has(a)).length > 1 ? 'are' : 'is'} in it)`}. Lately they talked there about: ${c.notes!.slice(-3).map(x => x.text).join(' ')} They may refer to it; {{user}} has not read it.`);
+});
 
 /* ---------- a call for everyone ---------- */
 

@@ -8,7 +8,7 @@
 //  - One AI call writes all the replies at once (a transcript of several speakers).
 
 export interface Msg { by: string; text: string; at: number }   // by: an avatar, or 'me'
-export interface Chat { id: string; name: string; members: string[]; you: boolean; msgs: Msg[]; made?: number }
+export interface Chat { id: string; name: string; members: string[]; you: boolean; msgs: Msg[]; made?: number; /** a chat without you: what they talked about lately, not the messages */ notes?: { day: number; text: string }[] }
 export type Writer = 'main' | 'mech';
 export type Freq = 'off' | 'quiet' | 'calm' | 'lively';
 export const FREQS: [Freq, string, [number, number]][] = [['off', 'Off', [0, 0]], ['quiet', 'Quiet', [0, 1]], ['calm', 'Calm', [1, 2]], ['lively', 'Lively', [2, 3]]];
@@ -141,3 +141,18 @@ export function yourAnswer(text: string): 'yes' | 'no' | null {
     if (/\b(i'?m in|count me in|i'?ll come|i'?ll be there|sure|yes|yeah|ok(ay)?|down)\b|я за|приду|буду|иду|давай|ок\b|конечно/.test(t)) return 'yes';
     return null;
 }
+
+/* ---------- the characters' own chats, without you (part 5) ---------- */
+
+export const HIDDEN_MAX = 3, CLOSE = 45;
+/** Three people who are all close to each other and have no chat of their own yet (null: none). */
+export function hiddenTrio(people: string[], value: (a: string, b: string) => number, chats: Chat[], roll: (k: string) => number): string[] | null {
+    const ps = [...people].sort(); const trios: string[][] = [];
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) for (let k = j + 1; k < ps.length; k++) {
+        const t = [ps[i], ps[j], ps[k]];
+        if (value(t[0], t[1]) >= CLOSE && value(t[0], t[2]) >= CLOSE && value(t[1], t[2]) >= CLOSE && !chats.some(c => !c.you && t.every(a => c.members.includes(a)))) trios.push(t);
+    }
+    if (!trios.length || chats.filter(c => !c.you).length >= HIDDEN_MAX) return null;
+    return roll('trio') < 0.2 ? trios[Math.floor(roll('which') * trios.length)] : null;
+}
+export function note(c: Chat, day: number, text: string) { (c.notes ??= []).push({ day, text: text.slice(0, 240) }); if (c.notes.length > 5) c.notes.splice(0, c.notes.length - 5); }
