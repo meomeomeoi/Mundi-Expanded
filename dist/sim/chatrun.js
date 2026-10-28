@@ -1,6 +1,6 @@
 // [expanded] Group chats at runtime (rules in chats.ts): who can answer now, writing the messages (the main model
 // by default, or the mechanics model), sending yours, and what the scene is told.
-import { nowAbs, notify } from '../core/store.js';
+import { nowAbs, notify, game, toast } from '../core/store.js';
 import { isScenario, aiVoice } from '../core/world.js';
 import { aiLangName } from '../core/i18n.js';
 import { charOf, personaName, quiet } from '../st/bridge.js';
@@ -35,7 +35,8 @@ export function peopleOf(g, w, c) {
 }
 const about = (r) => { const c = charOf(r.avatar); return personalityOf(c?.description ?? '', c?.personality ?? '', 260).replace(/\n/g, ' '); };
 /** Writes the next messages of `writers` (in order) and posts them, a minute or two apart. */
-export async function write(g, w, c, writers, topic = '', news = []) {
+/** `loud`: you wrote, so a failure is shown (conversations without you only log it). */
+export async function write(g, w, c, writers, topic = '', news = [], loud = false) {
     const ws = writers.map(a => g.cast[a]).filter(Boolean);
     if (!ws.length)
         return [];
@@ -48,6 +49,7 @@ export async function write(g, w, c, writers, topic = '', news = []) {
     });
     const x = chatsOf(g);
     let ans = '';
+    let failed = '';
     TYPING.chat = c.id;
     TYPING.who = ws.map(r => r.avatar);
     notify();
@@ -60,18 +62,33 @@ export async function write(g, w, c, writers, topic = '', news = []) {
             ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
     }
     catch (e) {
+        failed = String(e?.message ?? e);
         console.warn('[Mundi Expanded] group chat', e);
     }
     finally {
         TYPING.chat = '';
         TYPING.who = [];
     }
+    // [expanded] the answer can take a while: write into the save and the chat as they are NOW (the chat may have been
+    // reloaded meanwhile; the objects from before the call would be lost), and never lose an answer silently
+    const g2 = game() ?? g;
+    const c2 = C.chatById(G(g2), c.id) ?? c;
     const lines = C.parseChat(ans, ws.map(r => ({ avatar: r.avatar, name: r.name })));
+    if (!lines.length) {
+        if (!failed) {
+            failed = ans.trim() ? 'the answer had no "Name: message" lines from the people asked' : 'the model sent an empty answer';
+            console.warn(`[Mundi Expanded] group chat: ${failed}. Asked: ${ws.map(r => r.name).join(', ')}. Answer:`, ans);
+        }
+        if (loud)
+            toast(`${c.name}: no answers came (${failed}). Try again, or let the mechanics model write chats (phone Settings).`, 'warn');
+        notify();
+        return [];
+    }
     const out = [];
-    lines.forEach((l, i) => { const m = C.post(c, l.by, l.text, now + 1 + i + Math.floor(H(`${c.id}|${now}|${i}`) * 2)); if (m)
+    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, now + 1 + i + Math.floor(H(`${c2.id}|${now}|${i}`) * 2)); if (m)
         out.push(m); });
     if (out.length)
-        social(g).unread[unreadKey(c.id)] = (social(g).unread[unreadKey(c.id)] ?? 0) + out.length;
+        social(g2).unread[unreadKey(c2.id)] = (social(g2).unread[unreadKey(c2.id)] ?? 0) + out.length;
     return out;
 }
 /** You write in a chat: who answers is decided, then their messages are written. */
@@ -83,7 +100,7 @@ export async function sendToChat(g, w, id, text) {
     if (!mine)
         return [];
     const who = C.answerers({ author: C.ME, authorRoom: g.player.loc, text, people: peopleOf(g, w, c), closeness: (a) => closeness(g, C.ME, a), roll: (k) => H(`${c.id}|${mine.at}|${c.msgs.length}|${k}`) });
-    return who.length ? write(g, w, c, who) : [];
+    return who.length ? write(g, w, c, who, '', [], true) : [];
 }
 // The scene: the chats you are in, lately, when someone here is in them too.
 presentNotes.push((g, _w, present) => {

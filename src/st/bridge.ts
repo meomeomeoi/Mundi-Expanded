@@ -395,9 +395,30 @@ export async function narratorLine(text: string) {
 // Models that think before answering (Claude with thinking, reasoning models) spend part of the length on thinking:
 // a small length left nothing for the answer ("No message generated"). So the length asked is never small, the
 // answer is cut by Mundi afterwards, and an empty answer is tried once more with room to spare.
+//
+// [expanded] The answer is taken RAW (generateRawData), never through generateRaw: generateRaw runs SillyTavern's
+// clean-up for chat messages on it (cleanUpMessage), which is wrong for answers Mundi reads itself. In a group chat
+// (every Mundi game is one) it cuts the answer at the first line that starts with a member's name, so "Finn: hi"
+// became nothing ("No message generated") and every "Name: line" answer died; it also applies the user's regex
+// scripts, stop strings, trimmed names and sentences. Only very old SillyTavern (no generateRawData) falls back.
+/** Text of an AI answer, whatever its shape (a string, chat-completion JSON, content parts); thinking removed. */
+export function answerText(data: unknown): string {
+    let t: any = '';
+    try { t = typeof data === 'string' ? data : ctx().extractMessageFromData?.(data) ?? ''; } catch { t = ''; }
+    const d: any = data;
+    if (!t && d && typeof d === 'object') t = d.choices?.[0]?.message?.content ?? d.choices?.[0]?.text ?? d.content ?? d.text ?? '';
+    if (Array.isArray(t)) t = t.map((p: any) => (typeof p === 'string' ? p : p?.text ?? '')).join('');
+    return stripThinking(String(t ?? ''));
+}
+export const stripThinking = (s: string) => String(s ?? '')
+    .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '')
+    .replace(/^\s*<(think|thinking|reasoning)>[\s\S]*$/i, '')   // thinking cut off before it closed: no answer in it
+    .trim();
 export async function quiet(prompt: string, responseLength = 300, systemPrompt = ''): Promise<string> {
-    const ask = async (len: number) => String(await ctx().generateRaw({ prompt, systemPrompt, responseLength: len }) ?? '')
-        .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
+    const c = ctx();
+    const ask = async (len: number): Promise<string> => typeof c.generateRawData === 'function'
+        ? answerText(await c.generateRawData({ prompt, systemPrompt, responseLength: len }))
+        : stripThinking(String(await c.generateRaw({ prompt, systemPrompt, responseLength: len, trimNames: false }) ?? ''));
     try {
         const out = await ask(Math.max(responseLength, 2000));   // [expanded] 1000 was eaten by thinking (high reasoning effort)
         if (out) return out;

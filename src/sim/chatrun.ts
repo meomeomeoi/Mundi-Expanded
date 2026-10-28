@@ -1,6 +1,6 @@
 // [expanded] Group chats at runtime (rules in chats.ts): who can answer now, writing the messages (the main model
 // by default, or the mechanics model), sending yours, and what the scene is told.
-import { nowAbs, notify, type Save, type Resident } from '../core/store.js';
+import { nowAbs, notify, game, toast, type Save, type Resident } from '../core/store.js';
 import { isScenario, aiVoice, type WorldDef } from '../core/world.js';
 import { aiLangName } from '../core/i18n.js';
 import { charOf, personaName, quiet } from '../st/bridge.js';
@@ -35,7 +35,8 @@ export function peopleOf(g: Save, w: WorldDef, c: C.Chat): C.Who[] {
 const about = (r: Resident) => { const c: any = charOf(r.avatar); return personalityOf(c?.description ?? '', c?.personality ?? '', 260).replace(/\n/g, ' '); };
 
 /** Writes the next messages of `writers` (in order) and posts them, a minute or two apart. */
-export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], topic = '', news: string[] = []): Promise<C.Msg[]> {
+/** `loud`: you wrote, so a failure is shown (conversations without you only log it). */
+export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], topic = '', news: string[] = [], loud = false): Promise<C.Msg[]> {
     const ws = writers.map(a => g.cast[a]).filter(Boolean) as Resident[]; if (!ws.length) return [];
     const now = nowAbs(g);
     const prompt = C.chatPrompt({
@@ -44,17 +45,25 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
         known: liveDigest(g, w, ws.map(r => r.avatar), { lines: 8, chars: 1200 }), news,
         history: c.msgs.slice(-16).map(m => ({ name: nameOf(g, m.by), text: m.text })), writers: ws.map(r => r.name), topic,
     });
-    const x = chatsOf(g); let ans = '';
+    const x = chatsOf(g); let ans = ''; let failed = '';
     TYPING.chat = c.id; TYPING.who = ws.map(r => r.avatar); notify();
     try {
         if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); ans = await bgAsk(prompt, 2500, C.CHAT_SYSTEM); }
         else ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
-    } catch (e) { console.warn('[Mundi Expanded] group chat', e); }
+    } catch (e: any) { failed = String(e?.message ?? e); console.warn('[Mundi Expanded] group chat', e); }
     finally { TYPING.chat = ''; TYPING.who = []; }
+    // [expanded] the answer can take a while: write into the save and the chat as they are NOW (the chat may have been
+    // reloaded meanwhile; the objects from before the call would be lost), and never lose an answer silently
+    const g2 = game() ?? g; const c2 = C.chatById(G(g2), c.id) ?? c;
     const lines = C.parseChat(ans, ws.map(r => ({ avatar: r.avatar, name: r.name })));
+    if (!lines.length) {
+        if (!failed) { failed = ans.trim() ? 'the answer had no "Name: message" lines from the people asked' : 'the model sent an empty answer'; console.warn(`[Mundi Expanded] group chat: ${failed}. Asked: ${ws.map(r => r.name).join(', ')}. Answer:`, ans); }
+        if (loud) toast(`${c.name}: no answers came (${failed}). Try again, or let the mechanics model write chats (phone Settings).`, 'warn');
+        notify(); return [];
+    }
     const out: C.Msg[] = [];
-    lines.forEach((l, i) => { const m = C.post(c, l.by, l.text, now + 1 + i + Math.floor(H(`${c.id}|${now}|${i}`) * 2)); if (m) out.push(m); });
-    if (out.length) social(g).unread[unreadKey(c.id)] = (social(g).unread[unreadKey(c.id)] ?? 0) + out.length;
+    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, now + 1 + i + Math.floor(H(`${c2.id}|${now}|${i}`) * 2)); if (m) out.push(m); });
+    if (out.length) social(g2).unread[unreadKey(c2.id)] = (social(g2).unread[unreadKey(c2.id)] ?? 0) + out.length;
     return out;
 }
 /** You write in a chat: who answers is decided, then their messages are written. */
@@ -62,7 +71,7 @@ export async function sendToChat(g: Save, w: WorldDef, id: string, text: string)
     const c = C.chatById(G(g), id); if (!c || !isScenario(w)) return [];
     const mine = C.post(c, C.ME, text, nowAbs(g)); if (!mine) return [];
     const who = C.answerers({ author: C.ME, authorRoom: g.player.loc, text, people: peopleOf(g, w, c), closeness: (a) => closeness(g, C.ME, a), roll: (k) => H(`${c.id}|${mine.at}|${c.msgs.length}|${k}`) });
-    return who.length ? write(g, w, c, who) : [];
+    return who.length ? write(g, w, c, who, '', [], true) : [];
 }
 
 // The scene: the chats you are in, lately, when someone here is in them too.

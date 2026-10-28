@@ -8,7 +8,7 @@
 //  - Every call is counted (today's calls and an estimate of the tokens), so the cost can be checked in Settings.
 import { settings, saveSettings, game, type Save } from '../core/store.js';
 import { getWorld, isScenario, type WorldDef } from '../core/world.js';
-import { ctx, quiet, chat } from '../st/bridge.js';
+import { ctx, quiet, chat, answerText } from '../st/bridge.js';
 
 export type RegMode = 'message' | 'night';
 interface Stats { day: string; calls: number; tin: number; tout: number; fails: number }
@@ -42,7 +42,7 @@ export async function bgAsk(prompt: string, maxTokens: number, system = '', fall
         try {
             const messages = [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: prompt }];
             const res = await service().sendRequest(regCfg().profile, messages, maxTokens, { stream: false, extractData: true, includePreset: false, includeInstruct: false });
-            const out = clean(typeof res === 'string' ? res : res?.content ?? '');
+            const out = answerText(typeof res === 'string' ? res : res?.content ?? res);   // [expanded] content may come as parts
             st.calls++; st.tin += estTok(system) + estTok(prompt); st.tout += estTok(out); saveSettings();
             return out;
         } catch (e) {
