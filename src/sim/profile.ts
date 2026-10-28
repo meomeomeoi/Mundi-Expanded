@@ -28,6 +28,8 @@ export interface LifeX {
     keys?: string[];                          // who gave you a key to their room
     woke?: Record<string, number>;            // woken up (by you): awake until (absolute minutes)
     atDoor?: { avatar: string; until: number };   // came to their door to talk, without letting you in
+    intr?: { loc: string; owners: string[]; at: number; from: number; left?: number; done?: boolean } | null;   // you went into an empty room
+    caught?: { avatar: string; until: number; text: string } | null;   // and they found you there
 }
 export type GLike = { lifex?: LifeX };
 export const lifexOf = (g: GLike): LifeX => {

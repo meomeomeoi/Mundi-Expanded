@@ -34,4 +34,17 @@ test('waking on purpose and letting yourself in', () => {
 test('a door that answered lets upstream\'s check through once', () => {
     D.passDoor('home:k'); assert.ok(D.passPending('home:k')); assert.ok(D.passing('home:k')); assert.ok(!D.passing('home:k'));
 });
+test('breaking in: rough reactions by closeness, found is worse than noticed', () => {
+    const stranger = D.roughReaction(10, false, true), friend = D.roughReaction(70, false, true), later = D.roughReaction(10, false, false);
+    assert.equal(stranger.severity, 3); assert.ok(stranger.delta < friend.delta); assert.ok(later.delta > stranger.delta);
+    assert.equal(D.roughReaction(5, true, false).delta, 0, 'a partner who only notices does not mind');
+    assert.ok(D.noticeChance(10) < D.noticeChance(180)); assert.ok(D.noticeChance(10000) <= 0.6);
+});
+test('breaking in: the model\'s reaction is read and kept within bounds', () => {
+    const r = D.parseReaction('ok {"severity": 7, "delta": -40, "feeling": "Hurt: read her diary", "reaction": "She throws you out."}');
+    assert.equal(r.severity, 3); assert.equal(r.delta, -15); assert.equal(r.feeling, 'Hurt: read her diary');
+    assert.equal(D.parseReaction('nope'), null);
+    assert.ok(D.reactPrompt({ name: 'Kathie', persona: 'shy', you: 'Gleb', bond: 'friends', partner: false, caught: true, minutes: 30, lines: '' }).includes('found Gleb inside'));
+});
+
 console.log(`doors: ${n} tests passed`);

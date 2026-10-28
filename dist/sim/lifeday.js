@@ -105,6 +105,10 @@ export function lifeLines(g, w, present) {
     const lx = P.lifexOf(G(g));
     if (lx.atDoor && lx.atDoor.until > now && present.some(r => r.avatar === lx.atDoor.avatar))
         out.push(`${g.cast[lx.atDoor.avatar]?.name} came to the door of their room to talk with {{user}} in the hallway, without inviting {{user}} in.`);
+    if (lx.caught && lx.caught.until > now && present.some(r => r.avatar === lx.caught.avatar)) {
+        const n = g.cast[lx.caught.avatar]?.name;
+        out.push(`${n} has just come back to their own room and found {{user}} inside, uninvited.${lx.caught.text ? ` How ${n} takes it: ${lx.caught.text}` : ''}`);
+    }
     for (const r of present) {
         const t = lx.woke?.[r.avatar];
         if (t && t > now && t - now > 60)

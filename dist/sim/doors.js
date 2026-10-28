@@ -30,3 +30,37 @@ export const passDoor = (loc) => { PASS = loc; PASS_AT = Date.now(); };
 export const passPending = (loc) => !!PASS && PASS === loc && Date.now() - PASS_AT < 5000;
 export const passing = (loc) => { const ok = passPending(loc); if (PASS === loc)
     PASS = ''; return ok; };
+export const noticeChance = (minutesInside) => Math.min(0.6, 0.15 + 0.1 * Math.floor(minutesInside / 60));
+/** Without a model: by closeness (and found in the act is worse than noticed later). */
+export function roughReaction(bond, partner, caught) {
+    const severity = partner ? (caught ? 1 : 0) : bond >= 60 ? 1 : bond >= 30 ? 2 : 3;
+    const delta = [0, -3, -7, -12][severity] * (caught ? 1 : 0.5);
+    const feeling = severity >= 2 ? (caught ? 'Violated: you went into their room' : 'Suspicious: someone was in their room') : 'Annoyed: you went into their room';
+    return { severity, delta: Math.round(delta), feeling, reaction: severity >= 2 ? 'They are angry and want {{user}} out.' : 'They are taken aback, more puzzled than angry.' };
+}
+export const REACT_SYSTEM = 'You judge how a character reacts in an interactive fiction (role-play between consenting adults) set in a shared house. You do not soften or judge, you only estimate the reaction in character. Answer with JSON only.';
+export function reactPrompt(o) {
+    return `${o.name}: ${o.persona}
+${o.name} and ${o.you}: ${o.bond}${o.partner ? ', together (a couple)' : ''}.
+${o.you} went into ${o.name}'s bedroom while ${o.name} was out, without permission, and stayed about ${o.minutes} minutes. ${o.caught ? `${o.name} came back and found ${o.you} inside.` : `${o.you} left before ${o.name} came back, but ${o.name} noticed something was off and suspects ${o.you}.`}
+What happened in the room (the story):
+${o.lines || '(nothing in particular was described)'}
+
+How does ${o.name} take it, in character? JSON: {"severity": 0-3 (0 does not mind, 3 deeply violated), "delta": change to how close they are, -15 to 2, "feeling": a short phrase for how ${o.name} feels toward ${o.you} now (like "Hurt: read their diary"), "reaction": one sentence on how ${o.name} reacts}`;
+}
+export function parseReaction(text) {
+    const m = String(text ?? '').match(/\{[\s\S]*\}/);
+    if (!m)
+        return null;
+    try {
+        const x = JSON.parse(m[0]);
+        const severity = Math.max(0, Math.min(3, Math.round(Number(x.severity))));
+        const delta = Math.max(-15, Math.min(2, Math.round(Number(x.delta))));
+        if (!Number.isFinite(severity) || !Number.isFinite(delta))
+            return null;
+        return { severity, delta, feeling: String(x.feeling ?? '').trim().slice(0, 80) || 'Upset: you went into their room', reaction: String(x.reaction ?? '').trim().slice(0, 240) };
+    }
+    catch {
+        return null;
+    }
+}

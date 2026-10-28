@@ -11,6 +11,7 @@ import { whereNow } from '../sim/people.js';
 import { ownRoom, slotAt } from '../sim/lifeday.js';
 import * as P from '../sim/profile.js';
 import * as D from '../sim/doors.js';
+import { startIntrusion } from '../sim/intrude.js';
 
 const G = (g: Save) => g as unknown as P.GLike;
 export const DR = { loc: '', mode: '' as '' | 'awake' | 'asleep' | 'empty', note: '' };
@@ -52,10 +53,10 @@ export function doorHtml(): string {
     const names = (inside.length ? inside : owners).map(r => r.name).join(' and ');
     const faces = (inside.length ? inside : owners).map(r => `<img src="${esc(thumb(r.avatar))}" alt="">`).join('');
     const wakeable = inside.some(r => D.canWake(whoOf(g, r)));
-    const body = DR.mode === 'empty' ? `<p>${esc(names)} ${owners.length > 1 ? 'are' : 'is'} not in. The door is closed.</p>`
+    const body = DR.mode === 'empty' ? `<p>${esc(names)} ${owners.length > 1 ? 'are' : 'is'} not in. The door is closed.</p><small class="mu-muted">You can go in anyway. If ${owners.length > 1 ? 'one of them comes' : 'they come'} back while you are inside, you are found; after you leave, ${owners.length > 1 ? 'they' : 'they'} may notice. How they take it depends on how close you are, who they are and what you did in there.</small>`
         : DR.mode === 'asleep' ? `<p>It is quiet behind the door: ${esc(names)} ${inside.length > 1 ? 'are' : 'is'} asleep.</p>`
         : `<p>${esc(names)} ${inside.length > 1 ? 'are' : 'is'} in. The door is closed.</p>`;
-    const btns = DR.mode === 'empty' ? `<button class="mu-primary" data-act="door-leave">Leave it</button>`
+    const btns = DR.mode === 'empty' ? `<button class="mu-danger" data-act="door-sneak" title="If they come back while you are inside, they find you; they may also notice later">${icon('lock')}<span>Go in anyway</span></button><button class="mu-primary" data-act="door-leave">Leave it</button>`
         : DR.mode === 'asleep' ? `<button data-act="door-leave">Let them sleep</button><button data-act="door-knock">${icon('chat')}<span>Knock</span></button>
             <button class="mu-primary" data-act="door-wake" ${wakeable ? '' : 'aria-disabled="true" title="Only for someone you are very close to (friendship 60+) or together with"'}>${icon('bolt')}<span>Wake them</span></button>`
         : `<button data-act="door-leave">Leave</button><button class="mu-primary" data-act="door-knock">${icon('chat')}<span>Knock</span></button>`;
@@ -92,6 +93,12 @@ Object.assign(ACT, {
             answer(g, w, r, a, DR.loc); return;
         }
         answer(g, w, r, D.knock(whoOf(g, r), hour, roll), DR.loc);
+    },
+    'door-sneak': async () => {
+        const g = game(); const w = g && getWorld(g.world); if (!g || !w || !DR.loc) return;
+        const loc = DR.loc; const owners = ownersOf(g, w, loc).map(r => r.avatar);
+        await goIn(loc);
+        if (g.player.loc === loc) { startIntrusion(g, loc, owners); saveGame(); }
     },
     'door-wake': (el) => {
         if (el.getAttribute('aria-disabled')) return;
