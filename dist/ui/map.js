@@ -20,7 +20,7 @@ import { journeyOf, travelRoad } from '../sim/journey.js';
 import { thumb } from '../st/bridge.js';
 import { pins, placeOf, travelMinutes, playerHomeId, isOuting, outingName } from '../sim/places.js';
 import { planOn, floorsOn, planTarget, unplaced, floorOf } from '../sim/plan.js';
-import { presentAt, whereNow } from '../sim/people.js';
+import { presentAt, whereNow, residents, selfOf } from '../sim/people.js';
 import { writeDiary, diaryOn, markDayStart, dayStart } from '../sim/diary.js';
 import { bondsNight, changesNote } from '../sim/bondsnight.js'; // [expanded]
 import { stockBlock, stockNight } from '../sim/stocknight.js'; // [expanded]
@@ -203,6 +203,9 @@ function roomsHtml(g, w) {
         <div class="mu-rooms-grid">${[...yours, ...rooms].map(card).join('')}</div>
         ${beds.length ? `<h4>Bedrooms</h4><div class="mu-rooms-grid">${beds.map(card).join('')}</div>` : ''}</div>${toolsHtml()}</div>`;
 }
+// [expanded] Who is on a floor: the people the floor's rooms show (the button counted only people you know, so it showed
+// fewer faces than the rooms below it).
+const presentFloor = (g, w, floorId) => residents(g).filter(r => r.avatar !== selfOf(g) && floorOf(g, w, whereNow(g, w, r)) === floorId);
 // A scenario with a floor plan: the floor you are on, each room where it is (click to go there), the floors at the
 // bottom left, and the rooms not on the plan yet with a red "!".
 export const PV = { floor: '', at: '' };
@@ -239,8 +242,8 @@ function planHtml(g, w) {
         return `<button data-act="go" data-loc="${esc(p.id)}" class="${p.id === g.player.loc ? 'is-you' : ''}" title="${esc(name)}: where this room is on the floor plan is not set yet (World creator › Maps › Floor plan). Click to go there."><b class="mu-plan-bang">!</b><span data-notr>${esc(name)}</span></button>`;
     }).join('')}</div>` : ''}
             ${plan.floors.length > 1 ? `<nav class="mu-plan-floors" aria-label="Floors">${plan.floors.map(f => {
-        const who = Object.values(g.cast).filter(r => r.met && floorOf(g, w, whereNow(g, w, r)) === f.id);
-        return `<button class="${f.id === floor.id ? 'is-on' : ''}" data-act="plan-floor" data-id="${esc(f.id)}">${who.length ? `<span class="mu-floor-faces">${who.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" title="${esc(r.name)}">`).join('')}${who.length > 5 ? `<i>+${who.length - 5}</i>` : ''}</span>` : ''}${floorOf(g, w, g.player.loc) === f.id ? icon('pin') : ''}<span ${/^Floor \d+$/.test(f.name) ? '' : 'data-notr'}>${esc(f.name)}</span></button>`;
+        const who = presentFloor(g, w, f.id); // [expanded] everyone the rooms show (strangers too, as "Someone"), as they show them
+        return `<button class="${f.id === floor.id ? 'is-on' : ''}" data-act="plan-floor" data-id="${esc(f.id)}">${who.length ? `<span class="mu-floor-faces">${who.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r)} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${who.length > 5 ? `<i>+${who.length - 5}</i>` : ''}</span>` : ''}${floorOf(g, w, g.player.loc) === f.id ? icon('pin') : ''}<span ${/^Floor \d+$/.test(f.name) ? '' : 'data-notr'}>${esc(f.name)}</span></button>`;
     }).join('')}</nav>` : ''}</div>
         ${toolsHtml()}</div>`;
 }

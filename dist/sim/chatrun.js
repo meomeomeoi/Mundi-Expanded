@@ -113,7 +113,7 @@ export async function write(g, w, c, writers, topic = '', news = [], loud = fals
     const asleep = c.members.filter(a => g.cast[a] && !writers.includes(a) && isSleeping(g.cast[a], at0)).map(a => g.cast[a].name);
     const prompt = C.chatPrompt({
         chatName: c.name, when: `${weekday(g.day)}, ${hm(g.minutes)} (${period(w, g.minutes).name.toLowerCase()})`, asleep, lang: aiLangName(g.lang), voice: aiVoice(w), era: eraTextLine(g),
-        members: c.members.map(a => g.cast[a]).filter(Boolean).map(r => ({ name: r.name, about: about(r) })), you: personaName(), youIn: c.you,
+        members: c.members.map(a => g.cast[a]).filter(Boolean).map(r => ({ name: r.name, about: about(r) + (c.you && !r.met ? ` (has not met ${personaName()} yet: a first hello, a welcome)` : '') })), you: personaName(), youIn: c.you,
         known: liveDigest(g, w, ws.map(r => r.avatar), { lines: 8, chars: 1200 }), news,
         history: c.msgs.slice(-16).map(m => ({ name: nameOf(g, m.by), text: m.text })), writers: ws.map(r => r.name), topic,
     });
@@ -166,6 +166,14 @@ export async function write(g, w, c, writers, topic = '', news = [], loud = fals
     const after = c2.msgs.at(-1)?.at ?? -Infinity;
     lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, Math.max(after, Math.min(at0 + i, clock))); if (m)
         out.push(m); });
+    // [expanded] writing in a chat you are in is meeting you (a housemate's hello in the house chat): from then on they
+    // are known (named on the map, in People), as after running into each other
+    if (c2.you)
+        for (const m of out) {
+            const r = g2.cast[m.by];
+            if (r && !r.met)
+                r.met = true;
+        }
     reveal(c2.id, out); // unread counts grow as they show
     return out;
 }

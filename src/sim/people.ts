@@ -114,5 +114,5 @@ export function whereNow(g: Save, w: WorldDef, r: Resident): string {
 
 export const residents = (g: Save) => Object.values(g.cast);
 // (someone you are playing as is not "here": you are them)
-const selfOf = (g: Save) => { const s = (g as any).swap; return s ? (s.avatar || s.origCard || '') : ''; };
+export const selfOf = (g: Save) => { const s = (g as any).swap; return s ? (s.avatar || s.origCard || '') : ''; };
 export const presentAt = (g: Save, w: WorldDef, loc: string) => residents(g).filter(r => r.avatar !== selfOf(g) && whereNow(g, w, r) === loc);
