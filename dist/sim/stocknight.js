@@ -13,6 +13,7 @@ import * as S from './stock.js';
 import * as M from './money.js';
 import { money } from './needs.js';
 import { applyGifts, giftLines } from './gifts.js';
+import { placeReadLines, applyPlaceRead } from './furnishread.js';
 const G = (g) => g;
 const adults = (g) => Object.values(g.cast).filter(r => !isMinor(g, r.avatar)).map(r => r.avatar);
 const refresh = () => { void import('./prompt.js').then(m => m.refreshPrompt()); };
@@ -49,13 +50,13 @@ async function readLines(g, text, fallback) {
     if (!text.trim())
         return [];
     const you = personaName();
-    const extra = [...M.MONEY_READ, ...(M.moneyOn(g) ? M.MONEY_READ_PAY : []), M.ATTACH_NOTE];
+    const extra = [...M.MONEY_READ, ...(M.moneyOn(g) ? M.MONEY_READ_PAY : []), M.ATTACH_NOTE, ...placeReadLines(g, you)]; // [expanded] 0.2.0.7: the rooms' things
     const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 1500, S.READ_SYSTEM, fallback);
     if (!raw)
         return [];
     const changes = S.applyRead(G(g), S.parseRead(G(g), raw, you), you);
     const mops = M.parseMoney(g, raw, you, s => S.personOf(G(g), s, you));
-    const more = [...M.applyMoney(g, mops, you), ...applyGifts(g, mops, you)];
+    const more = [...M.applyMoney(g, mops, you), ...applyGifts(g, mops, you), ...applyPlaceRead(g, raw, mops, you, s => S.personOf(G(g), s, you))];
     return [...changes, ...more.map(text => ({ kind: 'add', text }))];
 }
 const asText = (lines, cap) => {

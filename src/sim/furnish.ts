@@ -346,3 +346,64 @@ export function pickWant(people: WantIn[], houseHas: (a: Afford) => boolean, era
     for (const o of out) { r -= o.w; if (r < 0) return { by: o.by, cat: o.cat, forSelf: o.forSelf }; }
     const o = out[out.length - 1]; return { by: o.by, cat: o.cat, forSelf: o.forSelf };
 }
+
+/* ---------- the story: things brought in, moved, thrown out; gifts ---------- */
+
+// What a thing named in the story is, in the catalog (the first that fits: the more specific ones go first).
+const BY_NAME: [RegExp, string][] = [
+    [/handheld|game ?boy|\bswitch\b|\bpsp\b|nintendo ds|steam deck/, 'handheld'], [/\bvr\b|virtual reality/, 'vr'], [/projector|проектор/, 'projector'],
+    [/\bdvd|blu-?ray/, 'dvd'], [/\b(tv|television|telly)\b|телевизор/, 'tv'], [/console|playstation|\bps[2-5]\b|xbox|\bwii\b|приставк/, 'console'],
+    [/laptop|ноутбук/, 'laptop'], [/computer|\bpc\b|компьютер/, 'pc'], [/pool table|billiard|бильярд/, 'pooltable'], [/dart/, 'darts'],
+    [/board ?games?|настольн/, 'boardgames'], [/record player|turntable|vinyl player|проигрывател/, 'turntable'], [/karaoke|караоке/, 'karaoke'],
+    [/stereo|speakers?\b|boombox|колонк/, 'stereo'], [/guitar|гитар/, 'guitar'], [/piano|пианино|рояль/, 'piano'], [/synth|keyboard|синтезатор/, 'keyboard'],
+    [/couch|sofa|диван/, 'couch'], [/armchair|кресл/, 'armchair'], [/bookshel|bookcase|книжн/, 'bookshelf'], [/\bdesk\b|письменный стол/, 'desk'],
+    [/double bed|двуспальн/, 'doublebed'], [/vanity|dressing table|туалетный столик/, 'vanity'], [/aquarium|fish tank|аквариум/, 'aquarium'],
+    [/easel|мольберт/, 'easel'], [/sewing|швейн/, 'sewing'], [/workbench|верстак/, 'workbench'], [/treadmill|беговая дорожка/, 'treadmill'],
+    [/weight bench|dumbbell|barbell|гантел|штанг/, 'weights'], [/yoga mat|коврик для йоги/, 'yogamat'], [/exercise bike|stationary bike|велотренаж/, 'bike'],
+    [/microwave|микроволнов/, 'microwave'], [/stove|oven|плит[аау]|духовк/, 'stove'], [/coffee (maker|machine)|espresso machine|кофемашин|кофеварк/, 'coffee'],
+    [/dining table|обеденный стол/, 'table'], [/bathtub|ванн[аау]\b/, 'bathtub'], [/washing machine|\bwasher\b|стиральн/, 'washer'],
+    [/hot tub|jacuzzi|джакузи/, 'hottub'], [/grill|barbecue|\bbbq\b|мангал|гриль/, 'grill'], [/lounger|шезлонг/, 'loungers'],
+];
+export function catByName(text: string): string | null {
+    const t = String(text ?? '').toLowerCase(); for (const [re, id] of BY_NAME) if (re.test(t)) return id; return null;
+}
+/** The lines the story reader may write about the house's things (with the rooms and what is in them now). */
+export const PLACE_READ = [
+    'PLACE | room | thing | whose (optional)   (a piece of furniture, an appliance, an instrument or another big thing was brought into the house and set up in a room: bought, received, made, carried in)',
+    'RELOCATE | from room | to room | thing   (such a thing was carried to another room)',
+    'DISCARD | room | thing   (such a thing was thrown out, sold or broken beyond use)',
+    'For PLACE, RELOCATE and DISCARD the room is one of the rooms listed above; small things (food, clothes, a mug) are not for these lines, and a big thing gets no ADD or MOVE line. A gift gets its GIFT line; a big gift also its PLACE line.',
+];
+export interface PlaceOp { op: 'place' | 'relocate' | 'discard'; room: string; from?: string; thing: string; who?: Owner }
+/** Reads PLACE, RELOCATE and DISCARD lines (rooms and people resolved by the callbacks; anything unknown dropped). */
+export function parsePlace(raw: string, room: (s: string) => string | null, person: (s: string) => Owner | null): PlaceOp[] {
+    const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '');
+    const out: PlaceOp[] = [];
+    for (const line of text.split('\n')) {
+        const p = line.trim().replace(/^[-*•]\s*/, '').split('|').map(x => x.trim()); const op = (p[0] ?? '').toUpperCase();
+        if (op === 'PLACE' && p.length >= 3) { const r = room(p[1]); const who = p[3] ? person(p[3]) : null; if (r && p[2]) out.push({ op: 'place', room: r, thing: p[2].slice(0, 60), ...(who ? { who } : {}) }); }
+        else if (op === 'RELOCATE' && p.length >= 4) { const a = room(p[1]), b = room(p[2]); if (a && b && a !== b && p[3]) out.push({ op: 'relocate', from: a, room: b, thing: p[3].slice(0, 60) }); }
+        else if (op === 'DISCARD' && p.length >= 3) { const r = room(p[1]); if (r && p[2]) out.push({ op: 'discard', room: r, thing: p[2].slice(0, 60) }); }
+    }
+    return out.slice(0, 6);
+}
+const sameThing = (x: Fixture, thing: string) => { const c = catByName(thing); const n = (s: string) => s.toLowerCase().replace(/[^a-zа-яё0-9 ]/gi, '').trim(); return (c && x.cat === c) || n(x.name) === n(thing) || (n(thing).length >= 4 && n(x.name).includes(n(thing))); };
+/** Applies what was read: things set up (a catalog thing when it is one, else a thing with a name only), carried,
+ *  thrown out. `ownerOf`: whose a thing set up in a room is when the line does not say (a bedroom's owner, the house).
+ *  Returns short notes. A thing already there (the same kind, in that room) is not set up twice. */
+export function applyPlace(g: GLike, ops: PlaceOp[], era: Era, ownerOf: (room: string) => Owner, nameOf: (room: string) => string): string[] {
+    const out: string[] = [];
+    for (const o of ops) {
+        if (o.op === 'place') {
+            if (fixturesIn(g, o.room).some(x => sameThing(x, o.thing))) continue;
+            const cat = catByName(o.thing); const c = cat ? catOf(cat) : null;
+            const x = addFixture(g, { ...(c && forEra(c, era) ? { cat: c.id } : { name: o.thing.charAt(0).toUpperCase() + o.thing.slice(1) }), room: o.room, owner: o.who ?? ownerOf(o.room), via: 'story', era });
+            if (x) out.push(`${x.name} → ${nameOf(o.room)}`);
+        } else {
+            const x = fixturesIn(g, o.op === 'relocate' ? o.from! : o.room).find(y => sameThing(y, o.thing)); if (!x) continue;
+            if (o.op === 'discard') { removeFixture(g, x.id); out.push(`${x.name}: gone`); }
+            else { moveFixture(g, x.id, o.room); out.push(`${x.name} → ${nameOf(o.room)}`); }
+        }
+    }
+    return out;
+}

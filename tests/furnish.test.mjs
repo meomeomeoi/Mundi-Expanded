@@ -100,5 +100,25 @@ test('house purchases: votes, the verdict, what someone would ask for', () => {
     assert.deepEqual(F.pickWant(people, () => true, 'now', roll), { by: 'm', cat: 'console', forSelf: true });           // Masha has no console
     assert.equal(F.pickWant([{ who: 'k', social: 50, needs: [], canDo: () => true }], () => true, 'now', roll), null);
 });
+test('the story: things set up, carried, thrown out', () => {
+    assert.equal(F.catByName('a new PlayStation 5'), 'console'); assert.equal(F.catByName('Nintendo Switch'), 'handheld');
+    assert.equal(F.catByName('old acoustic guitar'), 'guitar'); assert.equal(F.catByName('pool table'), 'pooltable'); assert.equal(F.catByName('a mug'), null);
+    assert.equal(F.catByName('ноутбук'), 'laptop'); assert.equal(F.catByName('flat-screen TV'), 'tv');
+    const g = { cast: { 'm.png': { name: 'Masha' } }, day: 3 };
+    const rooms = { 'living room': 'living', "masha's room": 'home:m.png' };
+    const room = (s) => rooms[s.toLowerCase()] ?? null, person = (s) => (/masha/i.test(s) ? 'm.png' : null);
+    const raw = `PLACE | Living room | a pool table\nPLACE | Masha's room | guitar | Masha\nPLACE | Attic | piano\nPLACE | Living room | framed movie poster\nNONE`;
+    const ops = F.parsePlace(raw, room, person);
+    assert.equal(ops.length, 3); assert.deepEqual(ops[1], { op: 'place', room: 'home:m.png', thing: 'guitar', who: 'm.png' });
+    const own = (r) => (r.startsWith('home:') ? r.slice(5) : 'house');
+    const notes = F.applyPlace(g, ops, 'now', own, (r) => r);
+    assert.equal(notes.length, 3);
+    assert.equal(F.fixturesIn(g, 'home:m.png')[0].owner, 'm.png'); assert.equal(F.fixturesIn(g, 'living').find(x => x.cat === 'pooltable').owner, 'house');
+    assert.equal(F.fixturesIn(g, 'living').find(x => !x.cat).name, 'Framed movie poster');
+    assert.equal(F.applyPlace(g, F.parsePlace('PLACE | living room | Pool table', room, person), 'now', own, (r) => r).length, 0);   // already there
+    F.applyPlace(g, F.parsePlace("RELOCATE | Masha's room | living room | the guitar\nDISCARD | living room | poster", room, person), 'now', own, (r) => r);
+    assert.equal(F.fixturesIn(g, 'home:m.png').length, 0); assert.ok(F.fixturesIn(g, 'living').some(x => x.cat === 'guitar' && x.owner === 'm.png'));
+    assert.ok(!F.fixturesIn(g, 'living').some(x => /poster/i.test(x.name)));
+});
 
 console.log(`furnish: ${n} tests passed`);
