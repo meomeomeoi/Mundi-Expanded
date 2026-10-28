@@ -18,11 +18,11 @@
 #mundi-root .mu-lp-act input, #mundi-root .mu-lp-act select { min-width: 0; }
 #mundi-root .mu-lp-faces { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 #mundi-root .mu-lp-faces img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; object-position: top; }
-#mundi-root .mu-lp-setup { max-width: 460px; }
+
 #mundi-root .mu-lp-ticks { margin-top: -2px; }
 #mundi-root .mu-lp-ticks i { font-style: normal; font-size: 10px; color: var(--muted); text-align: left; }
 #mundi-root .mu-lp-ticks .mu-lp-cells i:nth-child(6n+1) { margin-left: 2px; }
-#mundi-root .mu-door { max-width: 420px; }
+
 #mundi-root .mu-door-faces { display: flex; gap: 6px; }
 #mundi-root .mu-door-faces img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: top; filter: grayscale(.4) brightness(.8); }
 #mundi-root .mu-door-note { padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, .06); font-style: italic; }
@@ -34,3 +34,9 @@
 #mundi-root .mu-cp-faces { display: inline-flex; flex: none; }
 #mundi-root .mu-cp-faces img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; object-position: top; margin-right: -8px; border: 2px solid var(--panel, #121a2a); }
 #mundi-root .mu-cp-faces + span { margin-left: 12px; }
+/* this fork's windows over the game screen: centred above the veil (like Go out's "Back home?"); the veil next to
+   them is a sibling, not their container */
+#mundi-root .mu-lp-setup, #mundi-root .mu-door { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 60;
+    width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; display: grid; gap: 10px; padding: 20px 22px; }
+#mundi-root .mu-lp-setup h3, #mundi-root .mu-door h3 { margin: 0; display: inline-flex; align-items: center; gap: 8px; }
+#mundi-root .mu-lp-setup p, #mundi-root .mu-door p { margin: 0; }
