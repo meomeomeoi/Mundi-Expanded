@@ -1,5 +1,5 @@
 {
-    "display_name": "Mundi",
+    "display_name": "Mundi Expanded",
     "loading_order": 100,
     "requires": [],
     "optional": [
@@ -7,9 +7,9 @@
     ],
     "js": "dist/index.js",
     "css": "style.css",
-    "author": "Thales",
+    "author": "meomeomeoi (fork of Mundi by Thales)",
     "version": "0.2.0",
-    "homePage": "https://github.com/tjalis/Mundi",
+    "homePage": "https://github.com/meomeomeoi/Mundi-Expanded",
     "auto_update": false,
-    "description": "Mundi: an open-world RPG creator for SillyTavern. Worlds with maps, time, routines, needs and a full visual-novel scene, built on SillyTavern's own cards, personas, lorebooks and group chats."
+    "description": "Mundi Expanded: a Home-focused fork of Mundi. Adds relationships between the characters that grow and change on their own, with a relationship graph and memory book. Do not enable together with the original Mundi."
 }

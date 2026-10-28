@@ -1,3 +1,14 @@
+# Mundi Expanded
+
+> A Home-focused fork of [Mundi](https://github.com/tjalis/Mundi) by Thales. It adds relationships between the
+> characters that change on their own, with a relationship graph and a memory book. See [ROADMAP.md](ROADMAP.md).
+>
+> Install it **instead of** Mundi, not next to it: both use the same settings and save data (so your Mundi saves
+> keep working here), and running the two at once breaks both. Install from
+> `https://github.com/meomeomeoi/Mundi-Expanded`.
+>
+> Everything below is the original Mundi README.
+
 # Mundi
 
 **Open worlds inside SillyTavern.** Mundi turns a SillyTavern group chat into a life you live: a city with a map and a clock, needs to look after, a job, bills, people with their own days, and the story the AI writes around what you do.
