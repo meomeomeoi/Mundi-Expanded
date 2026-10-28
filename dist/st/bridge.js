@@ -253,6 +253,34 @@ export function fillerAt(id) {
     return true;
 }
 export const isFiller = (m) => !!m?.extra?.mundi_filler;
+/** [expanded] After a group turn: the "Send if empty" lines are hidden (SillyTavern leaves hidden lines out of the prompt).
+ *  During the turn the last one is needed (Gemini and others refuse a request that ends with the model's turn); after
+ *  it they only piled up in the history the story model reads every time. Lines from before they were marked are
+ *  found by their text (the preset's "Send if empty"). Never the last line, and only lines in your name. */
+export async function hideFillers() {
+    const list = chat();
+    if (!list.length)
+        return;
+    const f = String(ctx().chatCompletionSettings?.send_if_empty ?? '').trim();
+    const idx = [];
+    for (let i = 0; i < list.length - 1; i++) {
+        const m = list[i];
+        if (!m?.is_user || m.is_system)
+            continue;
+        if (m.extra?.mundi_filler || (f && String(m.mes ?? '').trim() === f))
+            idx.push(i);
+    }
+    // in runs, one /hide each
+    for (let k = 0; k < idx.length;) {
+        let e = k;
+        while (e + 1 < idx.length && idx[e + 1] === idx[e] + 1)
+            e++;
+        await hideMessages(idx[k], idx[e]);
+        k = e + 1;
+    }
+    if (idx.length)
+        console.info(`[Mundi Expanded] hid ${idx.length} "Send if empty" line(s) from the prompt`);
+}
 // A save's name. No ":" in it: on Windows the file is saved without it, and SillyTavern then cannot find the chat
 // by the name it keeps in the group (a save made like that could not be loaded).
 export const saveName = (suffix = '') => `Mundi ${new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', 'h')}${suffix}`;
