@@ -399,7 +399,7 @@ export async function quiet(prompt: string, responseLength = 300, systemPrompt =
     const ask = async (len: number) => String(await ctx().generateRaw({ prompt, systemPrompt, responseLength: len }) ?? '')
         .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
     try {
-        const out = await ask(Math.max(responseLength, 1000));
+        const out = await ask(Math.max(responseLength, 2000));   // [expanded] 1000 was eaten by thinking (high reasoning effort)
         if (out) return out;
     } catch (e: any) { if (!/no message generated|empty/i.test(String(e?.message ?? e))) throw e; }
     return ask(Math.min(Math.max(responseLength * 2, 3000), 4000));   // one more try, with more room (models that think first)

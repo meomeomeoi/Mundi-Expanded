@@ -9,6 +9,7 @@
 //  - Dinner together is a rule of the house (on by default): whoever is home and awake eats with the others.
 //
 // Pure logic (no SillyTavern), tested on its own; the hook into upstream's routine in life.ts, the editor in lifeui.ts.
+import { looseJson } from './jsonfix.js';
 
 export type Kind = 'sleep' | 'room' | 'common' | 'out' | 'meal';
 export type Where = 'room' | 'common' | string;   // a room id is a specific room
@@ -113,8 +114,8 @@ Rules for "acts": at most two may be about their main hobby or trait; the rest m
 }
 /** The model's answer → a profile (null when it is not usable). */
 export function parseProfile(text: string, rooms: string[]): Profile | null {
-    const m = String(text ?? '').match(/\{[\s\S]*\}/); if (!m) return null;
-    try { const x = JSON.parse(m[0]); if (typeof x !== 'object' || !x) return null; const p = cleanProfile(x, rooms, 'gen'); return p.acts.length ? p : null; } catch { return null; }
+    const x = looseJson(text); if (typeof x !== 'object' || !x) return null;
+    const p = cleanProfile(x, rooms, 'gen'); return p.acts.length ? p : null;
 }
 
 /* ---------- the day ---------- */

@@ -27,7 +27,7 @@ async function react(g: Save, w: WorldDef, it: D.Intrusion, avatar: string, caug
     try {
         const { bgAsk } = await import('./regulator.js');
         const c: any = charOf(avatar);
-        const ans = await bgAsk(D.reactPrompt({ name: r.name, persona: personalityOf(c?.description ?? '', c?.personality ?? '', 600), you: personaName(), bond: bondLabel(g, avatar).toLowerCase(), partner: isPartner(g, avatar), caught, minutes, lines: linesSince(it.from) }), 200, D.REACT_SYSTEM);
+        const ans = await bgAsk(D.reactPrompt({ name: r.name, persona: personalityOf(c?.description ?? '', c?.personality ?? '', 600), you: personaName(), bond: bondLabel(g, avatar).toLowerCase(), partner: isPartner(g, avatar), caught, minutes, lines: linesSince(it.from) }), 1500, D.REACT_SYSTEM);
         re = D.parseReaction(ans) ?? re;
     } catch (e) { console.warn('[Mundi Expanded] intrusion', e); }
     const delta = caught ? re.delta : Math.min(0, Math.round(re.delta / 2));

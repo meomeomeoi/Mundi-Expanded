@@ -167,7 +167,7 @@ export async function makeProfile(g, w, avatar, useModel = true) {
     if (useModel) {
         try {
             const { bgAsk } = await import('./regulator.js');
-            const ans = await bgAsk(P.profilePrompt(r?.name ?? '', text, rooms), 400, P.PROFILE_SYSTEM);
+            const ans = await bgAsk(P.profilePrompt(r?.name ?? '', text, rooms), 2500, P.PROFILE_SYSTEM);
             const p = P.parseProfile(ans, ids);
             if (p)
                 return p;

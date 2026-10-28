@@ -8,6 +8,8 @@
 //    for a partner or someone very close (friendship 60+), and costs a little unless you are together.
 //  - Nobody in: a partner, or someone who gave you a key, lets themselves in; anyone else does not (part 4: break in).
 
+import { looseJson } from './jsonfix.js';
+
 export type Answer = 'in' | 'door' | 'no' | 'asleep';
 export interface Who { bond: number; partner: boolean; key: boolean; social: number; grudge: boolean }
 export const WAKE_BOND = 60, WOKEN_MIN = 120;
@@ -60,9 +62,8 @@ ${o.lines || '(nothing in particular was described)'}
 How does ${o.name} take it, in character? JSON: {"severity": 0-3 (0 does not mind, 3 deeply violated), "delta": change to how close they are, -15 to 2, "feeling": a short phrase for how ${o.name} feels toward ${o.you} now (like "Hurt: read their diary"), "reaction": one sentence on how ${o.name} reacts}`;
 }
 export function parseReaction(text: string): Reaction | null {
-    const m = String(text ?? '').match(/\{[\s\S]*\}/); if (!m) return null;
     try {
-        const x = JSON.parse(m[0]);
+        const x = looseJson(text); if (!x || typeof x !== 'object') return null;
         const severity = Math.max(0, Math.min(3, Math.round(Number(x.severity))));
         const delta = Math.max(-15, Math.min(2, Math.round(Number(x.delta))));
         if (!Number.isFinite(severity) || !Number.isFinite(delta)) return null;

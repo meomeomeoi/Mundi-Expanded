@@ -450,7 +450,7 @@ export async function quiet(prompt, responseLength = 300, systemPrompt = '') {
     const ask = async (len) => String(await ctx().generateRaw({ prompt, systemPrompt, responseLength: len }) ?? '')
         .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
     try {
-        const out = await ask(Math.max(responseLength, 1000));
+        const out = await ask(Math.max(responseLength, 2000)); // [expanded] 1000 was eaten by thinking (high reasoning effort)
         if (out)
             return out;
     }

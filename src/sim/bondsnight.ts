@@ -49,7 +49,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     if (convo.length > 12000) convo = convo.slice(-12000);
     if (spoke.length < 2 && b.life === 'off') { b.lastNight = day; return []; }
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life });
-    const raw = await bgAsk(prompt, 700, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
+    const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
     const changes: Change[] = [];

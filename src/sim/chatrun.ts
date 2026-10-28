@@ -47,8 +47,8 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
     const x = chatsOf(g); let ans = '';
     TYPING.chat = c.id; TYPING.who = ws.map(r => r.avatar); notify();
     try {
-        if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); ans = await bgAsk(prompt, 400, C.CHAT_SYSTEM); }
-        else ans = await quiet(prompt, 400, C.CHAT_SYSTEM);
+        if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); ans = await bgAsk(prompt, 2500, C.CHAT_SYSTEM); }
+        else ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
     } catch (e) { console.warn('[Mundi Expanded] group chat', e); }
     finally { TYPING.chat = ''; TYPING.who = []; }
     const lines = C.parseChat(ans, ws.map(r => ({ avatar: r.avatar, name: r.name })));

@@ -54,10 +54,10 @@ export async function write(g, w, c, writers, topic = '', news = []) {
     try {
         if (x.writer === 'mech') {
             const { bgAsk } = await import('./regulator.js');
-            ans = await bgAsk(prompt, 400, C.CHAT_SYSTEM);
+            ans = await bgAsk(prompt, 2500, C.CHAT_SYSTEM);
         }
         else
-            ans = await quiet(prompt, 400, C.CHAT_SYSTEM);
+            ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
     }
     catch (e) {
         console.warn('[Mundi Expanded] group chat', e);

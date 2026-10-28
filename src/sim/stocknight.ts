@@ -51,7 +51,7 @@ async function readLines(g: Save, text: string, fallback: boolean): Promise<S.Ch
     if (!text.trim()) return [];
     const you = personaName();
     const extra = [...M.MONEY_READ, ...(M.moneyOn(g as any) ? M.MONEY_READ_PAY : []), M.ATTACH_NOTE];
-    const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 400, S.READ_SYSTEM, fallback);
+    const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 1500, S.READ_SYSTEM, fallback);
     if (!raw) return [];
     const changes = S.applyRead(G(g), S.parseRead(G(g), raw, you), you);
     const mops = M.parseMoney(g as any, raw, you, s => S.personOf(G(g), s, you));
