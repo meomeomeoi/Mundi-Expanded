@@ -99,6 +99,8 @@ function follow() {
         patchLastLine(); });
     on('MESSAGE_SENT', (id) => { const m = globalThis.SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user)
         void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
+    // [expanded] the regulator reads the exchange that just ended (when a mechanics model is set)
+    on('MESSAGE_SENT', (id) => { void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });
     // Home: time passes with every message you send (Settings › This save can turn it off)
     on('MESSAGE_SENT', async (id) => {
         const m = globalThis.SillyTavern?.getContext?.().chat?.[id];

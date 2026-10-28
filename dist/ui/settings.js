@@ -14,6 +14,7 @@ import { feedPrefs } from '../sim/feed.js';
 import { setSkin } from './skins.js';
 import { addonsTab } from './addons.js';
 import { lookPanelHtml, lookConfirmHtml } from './chatlook.js';
+import { regulatorSettingsHtml } from './regui.js'; // [expanded]
 import { DATE_FORMATS, fmtDate, fmtDateTime, fmtClock } from '../core/fmt.js';
 // Fonts: Mundi's default, the system's, or one of these (the world's style font is used when "world" is chosen).
 export const FONTS = [['default', 'Mundi (Nunito)', ''], ['system', 'System', 'system-ui, "Segoe UI", sans-serif'], ['inter', 'Inter', '"Inter", sans-serif'],
@@ -62,6 +63,7 @@ function tabGame() {
             <label class="mu-check"><input type="checkbox" data-input="set-openstart" ${settings().openOnStart ? 'checked' : ''}><span>Open Mundi when SillyTavern starts</span></label></section>
         <section><h3>Diary</h3>
             <label class="mu-check"><input type="checkbox" data-input="set-diary" ${settings().diaryOnSleep !== false ? 'checked' : ''}><span>Write the day in the diary when you sleep<small>One AI call per night: the day's facts and conversations become a short first-person entry in the Journal, and the story remembers the past days through it.</small></span></label></section>
+        ${regulatorSettingsHtml() /* [expanded] */}
         <section><h3>Background</h3>
             <label class="mu-field"><span>When you move between places</span><select data-input="set-bgfollow">${[['mundi', 'Only Mundi\'s scene changes picture'], ['chat', 'SillyTavern\'s chat background follows the place too']].map(([v, l]) => `<option value="${v}" ${(settings().bgFollow ?? 'mundi') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></section>
         <section><h3>Phone</h3>

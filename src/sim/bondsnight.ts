@@ -2,7 +2,8 @@
 // AI call, the daily drift, and what is sent with each scene. Only in Home (a scenario world).
 import { saveGame, type Save } from '../core/store.js';
 import { isScenario, type WorldDef } from '../core/world.js';
-import { chat, quiet, personaName, charOf } from '../st/bridge.js';
+import { chat, personaName, charOf } from '../st/bridge.js';
+import { bgAsk } from './regulator.js';
 import { onDay } from './hooks.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
@@ -44,7 +45,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     if (convo.length > 12000) convo = convo.slice(-12000);
     if (spoke.length < 2 && b.life === 'off') { b.lastNight = day; return []; }
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life });
-    const raw = await quiet(prompt, 700, NIGHT_SYSTEM);
+    const raw = await bgAsk(prompt, 700, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
     const changes: Change[] = [];
     for (const p of parseNight(raw, people, b.life)) {
         // scene moments are only between people who were in today's scenes

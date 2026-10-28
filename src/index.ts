@@ -87,6 +87,8 @@ function follow() {
     on('GROUP_WRAPPER_FINISHED', done);
     on('STREAM_TOKEN_RECEIVED', () => { if (state.open && state.view === 'scene') patchLastLine(); });
     on('MESSAGE_SENT', (id: number) => { const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user) void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
+    // [expanded] the regulator reads the exchange that just ended (when a mechanics model is set)
+    on('MESSAGE_SENT', (id: number) => { void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });
     // Home: time passes with every message you send (Settings › This save can turn it off)
     on('MESSAGE_SENT', async (id: number) => {
         const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id];
