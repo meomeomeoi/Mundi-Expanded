@@ -17,6 +17,7 @@ import { showTransition } from './lifeui.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 import { backHome } from '../sim/stocknight.js'; // [expanded]
+import { outPlacesHtml } from './outplaces.js'; // [expanded]
 export const OD = { open: false, bgOnly: false, place: '', with: [], bg: '', q: '', back: false, miss: false };
 export const bgStyle = (file) => (file ? `background-image:url('${bgHref(file)}');background-size:cover;background-position:center` : '');
 // Who can come: the people you know who are in the house now.
@@ -44,6 +45,7 @@ export function outingHtml() {
         return `<div class="mu-dlg-veil" data-act="out-close"></div><div class="mu-panel mu-scpick mu-glassdlg mu-outdlg" role="dialog"><header><h3>Background</h3><button class="mu-ibtn mu-ghost" data-act="out-close" aria-label="Close">${icon('x')}</button></header>${grid}
         <div class="mu-row mu-dlg-btns"><button data-act="out-close">Cancel</button><button class="mu-primary" data-act="out-bg-save">Use it</button></div></div>`;
     return `<div class="mu-dlg-veil" data-act="out-close"></div><div class="mu-panel mu-scpick mu-glassdlg mu-outdlg" role="dialog"><header><h3>${icon('map')} Go out</h3><button class="mu-ibtn mu-ghost" data-act="out-close" aria-label="Close">${icon('x')}</button></header>
+        ${outPlacesHtml() /* [expanded] saved and starter places */}
         <label class="mu-field mu-out-place ${OD.miss ? 'is-missing' : ''}"><span>Where are you going?</span><input type="text" maxlength="80" data-input="out-place" data-focus="outplace" placeholder="${styleOf(w) === 'medieval' ? 'the market square, the village tavern, the riverbank…' : 'the beach, a café downtown, the cinema…'}" value="${esc(OD.place)}">${OD.miss ? '<small class="mu-miss-note">Write where you are going first.</small>' : ''}</label>
         <div class="mu-field"><span>Who comes with you</span>${people.length ? `<div class="mu-out-people">${people.map(p => `<button class="mu-chip ${OD.with.includes(p.avatar) ? 'is-on' : ''}" data-act="out-with" data-who="${esc(p.avatar)}"><img src="${esc(thumb(p.avatar))}" alt=""><span data-notr>${esc(p.name)}</span></button>`).join('')}</div>` : '<small class="mu-muted">Nobody you know is in the house right now: you go alone.</small>'}</div>
         <div class="mu-field"><span>Background</span>${grid}</div>
