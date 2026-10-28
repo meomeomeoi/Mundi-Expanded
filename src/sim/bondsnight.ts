@@ -42,6 +42,10 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     const spoke = [...new Set(msgs.filter((m: any) => !m.is_user && names.has(String(m.name ?? ''))).map((m: any) => String(m.name)))]
         .map(n => people.find(p => p.name === n)!.avatar);
     let convo = msgs.map((m: any) => `${m.is_user ? me : m.extra?.mundi_narrator ? 'Narrator' : m.name}: ${clean(m.mes).slice(0, 400)}`).slice(-80).join('\n');
+    // the day's group chats count too (on their phones): what was written there can change how they get along
+    { const { chatsOf, nameOf } = await import('./chatrun.js'); const { dayLines } = await import('./chats.js');
+      const d = dayLines(chatsOf(g).chats, day * 1440, (day + 1) * 1440 + 12 * 60, (by) => (by === 'me' ? me : nameOf(g, by)));
+      if (d.lines.length) { convo += `${convo ? '\n' : ''}[On their phones, in group chats today (not face to face):]\n${d.lines.join('\n')}`; for (const a of d.authors) if (!spoke.includes(a) && people.some(p => p.avatar === a)) spoke.push(a); } }
     if (convo.length > 12000) convo = convo.slice(-12000);
     if (spoke.length < 2 && b.life === 'off') { b.lastNight = day; return []; }
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life });

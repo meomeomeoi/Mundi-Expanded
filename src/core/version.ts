@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.4';
+export const VERSION = '0.2.0.5';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,13 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.5', fork: true, title: 'The phone and the chats', items: [
+        ['phone', 'Three phones: the smartphone, a keypad phone and a PDA, with working keys. And an era for the house (today, the early 2010s, the 2000s): written into the game\'s lorebook, and texting follows it.'],
+        ['chat', 'The house group chat: write to everyone, and whoever feels like it answers. Make your own groups of two to four.'],
+        ['users', 'They talk without you: about the film they saw, a fight, the empty fridge… (Off, Quiet, Calm, Lively). Sometimes it is "movie night at 9, who\'s in?", and you can answer.'],
+        ['heart', 'Texts remember what was said face to face a few minutes ago (only by those who were there), and the scene knows what was texted.'],
+        ['moon', 'Close friends may start a chat of their own without you. You never read it, but they talk there, and it shows.'],
+    ] },
     { v: '0.2.0.4', fork: true, title: 'Life in the house', items: [
         ['calendar', 'Each person can have a profile: when they sleep, how much they keep to their room, the rooms they like and what they do. Made from their card (you are asked once at the start), edited in This world → People on a 24-hour strip.'],
         ['users', 'People are drawn to the friends they like and keep away from the ones they cannot stand; dinner together is a house rule (phone Settings). The scene knows what everyone in the house is doing right now.'],

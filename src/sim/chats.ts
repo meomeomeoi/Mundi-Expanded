@@ -156,3 +156,12 @@ export function hiddenTrio(people: string[], value: (a: string, b: string) => nu
     return roll('trio') < 0.2 ? trios[Math.floor(roll('which') * trios.length)] : null;
 }
 export function note(c: Chat, day: number, text: string) { (c.notes ??= []).push({ day, text: text.slice(0, 240) }); if (c.notes.length > 5) c.notes.splice(0, c.notes.length - 5); }
+
+/** For the night's reading: the day's group chat messages ("[Chat] Name: text") and who wrote, and their own chats' lines. */
+export function dayLines(chats: Chat[], from: number, to: number, nameOf: (by: string) => string): { lines: string[]; authors: string[] } {
+    const lines: string[] = []; const authors = new Set<string>();
+    for (const c of chats) {
+        if (c.you) for (const m of c.msgs.filter(x => x.at >= from && x.at < to)) { lines.push(`[${c.name} chat] ${nameOf(m.by)}: ${m.text.slice(0, 300)}`); if (m.by !== ME) authors.add(m.by); }
+    }
+    return { lines: lines.slice(-60), authors: [...authors] };
+}

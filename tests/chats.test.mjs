@@ -76,4 +76,11 @@ test('their own chats: only three who are all close, one chat per trio, at most 
     const c = { id: 'x', name: '', members: [], you: false, msgs: [] }; for (let i = 0; i < 8; i++) C.note(c, i, `n${i}`); assert.equal(c.notes.length, 5); assert.equal(c.notes[0].text, 'n3');
 });
 
+test('the night reads the day\'s chats you are in (not theirs, not other days)', () => {
+    const a = { id: 'house', name: 'House', members: ['k'], you: true, msgs: [{ by: 'k', text: 'hi', at: 1500 }, { by: 'me', text: 'yo', at: 1510 }, { by: 'k', text: 'old', at: 100 }] };
+    const b = { id: 'x', name: 'Theirs', members: ['k', 'f'], you: false, msgs: [{ by: 'f', text: 'secret', at: 1500 }] };
+    const d = C.dayLines([a, b], 1440, 2880, (by) => (by === 'me' ? 'Gleb' : by.toUpperCase()));
+    assert.deepEqual(d.lines, ['[House chat] K: hi', '[House chat] Gleb: yo']); assert.deepEqual(d.authors, ['k']);
+});
+
 console.log(`chats: ${n} tests passed`);

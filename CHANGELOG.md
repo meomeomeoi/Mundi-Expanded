@@ -1,5 +1,27 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.5 · 2026-10-28
+
+- **Era** (Home, phone Settings): today, the early 2010s or the 2000s. One entry of its own in the game's lorebook
+  (nothing else there is touched; without a lorebook the scene gets the line); texts follow it (the 2000s: short SMS,
+  abbreviations, no emoji); it suggests a phone.
+- **Phone skins**: a keypad phone (colour LCD, 3x3 menu, SMS lines, a keypad with working Menu / Back / up-down / green
+  / red keys) and a PDA (Pocket-PC screen, Start taskbar, the Today list, ICQ-like messages, hardware buttons). Every
+  app works the same in each.
+- **The bridge**: texts (private and group) know the last lines said face to face in scenes that person was in (where,
+  when, who was there); the scene knows what the people here texted and wrote in chats lately.
+- **Group chats**: the house's chat (everyone and you) and your own groups (two to four people). Who answers is
+  decided by rules (asked by name, how social and close, a question to all; nobody asleep, nobody next to the
+  author), then one AI call writes their messages. Written by the main model (default) or the mechanics model.
+- **Conversations without you**: Off / Quiet (0-1 a day) / Calm (1-2, default) / Lively (2-3), about what happened
+  (a plan that is over, a fight, the fridge, money, something light). **Calls for everyone** ("movie night at 9,
+  who's in?"): answers decided first, then written; you answer with buttons or by writing it.
+- **Their own chats**: three close friends may start a chat without you; you never read it, but conversations happen
+  there (a line of what about, a little closeness) and the scene can refer to it.
+- The night's reading of the day includes the group chats.
+- Tests: era 4, chats 11.
+
+
 ## Mundi Expanded 0.2.0.4 · 2026-10-28
 
 - **Profiles** (Home): when a character sleeps (later at the weekend), how much of their free time they spend with

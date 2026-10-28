@@ -87,6 +87,14 @@ their room; doors ignored the time, and nobody was ever asleep.
   outranked, sometimes just no, with another time suggested).
 - The sprite menu as a ring that stays on screen; money: your share of the house fund.
 
+## 5. The phone and the chats (0.2.0.5)
+
+- Era (lorebook entry, texting voice, a suggested phone) and phone skins (keypad, PDA).
+- The bridge between the live scene and the phone, both ways, by who was there.
+- Group chats: the house's, your own groups, and the characters' own (summaries only).
+- Conversations without you from the simulation's events, and calls for everyone with rule-decided answers.
+- Later: computer skins for the era, an app renaming per era, private messages starting on their own.
+
 ## Later (discussed, not designed yet)
 
 - **Traits in Home** (Proficiency, Personality, Interests): today they only reach the prompt when the persona is
@@ -96,13 +104,8 @@ their room; doors ignored the time, and nobody was ever asleep.
 - **Off-screen lives**: a daily agenda for each character, so they really leave (the grocery run is an absence of an
   hour, and the food arrives when they come back), meet people outside, and make plans with each other from their
   relationships (the same machinery as upstream's plans, without you).
-- **The house chat** instead of Chirp (Chirp is a Twitter feed written from the card alone, off in Home, and never
-  grounded in what happened): a group chat written from the simulation's events (the night's episodes, shopping,
-  errands, plans), the last lines sent to the scene; you can answer, and "buy me milk" becomes an errand.
-- **Eras and device skins**: upstream already switches the whole device (`deviceLook`: phone / journal). An era
-  package for a 2000s–2010s Home: a flip phone, a PDA or a CRT computer with an ICQ-like window, text messages without
-  emoji, app names of the time, and a line telling the AI the year and that there are no smartphones. A computer as a
-  thing in a room rather than a phone skin.
+- **Errands from the chat**: "buy me milk" in a chat becoming an errand (the mechanics reader does it for scenes).
+- **Computers for the era**: a CRT computer with an ICQ-like window, as a thing in a room.
 - **Rooms and their things**: things per room (yours and each character's) that unlock actions there (a PC: games,
   freelance, the chat; a guitar, an easel), change the owner's routine (the gamer stays in with the PC) and describe
   the room to the AI. Set up front in the Home setup, bought with money, and bought by characters themselves at
