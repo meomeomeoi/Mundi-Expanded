@@ -10,6 +10,7 @@ import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
 import { houseNotes, presentNotes } from './lifehooks.js';
+import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
 const G = (g) => g;
 const FREE_TAGS = ['leisure', 'food', 'sport', 'outdoor'];
@@ -125,6 +126,7 @@ export function lifeLines(g, w, present) {
     }
     for (const f of presentNotes)
         out.push(...f(g, w, present));
+    out.push(...textedLines(g, present));
     const elsewhere = houseNow(g, w, present);
     if (elsewhere)
         out.push(elsewhere);

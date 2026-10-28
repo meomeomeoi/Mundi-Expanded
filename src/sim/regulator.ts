@@ -68,6 +68,8 @@ let busy = false;
 // The player sent a message (index `id`): what came before it, since the last read, is settled; read it.
 export async function onUserMessage(id: number) {
     const g = game(); const w = g && getWorld(g.world);
+    // the bridge: where you were and who was with you for this message (Home only)
+    if (g && w && isScenario(w)) { try { const { noteScene } = await import('./livelog.js'); const { presentAt } = await import('./people.js'); noteScene(g, id, g.player.loc, presentAt(g, w, g.player.loc).map(r => r.avatar)); } catch { /* not in a scene */ } }
     if (!g || !w || !isScenario(w) || !perMessage() || !onExchange.length || busy) return;
     const list = chat(); const m = list[id];
     if (!m?.is_user) return;

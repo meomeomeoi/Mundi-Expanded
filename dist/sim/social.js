@@ -1,6 +1,7 @@
 // Relationships, meet-ups and text messages. Bond grows when you talk to someone (in a scene or by phone);
 // a meet-up puts her at a place you chose for two hours; at a high bond you can ask her to be your partner.
 import { eraTextLine } from './era.js'; // [expanded]
+import { liveDigest } from './livelog.js'; // [expanded]
 import { notify, nowAbs, cfg } from '../core/store.js';
 import { messageKind, aiVoice, isScenario, getWorld } from '../core/world.js';
 import { difficultyOf } from './bills.js';
@@ -92,6 +93,7 @@ function textTranscript(g, w, r, note = '') {
         `[${r.name}: ${about}${c?.personality ? ` Personality: ${String(c.personality).replace(/\s+/g, ' ').slice(0, 300)}` : ''}]`,
         `[Each ${letters ? 'letter' : 'message'} is short (one to three sentences), ${aiVoice(w)}, written in ${aiLangName(g.lang)}, and answers the ${letters ? 'letter' : 'message'} right before it.]`,
         ...(eraTextLine(g) ? [`[${eraTextLine(g)}]`] : []), // [expanded] the era
+        ...(() => { const d = liveDigest(g, w, [r.avatar]); return d ? [d] : []; })(), // [expanded] what was said face to face
         ...thread.slice(-14).map(t => `${t.me ? me : r.name}: ${t.text.replace(/\s+/g, ' ')}`),
         ...(note ? [`[${note}]`] : []),
     ].join('\n');

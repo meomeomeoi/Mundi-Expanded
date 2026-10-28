@@ -66,6 +66,15 @@ let busy = false;
 export async function onUserMessage(id) {
     const g = game();
     const w = g && getWorld(g.world);
+    // the bridge: where you were and who was with you for this message (Home only)
+    if (g && w && isScenario(w)) {
+        try {
+            const { noteScene } = await import('./livelog.js');
+            const { presentAt } = await import('./people.js');
+            noteScene(g, id, g.player.loc, presentAt(g, w, g.player.loc).map(r => r.avatar));
+        }
+        catch { /* not in a scene */ }
+    }
     if (!g || !w || !isScenario(w) || !perMessage() || !onExchange.length || busy)
         return;
     const list = chat();

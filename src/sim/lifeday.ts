@@ -10,6 +10,7 @@ import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
 import { houseNotes, presentNotes } from './lifehooks.js';
+import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
 
 const G = (g: Save) => g as unknown as P.GLike;
@@ -91,6 +92,7 @@ export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit!.avatar)) { const n = g.cast[lx.visit.avatar]?.name; out.push(`Late at night ${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`); }
     for (const r of present) { const t = lx.woke?.[r.avatar]; if (t && t > now && t - now > 60) out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`); }
     for (const f of presentNotes) out.push(...f(g, w, present));
+    out.push(...textedLines(g, present));
     const elsewhere = houseNow(g, w, present);
     if (elsewhere) out.push(elsewhere);
     return out;
