@@ -145,6 +145,17 @@ blocks for the house, notes and texts, the phone skins redrawn.
   it, and it travels along the ties, sometimes distorted); jealousy (romance with one hurts the pair of the two who
   care); couples between characters growing out of their value; unresolved fights that do not drift away until they
   are talked about in a scene; opinions about your partner.
+  - **Who knows what.** Today the AI hears about a pair only when one of the two is in the scene (the others never
+    learn that Masha and Leah are dating, nor that you are with Masha, unless she is there). Ties by how public they
+    are: known to the whole house (family, couples, exes, roommates, your partner), known to whoever saw it or was
+    told (fights, enmities, a crush), private (secrets). Sent for the people here, absent pairs included; the cards
+    only say what their own author wrote, and an absent character's card is not in the prompt at all.
+  - **Witnesses of the day.** In a Home the day's lines stay in the chat until you sleep (walking room to room is one
+    scene), so the model has read conversations the people here never heard. Each stretch keeps who was there, and
+    the prompt says "earlier today, in Masha's room, only Masha and {{user}} were there: the others do not know what
+    was said unless told".
+  - **Privacy in the scene**: "alone in her room, the door closed: nobody can overhear" against "five people here: side
+    conversations, not everyone hears everything".
 - **Cooking**: recipes, ingredients from the inventory.
 
 Each of these gets discussed and designed before any code.
