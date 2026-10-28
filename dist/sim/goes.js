@@ -8,7 +8,19 @@ import { nowAbs } from '../core/store.js';
 import { social } from './social.js';
 import { OUT } from './people.js';
 import { ownRoom } from './lifeday.js';
+import { placeOn, extraRooms } from './places.js';
+import { personaName } from '../st/bridge.js';
 export const GONE_MIN = 60;
+/** Where someone can walk off to in the house: every room of this game (common rooms, the bathroom, the laundry, the
+ *  garage…, rooms of your own too) and everyone's bedroom ("Masha's room": going to see her; their own is "own room"). */
+export function movePlaces(g, w) {
+    const rooms = [...w.places.filter(p => !p.link && !p.home && placeOn(g, w, p.id)), ...extraRooms(g).filter(p => !p.link)]
+        .map(p => ({ id: p.id, name: p.name }));
+    const beds = [{ id: 'home:player', name: `${personaName()}'s room` }, ...Object.values(g.cast).map(r => ({ id: ownRoom(r), name: `${r.name}'s room` }))];
+    const seen = new Set();
+    return [...rooms, ...beds].filter(p => { const k = `${p.id}|${p.name}`; if (seen.has(k))
+        return false; seen.add(k); return true; });
+}
 const wentOf = (g) => (social(g).went ??= {});
 const followedOf = (g) => (social(g).followed ??= {});
 /** Undoes what the line `line` did (a swipe of it is read again). */
@@ -61,7 +73,8 @@ export function applyMoves(g, w, line, moves, follows) {
         s.with = s.with.filter((c) => c.avatar !== a);
         if (locked)
             s.lock.who = s.lock.who.filter((x) => x !== a);
-        out.push(loc === OUT ? `${r.name} left the house.` : dest === 'own' ? `${r.name} went to their room.` : `${r.name} went to the ${placeName(loc).toLowerCase()}.`);
+        const bed = loc.startsWith('home:') ? (loc === 'home:player' ? 'your room' : `${g.cast[loc.slice(5)]?.name ?? 'someone'}'s room`) : '';
+        out.push(loc === OUT ? `${r.name} left the house.` : dest === 'own' ? `${r.name} went to their room.` : bed ? `${r.name} went to ${bed}.` : `${r.name} went to the ${placeName(loc).toLowerCase()}.`);
     }
     for (const a of follows) {
         const r = g.cast[a];

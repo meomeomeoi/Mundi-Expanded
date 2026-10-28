@@ -9,8 +9,20 @@ import type { WorldDef } from '../core/world.js';
 import { social } from './social.js';
 import { OUT } from './people.js';
 import { ownRoom } from './lifeday.js';
+import { placeOn, extraRooms } from './places.js';
+import { personaName } from '../st/bridge.js';
 
 export const GONE_MIN = 60;
+
+/** Where someone can walk off to in the house: every room of this game (common rooms, the bathroom, the laundry, the
+ *  garage…, rooms of your own too) and everyone's bedroom ("Masha's room": going to see her; their own is "own room"). */
+export function movePlaces(g: Save, w: WorldDef): { id: string; name: string }[] {
+    const rooms = [...w.places.filter(p => !(p as any).link && !(p as any).home && placeOn(g, w, p.id)), ...extraRooms(g).filter(p => !(p as any).link)]
+        .map(p => ({ id: p.id, name: p.name }));
+    const beds = [{ id: 'home:player', name: `${personaName()}'s room` }, ...Object.values(g.cast).map(r => ({ id: ownRoom(r), name: `${r.name}'s room` }))];
+    const seen = new Set<string>();
+    return [...rooms, ...beds].filter(p => { const k = `${p.id}|${p.name}`; if (seen.has(k)) return false; seen.add(k); return true; });
+}
 interface Went { loc: string; until: number; line: number; locked?: boolean; withWas?: { avatar: string; until: number } }
 interface Followed { line: number }
 const wentOf = (g: Save) => (((social(g) as any).went ??= {}) as Record<string, Went>);
@@ -46,7 +58,8 @@ export function applyMoves(g: Save, w: WorldDef, line: number, moves: Record<str
         went[a] = { loc, until: now + GONE_MIN, line, ...(locked ? { locked } : {}), ...(withWas ? { withWas: { ...withWas } } : {}) };
         s.with = s.with.filter((c: any) => c.avatar !== a);
         if (locked) s.lock.who = s.lock.who.filter((x: string) => x !== a);
-        out.push(loc === OUT ? `${r.name} left the house.` : dest === 'own' ? `${r.name} went to their room.` : `${r.name} went to the ${placeName(loc).toLowerCase()}.`);
+        const bed = loc.startsWith('home:') ? (loc === 'home:player' ? 'your room' : `${g.cast[loc.slice(5)]?.name ?? 'someone'}'s room`) : '';
+        out.push(loc === OUT ? `${r.name} left the house.` : dest === 'own' ? `${r.name} went to their room.` : bed ? `${r.name} went to ${bed}.` : `${r.name} went to the ${placeName(loc).toLowerCase()}.`);
     }
     for (const a of follows) {
         const r = g.cast[a]; if (!r || went[a] || s.with.some((c: any) => c.avatar === a)) continue;

@@ -159,8 +159,7 @@ function background(g, w) {
 }
 import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM } from '../sim/exprs.js'; // [expanded]
-import { applyMoves } from '../sim/goes.js'; // [expanded]
-import { commonRooms } from '../sim/lifeday.js'; // [expanded]
+import { applyMoves, movePlaces } from '../sim/goes.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
@@ -490,7 +489,7 @@ function byModel(list) {
     // [expanded] in the house, the same call says who walked off and who goes along with you (sim/goes.ts), for the
     // newest turn only (a line read again after a swipe undoes what its old text did)
     const newestLine = list.indexOf(pending[0]);
-    const places = isScenario(w) && newestLine === list.length - 1 ? commonRooms(g, w) : undefined;
+    const places = isScenario(w) && newestLine === list.length - 1 ? movePlaces(g, w) : undefined;
     const prompt = exprPrompt({ people, you: personaName(), lines, places });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
