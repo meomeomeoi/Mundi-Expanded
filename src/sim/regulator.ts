@@ -12,11 +12,11 @@ import { ctx, quiet, chat, answerText } from '../st/bridge.js';
 
 export type RegMode = 'message' | 'night';
 interface Stats { day: string; calls: number; tin: number; tout: number; fails: number }
-interface RegCfg { profile: string; mode: RegMode; stats: Stats; /** facial expressions: SillyTavern's classifier, or a model for everyone in the scene */ expr: 'st' | 'mech' | 'main'; /** group turns: everyone here's cards joined (cacheable) instead of the speaker's */ joinCards: boolean }
+interface RegCfg { profile: string; mode: RegMode; stats: Stats; /** facial expressions: SillyTavern's classifier, or a model for everyone in the scene */ expr: 'st' | 'mech' | 'main'; /** group turns: everyone here's cards joined (cacheable) instead of the speaker's */ joinCards: boolean; /** how much the mechanics model may think: its least (default), low, or its own default */ think: 'min' | 'low' | 'auto' }
 const today = () => new Date().toISOString().slice(0, 10);
 export const regCfg = (): RegCfg => {
     const s = settings() as any; s.regulator ??= {};
-    const r = s.regulator; r.profile ??= ''; r.mode ??= 'message'; r.expr ??= 'st'; r.joinCards ??= false;
+    const r = s.regulator; r.profile ??= ''; r.mode ??= 'message'; r.expr ??= 'st'; r.joinCards ??= false; r.think ??= 'min';
     if (!r.stats || r.stats.day !== today()) r.stats = { day: today(), calls: 0, tin: 0, tout: 0, fails: 0 };
     return r as RegCfg;
 };
@@ -34,6 +34,19 @@ export const perMessage = () => regOn() && regCfg().mode === 'message';
 
 const clean = (t: unknown) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
 
+// [expanded] How much the mechanics model may think. Background calls go without the chat preset (so its reasoning
+// setting never reached them) and a thinking model then thinks at its own default: 600 tokens of hidden thinking for a
+// 40-token answer. Sent only where SillyTavern passes it on as it is: OpenRouter (reasoning.effort) and Google (AI
+// Studio, Vertex: SillyTavern turns it into the model's thinking level); other APIs keep their default.
+function thinkPayload(): Record<string, string> {
+    const lvl = regCfg().think; if (lvl === 'auto') return {};
+    const p: any = ((ctx().extensionSettings?.connectionManager?.profiles ?? []) as any[]).find(x => x?.id === regCfg().profile);
+    const api = String(p?.api ?? '');
+    if (api === 'openrouter') return { reasoning_effort: lvl === 'min' ? 'minimal' : 'low' };
+    if (api === 'makersuite' || api === 'vertexai') return { reasoning_effort: lvl };
+    return {};
+}
+
 // One background call. `fallback`: when the regulator is not set (or fails), use the main model instead (night
 // calls); without it, a failed call just returns '' (per-message calls must never land on the main model).
 export async function bgAsk(prompt: string, maxTokens: number, system = '', fallback = true): Promise<string> {
@@ -41,7 +54,11 @@ export async function bgAsk(prompt: string, maxTokens: number, system = '', fall
     if (regOn()) {
         try {
             const messages = [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: prompt }];
-            const res = await service().sendRequest(regCfg().profile, messages, maxTokens, { stream: false, extractData: true, includePreset: false, includeInstruct: false });
+            const opts = { stream: false, extractData: true, includePreset: false, includeInstruct: false };
+            const think = thinkPayload();
+            let res: any;
+            try { res = await service().sendRequest(regCfg().profile, messages, maxTokens, opts, think); }
+            catch (e) { if (!Object.keys(think).length) throw e; console.warn('[Mundi Expanded] the thinking level was refused; asking again without it', e); res = await service().sendRequest(regCfg().profile, messages, maxTokens, opts); }
             const out = answerText(typeof res === 'string' ? res : res?.content ?? res);   // [expanded] content may come as parts
             st.calls++; st.tin += estTok(system) + estTok(prompt); st.tout += estTok(out); saveSettings();
             return out;
