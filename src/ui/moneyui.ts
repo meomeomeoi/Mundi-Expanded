@@ -16,8 +16,11 @@ import { runPlans } from './plans.js';
 import { syncScene } from '../sim/game.js';
 import { showTransition } from './lifeui.js';
 import * as M from '../sim/money.js';
+import { tr } from '../core/tr.js';
+import { approveAll } from '../sim/living.js';
+const fmt = (t: string, ...a: string[]) => tr(t).replace(/\{(\d)\}/g, (_, n) => a[Number(n)] ?? '');
 
-const MV = { amount: '', mode: 'normal', jobPick: '', jobName: '', jobPay: '', jobHours: '8', logs: 'wallet' as 'wallet' | 'fund' };
+const MV = { borrow: 0, amount: '', mode: 'normal', jobPick: '', jobName: '', jobPay: '', jobHours: '8', logs: 'wallet' as 'wallet' | 'fund' };
 const G = (g: Save) => g as unknown as M.GLike;
 const canEdit = (g: Save) => bondsOf(g as any).edit === true;
 const who = (g: Save, a: string) => (a === M.PLAYER ? personaName() : g.cast[a]?.name ?? a);
@@ -64,8 +67,11 @@ export function moneyApp(g: Save, w: WorldDef, header: string): string {
     const debts = h.debts;
     return `${header}<div class="mu-ph-body mu-mn">
         <div class="mu-mn-cards"><div class="mu-mn-card"><small>Your wallet</small><b>${money(w, g.player.money)}</b></div><div class="mu-mn-card${h.tight ? ' is-tight' : ''}"><small>House fund</small><b>${money(w, h.fund)}</b>${h.tight ? '<small>money is tight</small>' : ''}</div></div>
-        <section class="mu-bd-panel"><div class="mu-bd-row"><input type="number" min="1" placeholder="Amount" data-input="mn-amount" value="${esc(MV.amount)}" class="mu-mn-amount" aria-label="Amount">
-            <button data-act="mn-in">${icon('up')}<span>Into the fund</span></button><button class="mu-ghost" data-act="mn-out">${icon('down')}<span>Take</span></button></div>
+        <section class="mu-bd-panel"><small class="mu-muted">${esc(fmt('Yours in the fund: {0}', money(w, M.mineOf(G(g)))))}${M.owedToFund(G(g)) ? ` · ${esc(fmt('you owe the house {0}', money(w, M.owedToFund(G(g)))))}` : ''}</small>
+            <input type="number" min="1" inputmode="decimal" placeholder="${esc(tr('Amount'))}" data-input="mn-amount" data-focus="mnamount" value="${esc(MV.amount)}" class="mu-mn-amount" aria-label="Amount">
+            <div class="mu-mn-move"><button data-act="mn-in">${icon('up')}<span>Into the fund</span></button><button class="mu-ghost" data-act="mn-out">${icon('down')}<span>Take</span></button></div>
+            ${MV.borrow ? `<div class="mu-mn-borrow"><small>${esc(fmt('Only {0} of it is yours. The other {1} would be a loan from the house: the others will know, and putting money back pays it off first.', money(w, M.takeSplit(G(g), MV.borrow).own), money(w, M.takeSplit(G(g), MV.borrow).loan)))}</small>
+                <div class="mu-mn-move"><button class="mu-ghost" data-act="mn-borrow-no">Cancel</button><button class="mu-primary" data-act="mn-borrow-yes">${esc(fmt('Borrow {0}', money(w, M.takeSplit(G(g), MV.borrow).loan)))}</button></div></div>` : ''}
             <label class="mu-field"><span>Your grocery runs are paid from</span><select data-input="mn-payfrom"><option value="fund" ${h.payFrom === 'fund' ? 'selected' : ''}>The house fund</option><option value="wallet" ${h.payFrom === 'wallet' ? 'selected' : ''}>Your wallet</option></select></label></section>
         ${jobSection(g, w)}
         ${debts.length ? `<section class="mu-bd-panel"><b>Debts</b>${debts.map(d => `<div class="mu-st-item"><span data-notr>${esc(who(g, d.from))} owes ${esc(who(g, d.to))}${d.why ? ` · ${esc(d.why)}` : ''}</span><b>${money(w, d.amount)}</b>${canEdit(g) ? `<button class="mu-ibtn mu-ghost" data-act="mn-debtdel" data-id="${esc(d.id)}" aria-label="Forget" title="Forget">${icon('x')}</button>` : ''}</div>`).join('')}</section>` : ''}
@@ -79,7 +85,18 @@ const done = () => { saveGame(); refreshPrompt(); notify(); };
 const ctxW = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? { g, w } : null; };
 Object.assign(ACT, {
     'mn-in': () => { const c = ctxW(); if (!c) return; const why = M.contribute(G(c.g), Number(MV.amount)); if (why) { toast(why, 'info'); return; } MV.amount = ''; done(); },
-    'mn-out': () => { const c = ctxW(); if (!c) return; const why = M.withdraw(G(c.g), Number(MV.amount)); if (why) { toast(why, 'info'); return; } MV.amount = ''; done(); },
+    'mn-out': () => {
+        const c = ctxW(); if (!c) return; const why = M.withdraw(G(c.g), Number(MV.amount));
+        if (why === 'borrow') { MV.borrow = Number(MV.amount); notify(); return; }
+        if (why) { toast(why, 'info'); return; } MV.amount = ''; MV.borrow = 0; done();
+    },
+    'mn-borrow-no': () => { MV.borrow = 0; notify(); },
+    'mn-borrow-yes': () => {
+        const c = ctxW(); if (!c || !MV.borrow) return;
+        const why = M.withdraw(G(c.g), MV.borrow, true); if (why) { toast(why, 'info'); return; }
+        approveAll(c.g, -2);   // the house notices
+        MV.amount = ''; MV.borrow = 0; done();
+    },
     'mn-mode': (el) => { MV.mode = el.dataset.v || 'normal'; notify(); },
     'mn-logs': (el) => { MV.logs = (el.dataset.v as any) || 'wallet'; notify(); },
     'mn-take': () => {
@@ -101,7 +118,7 @@ Object.assign(ACT, {
     'mn-debtdel': (el) => { const c = ctxW(); if (!c || !canEdit(c.g)) return; const h = M.houseOf(G(c.g)); h.debts = h.debts.filter(d => d.id !== el.dataset.id); done(); },
 });
 Object.assign(INPUT, {
-    'mn-amount': (el) => { MV.amount = el.value; },
+    'mn-amount': (el) => { MV.amount = el.value; if (MV.borrow) { MV.borrow = 0; notify(); } },
     'mn-jobpick': (el) => { MV.jobPick = String(el.value); notify(); },
     'mn-jobname': (el) => { MV.jobName = el.value; },
     'mn-jobpay': (el) => { MV.jobPay = el.value; },

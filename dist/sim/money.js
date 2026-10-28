@@ -66,24 +66,44 @@ export function fundAdd(g, amount, text) {
         h.flog.length = 40;
 }
 // From your wallet into the fund (or back). Returns '' or why not.
+export const FUND = 'fund'; // the house fund as a party to a debt
+export const mineOf = (g) => Math.max(0, houseOf(g).mine ?? 0);
+export const owedToFund = (g) => houseOf(g).debts.filter(d => d.from === PLAYER && d.to === FUND).reduce((s, d) => s + d.amount, 0);
+// Into the fund: what you owe the house is paid back first, the rest is yours in the fund.
 export function contribute(g, amount) {
     const n = r2(Math.abs(amount));
     if (!n)
         return 'Write an amount.';
     if (g.player.money < n)
         return 'You do not have that much.';
-    walletAdd(g, -n, 'Into the house fund');
-    fundAdd(g, n, 'From you');
+    const back = repay(g, PLAYER, FUND, n);
+    const h = houseOf(g);
+    h.mine = r2((h.mine ?? 0) + n - back);
+    walletAdd(g, -n, back ? 'Into the house fund (paying the house back)' : 'Into the house fund');
+    fundAdd(g, n, back ? 'From you (paid back)' : 'From you');
     return '';
 }
-export function withdraw(g, amount) {
+/** What taking `amount` would be: from your own share, and how much of it a loan from the house. */
+export function takeSplit(g, amount) {
     const n = r2(Math.abs(amount));
+    const own = Math.min(n, mineOf(g));
+    return { n, own: r2(own), loan: r2(n - own) };
+}
+// Out of the fund: yours freely; more than yours only as a loan (`borrow`), which the house knows about.
+export function withdraw(g, amount, borrow = false) {
+    const { n, own, loan } = takeSplit(g, amount);
     if (!n)
         return 'Write an amount.';
-    if (houseOf(g).fund < n)
+    const h = houseOf(g);
+    if (h.fund < n)
         return 'The fund does not have that much.';
-    fundAdd(g, -n, 'Taken by you');
-    walletAdd(g, n, 'From the house fund');
+    if (loan && !borrow)
+        return 'borrow';
+    h.mine = r2(mineOf(g) - own);
+    if (loan)
+        addDebt(g, PLAYER, FUND, loan, 'taken from the house fund');
+    fundAdd(g, -n, loan ? 'Borrowed by you' : 'Taken back by you');
+    walletAdd(g, n, loan ? 'Borrowed from the house fund' : 'From the house fund');
     return '';
 }
 /* ---------- the week ---------- */
@@ -111,6 +131,9 @@ export function week(g, day, hasJob = () => false, people = Object.keys(g.cast))
     const pay = Math.min(bills, Math.max(0, h.fund));
     if (pay)
         fundAdd(g, -pay, 'The week\'s bills');
+    // your own share of the bills comes out of what is yours in the fund (the others' shares cover theirs)
+    if (h.mine)
+        h.mine = r2(Math.max(0, Math.min(h.fund, h.mine - BILL_PER_PERSON * (bills ? pay / bills : 0))));
     h.tight = pay < bills;
     if (h.tight)
         notes.push('The house fund could not cover the bills: money is tight.');
@@ -232,14 +255,14 @@ export function repay(g, from, to, amount) {
 }
 export const debtsOf = (g, who) => houseOf(g).debts.filter(d => d.from === who || d.to === who);
 /* ---------- what the AI is told ---------- */
-const nameOf = (g, a, you) => (a === PLAYER ? you : g.cast[a]?.name ?? a);
+const nameOf = (g, a, you) => (a === PLAYER ? you : a === FUND ? 'the house fund' : g.cast[a]?.name ?? a);
 export function moneyLines(g, present, fmt, you = '{{user}}') {
     if (!moneyOn(g))
         return [];
     const h = houseOf(g);
     const out = [`Money: ${you} has ${fmt(g.player.money)}; the house fund has ${fmt(h.fund)}.${h.tight ? ' Money is tight in the house: the bills were not fully paid this week.' : ''}`];
     const who = new Set([PLAYER, ...present]);
-    const debts = h.debts.filter(d => who.has(d.from) && who.has(d.to));
+    const debts = h.debts.filter(d => who.has(d.from) && (who.has(d.to) || d.to === FUND));
     if (debts.length)
         out.push(`Debts: ${debts.map(d => `${nameOf(g, d.from, you)} owes ${nameOf(g, d.to, you)} ${fmt(d.amount)}`).join('; ')}.`);
     return out;
@@ -335,6 +358,10 @@ export function applyMoney(g, ops, you) {
                 walletAdd(g, a, `From ${nm(o.from)}${o.why ? `: ${o.why}` : ''}`);
             if (o.to === 'fund')
                 fundAdd(g, a, `From ${nm(o.from)}`);
+            if (o.to === 'fund' && o.from === PLAYER) {
+                const h = houseOf(g);
+                h.mine = r2((h.mine ?? 0) + a - repay(g, PLAYER, FUND, a));
+            }
             if (o.to !== 'fund')
                 repay(g, o.from, o.to, a);
             notes.push(`${nm(o.from)} ${o.op === 'repay' ? 'paid back' : 'paid'} ${nm(o.to)} ${a}`);

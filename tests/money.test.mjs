@@ -155,4 +155,21 @@ test('you cannot pay what you do not have', () => {
     assert.equal(g.player.money, 150);
 });
 
+test('the fund: yours to take back, more only as a loan the house knows about', () => {
+    const g = game(); M.enable(g, true); g.player.money = 100;
+    assert.equal(M.mineOf(g), 0);
+    assert.equal(M.withdraw(g, 40), 'borrow', 'nothing of yours in it: asks first');
+    assert.equal(M.contribute(g, 50), ''); assert.equal(M.mineOf(g), 50);
+    assert.equal(M.withdraw(g, 20), ''); assert.equal(M.mineOf(g), 30);
+    assert.equal(M.withdraw(g, 50), 'borrow');
+    const f0 = M.houseOf(g).fund;
+    assert.equal(M.withdraw(g, 50, true), ''); assert.equal(M.mineOf(g), 0); assert.equal(M.owedToFund(g), 20);
+    assert.equal(M.houseOf(g).fund, f0 - 50);
+    assert.ok(M.moneyLines(g, [], v => String(v)).some(l => /owes the house fund 20/.test(l)), 'the scene knows');
+    assert.equal(M.contribute(g, 30), ''); assert.equal(M.owedToFund(g), 0, 'paid back first'); assert.equal(M.mineOf(g), 10);
+    // your share of the bills comes out of what is yours
+    M.contribute(g, 40); const before = M.mineOf(g);
+    M.week(g, 8); assert.equal(M.mineOf(g), before - M.BILL_PER_PERSON);
+});
+
 console.log(`money: ${n} tests passed`);

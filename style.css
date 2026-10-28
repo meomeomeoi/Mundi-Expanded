@@ -1640,6 +1640,11 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-gift { display: grid; gap: 10px; width: min(420px, 100%); padding: 14px; border-radius: 18px; }
 #mundi-root .mu-gift .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 #mundi-root .mu-gift-kind { grid-template-columns: 1fr 1fr; }
+/* the fund: the amount on its own row, the two moves under it, the loan question */
+#mundi-root .mu-mn input.mu-mn-amount { width: 100%; box-sizing: border-box; font-size: 16px; }
+#mundi-root .mu-mn-move { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#mundi-root .mu-mn-move > button { justify-content: center; }
+#mundi-root .mu-mn-borrow { display: grid; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid rgba(243, 156, 18, .5); background: rgba(243, 156, 18, .08); }
 /* [expanded] Plan form extras: activities, who else comes */
 #mundi-root .mu-ax-acts { flex-wrap: wrap; gap: 6px; }
 #mundi-root .mu-ax-acts .mu-chip { display: inline-flex; align-items: center; gap: 5px; }
