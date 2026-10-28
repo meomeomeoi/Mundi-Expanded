@@ -34,10 +34,21 @@ export function skinChrome() {
 }
 Object.assign(ACT, {
     // back: the screen's own back button (each app knows where it goes back to), else the home screen
-    'sk-back': () => { const b = document.querySelector('#mundi-root .mu-phone .mu-ph-head button[data-act="ph-go"]'); if (b) {
-        b.click();
-        return;
-    } const h = document.createElement('button'); h.dataset.app = 'home'; ACT['ph-go']?.(h, new Event('click')); },
+    // [expanded] on the home screen there is nowhere to go back to: Back puts the device away (the PDA has no close key)
+    'sk-back': (el, e) => {
+        const b = document.querySelector('#mundi-root .mu-phone .mu-ph-head button[data-act="ph-go"]');
+        if (b) {
+            b.click();
+            return;
+        }
+        if (document.querySelector('#mundi-root .mu-phone .mu-ph-apps')) {
+            ACT['ph-close']?.(el, e);
+            return;
+        }
+        const h = document.createElement('button');
+        h.dataset.app = 'home';
+        ACT['ph-go']?.(h, new Event('click'));
+    },
     'sk-scroll': (el) => { const sc = document.querySelector('#mundi-root .mu-phone .mu-ph-screen'); sc?.scrollBy({ top: Number(el.dataset.d) * 80, behavior: 'smooth' }); },
 });
 /* ---------- settings (the phone's Settings, in a Home) ---------- */
