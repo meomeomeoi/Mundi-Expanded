@@ -11,7 +11,7 @@ import { isSleeping } from './plans.js';
 import { weekday, hm, period } from './time.js';
 import { liveDigest } from './livelog.js';
 import { eraTextLine } from './era.js';
-import { presentNotes } from './lifehooks.js';
+import { phoneNotes } from './lifehooks.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
 const G = (g) => g;
@@ -190,7 +190,7 @@ export async function sendToChat(g, w, id, text) {
     return who.length ? write(g, w, c, who, '', [], true) : [];
 }
 // The scene: the chats you are in, lately, when someone here is in them too.
-presentNotes.push((g, _w, present) => {
+phoneNotes.push((g, _w, present) => {
     const now = nowAbs(g);
     const here = new Set(present.map(r => r.avatar));
     return chatsOf(g).chats.filter(c => c.you && c.members.some(a => here.has(a))).flatMap(c => C.recentLines(c, now, (by) => (by === C.ME ? '{{user}}' : nameOf(g, by))));

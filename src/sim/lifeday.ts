@@ -9,7 +9,7 @@ import { homeJobOf, onShift, npcOut } from './hometime.js';
 import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
-import { houseNotes, presentNotes } from './lifehooks.js';
+import { houseNotes, presentNotes, phoneNotes } from './lifehooks.js';
 import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
 
@@ -73,11 +73,33 @@ export function asleepNow(r: Resident, at: number): boolean | null {
     return s ? s.asleep : P.asleepAt(p, Math.floor((at % 1440) / 60), isWeekend(Math.floor(at / 1440)));
 }
 
-/** For the scene: what the people here are doing, and the notes written for them. */
+// [expanded] The scene's lines about life in the house come in four blocks of their own (prompt.ts), so a tight budget
+// drops the least needed first: where everyone is (and the era) last, your notes never; texts and chats early.
+/** "The house": the era, and where everyone else is right now. */
+export function houseLines(g: Save, w: WorldDef, present: Resident[]): string[] {
+    if (!isScenario(w)) return [];
+    const out: string[] = [];
+    const era = eraPromptLine(g as any, !!chatLore()); if (era) out.push(era);
+    const elsewhere = houseNow(g, w, present); if (elsewhere) out.push(elsewhere);
+    return out;
+}
+/** "Your notes": the OOC notes written for the people here (their profiles). */
+export function oocLines(g: Save, w: WorldDef, present: Resident[]): string[] {
+    if (!isScenario(w)) return [];
+    return present.map(r => P.profileOf(G(g), r.avatar)?.ooc ? `[OOC note about ${r.name}: ${P.profileOf(G(g), r.avatar)!.ooc}]` : '').filter(Boolean);
+}
+/** "Texts and chats": what the people here texted with {{user}}, and the group chats lately. */
+export function phoneLines(g: Save, w: WorldDef, present: Resident[]): string[] {
+    if (!isScenario(w)) return [];
+    const out: string[] = [];
+    for (const f of phoneNotes) out.push(...f(g, w, present));
+    out.push(...textedLines(g, present));
+    return out;
+}
+/** For the scene: what the people here are doing (their moment: at the door, woken up, a plan of their own…). */
 export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     if (!isScenario(w)) return [];
     const now = nowAbs(g); const out: string[] = [];
-    const era = eraPromptLine(g as any, !!chatLore()); if (era) out.push(era);
     const roomName = (id: string) => w.places.find(p => p.id === id)?.name.toLowerCase() ?? extraRooms(g).find(p => p.id === id)?.name.toLowerCase() ?? '';
     const doing = present.map(r => {
         const s = slotAt(g, w, r, now); if (!s) return '';
@@ -85,16 +107,12 @@ export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
         return `${r.name}: ${s.act} (${s.loc.startsWith('home:') ? 'in their own room' : `in the ${roomName(s.loc)}`})`;
     }).filter(Boolean);
     if (doing.length) out.push(`What they were doing when this moment began (it can change as the scene goes on): ${doing.join('; ')}.`);
-    for (const r of present) { const p = P.profileOf(G(g), r.avatar); if (p?.ooc) out.push(`[OOC note about ${r.name}: ${p.ooc}]`); }
     const lx = P.lifexOf(G(g));
     if (lx.atDoor && lx.atDoor.until > now && present.some(r => r.avatar === lx.atDoor!.avatar)) out.push(`${g.cast[lx.atDoor.avatar]?.name} came to the door of their room to talk with {{user}} in the hallway, without inviting {{user}} in.`);
     if (lx.caught && lx.caught.until > now && present.some(r => r.avatar === lx.caught!.avatar)) { const n = g.cast[lx.caught.avatar]?.name; out.push(`${n} has just come back to their own room and found {{user}} inside, uninvited.${lx.caught.text ? ` How ${n} takes it: ${lx.caught.text}` : ''}`); }
     if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit!.avatar)) { const n = g.cast[lx.visit.avatar]?.name; out.push(`Late at night ${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`); }
     for (const r of present) { const t = lx.woke?.[r.avatar]; if (t && t > now && t - now > 60) out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`); }
     for (const f of presentNotes) out.push(...f(g, w, present));
-    out.push(...textedLines(g, present));
-    const elsewhere = houseNow(g, w, present);
-    if (elsewhere) out.push(elsewhere);
     return out;
 }
 

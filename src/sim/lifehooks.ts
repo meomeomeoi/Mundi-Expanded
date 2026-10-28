@@ -6,3 +6,5 @@ import type { WorldDef } from '../core/world.js';
 export const houseNotes: ((g: Save, w: WorldDef, r: Resident) => string | null)[] = [];
 /** Lines about the people here. */
 export const presentNotes: ((g: Save, w: WorldDef, present: Resident[]) => string[])[] = [];
+/** Lines about texts and group chats with the people here (their own prompt block, "Texts and chats"). */
+export const phoneNotes: ((g: Save, w: WorldDef, present: Resident[]) => string[])[] = [];

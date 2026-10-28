@@ -16,7 +16,7 @@ import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
 import { chatsOf, peopleOf, write, nameOf, typeMs } from './chatrun.js';
-import { presentNotes } from './lifehooks.js';
+import { phoneNotes } from './lifehooks.js';
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
@@ -116,7 +116,7 @@ onDay.push((g, w) => {
     }
     return [];
 });
-presentNotes.push((g, _w, present) => {
+phoneNotes.push((g, _w, present) => {
     const here = new Set(present.map(r => r.avatar));
     return chatsOf(g).chats.filter(c => !c.you && c.notes?.length && c.members.filter(a => here.has(a)).length >= 1).map(c => `${names(g, c.members)} have a group chat of their own, without {{user}}${c.members.every(a => here.has(a)) ? '' : ` (${names(g, c.members.filter(a => here.has(a)))} here ${c.members.filter(a => here.has(a)).length > 1 ? 'are' : 'is'} in it)`}. Lately they talked there about: ${c.notes.slice(-3).map(x => x.text).join(' ')} They may refer to it; {{user}} has not read it.`);
 });

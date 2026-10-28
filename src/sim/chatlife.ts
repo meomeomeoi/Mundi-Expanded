@@ -16,7 +16,7 @@ import * as CP from './cplans.js';
 import * as P from './profile.js';
 import * as C from './chats.js';
 import { chatsOf, peopleOf, write, nameOf, typeMs } from './chatrun.js';
-import { presentNotes } from './lifehooks.js';
+import { phoneNotes } from './lifehooks.js';
 
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
 const pairValue = (g: Save, a: string, b: string) => bondsOf(g as any).pairs[pairKey(a, b)]?.v ?? 0;
@@ -93,7 +93,7 @@ onDay.push((g, w) => {
     if (t) { const c = C.newChat(g as any, 'Their chat', t, false, nowAbs(g)); C.note(c, g.day, `${names(g, t)} started a group chat of their own.`); }
     return [];
 });
-presentNotes.push((g, _w, present) => {
+phoneNotes.push((g, _w, present) => {
     const here = new Set(present.map(r => r.avatar));
     return chatsOf(g).chats.filter(c => !c.you && c.notes?.length && c.members.filter(a => here.has(a)).length >= 1).map(c => `${names(g, c.members)} have a group chat of their own, without {{user}}${c.members.every(a => here.has(a)) ? '' : ` (${names(g, c.members.filter(a => here.has(a)))} here ${c.members.filter(a => here.has(a)).length > 1 ? 'are' : 'is'} in it)`}. Lately they talked there about: ${c.notes!.slice(-3).map(x => x.text).join(' ')} They may refer to it; {{user}} has not read it.`);
 });

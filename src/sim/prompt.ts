@@ -55,7 +55,7 @@ import { bondsPromptLines } from './bondsnight.js';   // [expanded]
 import { stockPromptLines } from './stocknight.js';   // [expanded]
 import { moneyPromptLines } from './moneynight.js';   // [expanded]
 import { activityLines } from './activityrun.js';   // [expanded]
-import { lifeLines } from './lifeday.js';   // [expanded]
+import { lifeLines, houseLines, oocLines, phoneLines } from './lifeday.js';   // [expanded]
 import './letters.js';
 import './journey.js';
 import { systemOn, blockSystem, isScenario, SCENARIO_STARTS, type WorldDef } from '../core/world.js';
@@ -67,6 +67,7 @@ export const PROMPT_KEY = 'mundi_scene';
 export interface Block { id: string; name: string; desc: string; cut?: number }
 export const BLOCKS: Block[] = [
     { id: 'core', name: 'Scene basics', desc: 'World, day and time, weather, place, who is here, and the rules of the scene.' },
+    { id: 'house', name: 'The house now', desc: 'In a Home: the era, and where everyone else in the house is right now (Mundi Expanded). Dropped last.', cut: 10 },   // [expanded]
     { id: 'world', name: 'The mood around', desc: 'How busy it is here, the public mood and tension of the region, and its prices.', cut: 4 },
     { id: 'memories', name: 'Memories', desc: 'What the people here remember about you, and what happened earlier in this place.', cut: 9 },
     { id: 'plans', name: 'Plans', desc: 'Plans you made with the people here.', cut: 8 },
@@ -77,7 +78,9 @@ export const BLOCKS: Block[] = [
     { id: 'ties', name: 'Family and ties', desc: 'Who is whose sister, parent, roommate…', cut: 6 },
     { id: 'bonds', name: 'Between them', desc: 'How the people here get along with each other, and what is known about it (Mundi Expanded).', cut: 7 },   // [expanded]
     { id: 'money', name: 'Money', desc: 'Your wallet, the house fund, debts between the people here (Mundi Expanded; only with money on).', cut: 2 },   // [expanded]
-    { id: 'life', name: 'What they are doing', desc: 'In a Home: what the people here are doing (from their profiles), who is asleep, and your notes for each (Mundi Expanded).', cut: 5 },   // [expanded]
+    { id: 'life', name: 'What they are doing', desc: 'In a Home: what the people here are doing (from their profiles), who is asleep, a plan of their own, at the door, just woken up (Mundi Expanded).', cut: 8 },   // [expanded]
+    { id: 'ooc', name: 'Your notes for them', desc: 'In a Home: the OOC notes from the profiles of the people here (Mundi Expanded). Always sent.' },   // [expanded]
+    { id: 'phone', name: 'Texts and chats', desc: 'In a Home: what the people here texted with you, and the group chats lately (Mundi Expanded).', cut: 4 },   // [expanded]
     { id: 'stock', name: 'The house\'s things', desc: 'What is in the fridge and pantry (in the kitchen) or in the room you are in, food running low, errands (Mundi Expanded).', cut: 3 },   // [expanded]
     { id: 'needs', name: 'How you feel', desc: 'Hunger, tiredness… only what stands out.', cut: 6 },
     { id: 'diary', name: 'Diary', desc: 'The last two days of your diary.', cut: 5 },
@@ -155,6 +158,7 @@ export function sceneBlocks(): Built[] {
         romance: [romanceLine(g, met)],
         bonds: bondsPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         life: lifeLines(g, w, present),   // [expanded]
+        house: houseLines(g, w, present), ooc: oocLines(g, w, present), phone: phoneLines(g, w, present),   // [expanded]
         stock: stockPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         money: moneyPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
         family: [familyLine(g, present)],
