@@ -105,8 +105,16 @@ export async function onUserMessage(id) {
         }
         catch { /* not in a scene */ }
     }
-    if (!g || !w || !isScenario(w) || !perMessage() || !onExchange.length || busy)
+    // [expanded] why an exchange is not read, in the console (a skipped read was silent)
+    const skip = (why) => console.info(`[Mundi Expanded] reading the exchange: skipped (${why})`);
+    if (!g || !w || !isScenario(w))
         return;
+    if (!perMessage())
+        return skip(regOn() ? 'the mechanics model reads only at night' : 'no mechanics model');
+    if (!onExchange.length)
+        return skip('nothing reads it');
+    if (busy)
+        return skip('the last read is still going');
     const list = chat();
     const m = list[id];
     if (!m?.is_user)
@@ -116,7 +124,8 @@ export async function onUserMessage(id) {
     st.read = id;
     const lines = list.slice(from, id).filter((x) => String(x?.mes ?? '').trim() && !x.extra?.mundi_diary && !x.extra?.mundi_filler).map(lineOf); // [expanded] not "Send if empty" lines
     if (!lines.length || !lines.some(l => !l.user))
-        return;
+        return skip(`no character line in lines ${from}–${id - 1}`);
+    console.info(`[Mundi Expanded] reading the exchange: lines ${from}–${id - 1} (${lines.length})`);
     busy = true;
     try {
         for (const f of onExchange)
