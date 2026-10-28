@@ -16,6 +16,7 @@ import { refreshPrompt } from '../sim/prompt.js';
 import { showTransition } from './lifeui.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
+import { backHome } from '../sim/stocknight.js'; // [expanded]
 export const OD = { open: false, bgOnly: false, place: '', with: [], bg: '', q: '', back: false, miss: false };
 export const bgStyle = (file) => (file ? `background-image:url('${bgHref(file)}');background-size:cover;background-position:center` : '');
 // Who can come: the people you know who are in the house now.
@@ -106,6 +107,7 @@ Object.assign(ACT, {
         const away = o ? nowAbs(g) - o.at : OUTING_MIN;
         if (away < OUTING_MIN)
             advance(g, w, OUTING_MIN - away).forEach(m => toast(m, 'warn'));
+        backHome(g, w, where); // [expanded] from a shop: groceries and errands
         endOuting(g);
         runPlans();
         saveGame();

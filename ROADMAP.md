@@ -51,9 +51,19 @@ friend of…) are fixed labels with a tone. This fork lets the characters' relat
 - **You are in it too:** your closeness with each character stays upstream's (shown as it is), but you can write facts
   about you and them, and set statuses.
 
+## 2. The house's things (first version: 0.2.0.2)
+
+- Storages: fridge, pantry, a room per person. Items: name, count, optional owner, kind (catalog of ~30 groceries,
+  anything else as free text), a price kept for later.
+- Mechanics: Snack / Meal / Cook / Coffee / Drink take from the house (refused when there is nothing); the house eats
+  daily; a housemate shops at night when food is low; coming back from a shop restocks.
+- Errands from the story ("bring me a pudding"), run at night by housemates, by you at a shop.
+- The regulator (a mechanics model from Connection Profiles) reads each exchange once the next message is sent;
+  without it, the day is read at night.
+- Not in this version: money and prices, recipes, spoilage, things in hand.
+
 ## Later (ideas, not designed yet)
 
-- **Inventory**: things the household owns, basic items.
 - **Deliveries**: ordering things home.
 - **Money and work in Home mode**: optional, reusing upstream's economy and jobs from the life-sim mode.
 - **Cooking**: recipes, ingredients from the inventory.

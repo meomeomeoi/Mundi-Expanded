@@ -1,5 +1,22 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.2 · 2026-10-28
+
+- **The house's things** (Home): the fridge, the pantry and a room per person (you too). Things have a count and
+  can be labelled as someone's; a small catalog of groceries plus anything else as free text.
+- **Actions use them**: Snack, Meal, Cook and Coffee take from the kitchen (never someone else's labelled food);
+  cooking leaves leftovers; with nothing left the action is refused with a reason.
+- **The house lives**: housemates eat every day; household things wear out; when food is low a housemate does the
+  grocery run at night; coming back home from a shop (Go out → "supermarket", "магазин"…) brings the staples.
+- **Errands**: "Finn, bring me a pudding" becomes an errand; housemates run theirs at night (now and then they
+  forget); yours are done when you come back from a shop. Done errands become facts the characters remember.
+- **Mechanics model** (Settings → Game): a Connection Profile for the mechanics; it reads each exchange once you send
+  the next message (short prompts, no chat preset). Without one, things are read at night with the main model.
+- **Storage app** in the phone, and a scene block with what is in the kitchen or the room you are in.
+- Relationships: a refusal at night is reported instead of counting as a quiet night.
+- Tests: 22 for relationships, 13 for the house's things.
+
+
 ## Mundi Expanded 0.2.0.1 · 2026-10-28
 
 The first release of the fork, based on Mundi 0.2.0.

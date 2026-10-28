@@ -16,6 +16,7 @@ import { refreshPrompt } from '../sim/prompt.js';
 import { showTransition } from './lifeui.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
+import { backHome } from '../sim/stocknight.js';   // [expanded]
 
 export const OD = { open: false, bgOnly: false, place: '', with: [] as string[], bg: '', q: '', back: false, miss: false };
 export const bgStyle = (file: string) => (file ? `background-image:url('${bgHref(file)}');background-size:cover;background-position:center` : '');
@@ -76,6 +77,7 @@ Object.assign(ACT, {
         // a trip out takes a while: at least 4 hours pass from leaving to coming back
         const o = outingOf(g); const away = o ? nowAbs(g) - o.at : OUTING_MIN;
         if (away < OUTING_MIN) advance(g, w, OUTING_MIN - away).forEach(m => toast(m, 'warn'));
+        backHome(g, w, where);   // [expanded] from a shop: groceries and errands
         endOuting(g); runPlans(); saveGame(); await syncScene(); refreshPrompt();
         state.view = 'scene';
         showTransition('Back home', `${where ? `From ${where} · ` : ''}${hm(g.minutes)}`, 'time');

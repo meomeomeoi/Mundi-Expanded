@@ -1594,6 +1594,31 @@ body.mundi-open #toast-container { display: none !important; }
 /* [expanded] upstream fix: in an open list the chosen option drew dark text on a dark highlight (unreadable) */
 #mundi-root#mundi-root select option:checked { background: var(--accent); color: #fff; }
 #mundi-root#mundi-root select option:hover { background: color-mix(in srgb, var(--accent) 35%, var(--bg2)); color: var(--fg); }
+/* [expanded] The Storage app (Mundi Expanded) */
+#mundi-root .mu-st { gap: 10px; }
+#mundi-root .mu-st-tabs button small { opacity: .7; font-weight: 600; margin-left: 2px; }
+#mundi-root .mu-st-list { display: grid; gap: 4px; }
+#mundi-root .mu-st-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; }
+#mundi-root .mu-st-item > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#mundi-root .mu-st-item > b { color: var(--muted); font-weight: 700; }
+#mundi-root .mu-st-item.is-edit { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "name qty del" "own mv mv"; gap: 4px 6px; }
+#mundi-root .mu-st-item.is-edit .mu-st-name { grid-area: name; font-weight: 600; }
+#mundi-root .mu-st-item.is-edit .mu-st-qty { grid-area: qty; }
+#mundi-root .mu-st-item.is-edit .mu-st-del { grid-area: del; width: 28px; height: 28px; }
+#mundi-root .mu-st-item.is-edit .mu-st-own { grid-area: own; }
+#mundi-root .mu-st-item.is-edit .mu-st-mv { grid-area: mv; }
+#mundi-root .mu-st-item.is-edit select { min-width: 0; width: 100%; font-size: 12px; padding: 3px 6px; }
+#mundi-root .mu-st-owner { font-style: normal; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); white-space: nowrap; }
+#mundi-root .mu-st-qty { display: inline-flex; align-items: center; gap: 2px; }
+#mundi-root .mu-st-qty b { min-width: 22px; text-align: center; }
+#mundi-root .mu-st-qty .mu-ibtn { width: 26px; height: 26px; font-size: 16px; }
+#mundi-root .mu-st-add { display: grid; gap: 8px; margin-top: 4px; }
+#mundi-root .mu-st-add .mu-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+#mundi-root .mu-st-add .mu-chip { font-size: 11.5px; padding: 3px 9px; }
+#mundi-root .mu-st-add input[type=text] { flex: 1; min-width: 0; }
+#mundi-root .mu-st-n { width: 54px; }
+#mundi-root .mu-st-low { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #f39c12; background: rgba(243, 156, 18, .1); border: 1px solid rgba(243, 156, 18, .35); }
+#mundi-root .mu-st-low.is-empty { color: #e74c3c; background: rgba(231, 76, 60, .1); border-color: rgba(231, 76, 60, .4); }
 /* The Sims 4-inspired look, for both themes: Nunito, glossy blue buttons, green accents, white-edged panels.
    Colors come from these variables; corners are moderately rounded. */
 #mundi-root {

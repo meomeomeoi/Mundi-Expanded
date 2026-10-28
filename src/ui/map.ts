@@ -24,6 +24,7 @@ import { planOn, floorsOn, planTarget, unplaced, floorOf } from '../sim/plan.js'
 import { presentAt, whereNow } from '../sim/people.js';
 import { writeDiary, diaryOn, markDayStart, dayStart } from '../sim/diary.js';
 import { bondsNight, changesNote } from '../sim/bondsnight.js';   // [expanded]
+import { stockBlock, stockNight } from '../sim/stocknight.js';   // [expanded]
 import { openWork, diaryWaiting, diaryReady } from './relui.js';
 import { askAboutPlans } from './appts.js';
 import { doing, isDoing } from './doing.js';
@@ -466,6 +467,8 @@ async function sleep() {
 async function nightBonds(g: Save, w: WorldDef, day: number, range: { start: number; end: number }) {
     try { const note = changesNote(await bondsNight(g, w, day, range)); if (note) { refreshPrompt(); toast(note, 'info', { ms: 8000 }); } }
     catch (e: any) { toast(`Relationships could not be updated tonight (${String(e?.message ?? e)}).`, 'warn'); }
+    try { const notes = await stockNight(g, w, day, range); refreshPrompt(); if (notes.length) toast(`The house overnight: ${notes.join(' · ')}.`, 'info', { ms: 9000 }); }
+    catch (e: any) { toast(`The house's things could not be updated tonight (${String(e?.message ?? e)}).`, 'warn'); }
 }
 
 // After a shift: time has passed; a short transition shows how it went.
@@ -524,6 +527,7 @@ Object.assign(ACT, {
         const a = actionsHere(g, w).find(x => x.id === el.dataset.id);
         if (!a) return;
         if (!canAfford(g, a)) { toast('Not enough money.', 'info'); return; }
+        { const why = stockBlock(g, w, a.id); if (why) { toast(why, 'info'); return; } }   // [expanded] the house's food
         const tired = tooTired(g, w, Object.fromEntries(Object.entries(a.effects ?? {}).map(([k, v]) => [k, -v])), a.label.toLowerCase()); if (tired) { toast(tired, 'warn'); return; }
         if (isDoing()) return;
         actionSound(a.effects, a.id);

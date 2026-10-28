@@ -257,6 +257,7 @@ export const DEFAULT_APPS: AppDef[] = [
     { id: 'messages', name: 'Messages', icon: 'chat', color: '#34c759', on: true },
     { id: 'people', name: 'People', icon: 'users', color: '#ff9f0a', on: true },
     { id: 'bonds', name: 'Relationships', icon: 'heart', color: '#e0577a', on: true, home: true },   // [expanded]
+    { id: 'stock', name: 'Storage', icon: 'utensils', color: '#2bb3a3', on: true, home: true },   // [expanded]
     { id: 'jobs', name: 'Jobs', icon: 'briefcase', color: '#0a84ff', on: true },
     { id: 'bank', name: 'Bank', icon: 'wallet', color: '#5e5ce6', on: true },
     { id: 'homes', name: 'Homes', icon: 'home', color: '#ff375f', on: true },

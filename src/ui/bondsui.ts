@@ -187,9 +187,9 @@ export function bondsSettingsHtml(): string {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w || !isScenario(w)) return '';
     const b = bondsOf(G(g)); const life = LIVES.find(l => l[0] === b.life)!;
-    return `<section class="mu-bd-set"><h4>Relationships</h4>
-        <label class="mu-check"><input type="checkbox" data-input="bd-unlock" ${b.edit ? 'checked' : ''}><span>Let me change relationships</span></label>
-        <small class="mu-muted">${b.edit ? 'In the Relationships app you can edit, add and delete facts, set statuses and move the values by hand.' : 'Off: the Relationships app only shows them; they change by themselves, night by night.'}</small>
+    return `<section class="mu-bd-set"><h4>Relationships and the house</h4>
+        <label class="mu-check"><input type="checkbox" data-input="bd-unlock" ${b.edit ? 'checked' : ''}><span>Let me edit relationships and the house's things</span></label>
+        <small class="mu-muted">${b.edit ? 'In Relationships you can edit facts, statuses and values; in Storage you can add, count, label, move and remove things.' : 'Off: Relationships and Storage only show; they change by themselves, with the story and night by night.'}</small>
         <b>Life without you</b>
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small></section>`;
