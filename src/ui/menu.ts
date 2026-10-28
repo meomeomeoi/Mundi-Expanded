@@ -1,7 +1,7 @@
 import { fmtDateTime } from '../core/fmt.js';
 // Main menu: continue, new game, load, settings and back to SillyTavern. "Load" lists every save
 // (each save is a chat of a game's group).
-import { VERSION } from '../core/version.js';
+import { VERSION, BASE } from '../core/version.js';
 import { state, notify, settings, saveSettings, esc, busy, game, toast } from '../core/store.js';
 import { tutorialTarget } from './tutorial.js';
 import { worlds, worldFile, loadAllWorlds, getWorld, isScenario } from '../core/world.js';
@@ -119,7 +119,7 @@ export function menuHtml() {
         <div class="mu-menu-body">${tab === 'load' ? loadView() : mainView()}</div>
         <div class="mu-menu-corner">
         </div>
-        <footer class="mu-menu-foot">Mundi Expanded · based on Mundi ${VERSION.replace(/\.0$/, '')} by Thales · Sounds by Kenney (CC0)</footer>
+        <footer class="mu-menu-foot">Mundi Expanded ${VERSION} · based on Mundi ${BASE.replace(/\.0$/, '')} by Thales · Sounds by Kenney (CC0)</footer>
     </div>`;
 }
 

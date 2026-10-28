@@ -31,11 +31,15 @@ export function whatsNewHtml() {
     if (!newer(VERSION, seenVersion()))
         return '';
     const r = CHANGELOG[0];
+    // [expanded] a release of this fork has no Stella tour: just the list
+    const foot = r.fork
+        ? `<footer><div class="mu-row"><button class="mu-primary" data-act="wn-close">Got it</button></div></footer>`
+        : `<footer><p>Want a quick look at what's new? Stella shows only the new things.</p>
+            <div class="mu-row"><button class="mu-ghost" data-act="wn-close">Not now</button><button class="mu-primary" data-act="wn-tour">${icon('forward')}<span>Show me</span></button></div></footer>`;
     return `<div class="mu-recap-veil mu-wn-veil"><section class="mu-recap mh-glass mu-wn" role="dialog" aria-label="What's new">
-        <header><small>Mundi ${r.v.replace(/\.0$/, '')}</small><h3>${r.title}</h3></header>
+        <header><small>${r.fork ? `Mundi Expanded ${r.v}` : `Mundi ${r.v.replace(/\.0$/, '')}`}</small><h3>${r.title}</h3></header>
         <ul class="mu-wn-list">${r.items.map(([ic, t]) => `<li>${icon(ic)}<span>${t}</span></li>`).join('')}</ul>
-        <footer><p>Want a quick look at what's new? Stella shows only the new things.</p>
-            <div class="mu-row"><button class="mu-ghost" data-act="wn-close">Not now</button><button class="mu-primary" data-act="wn-tour">${icon('forward')}<span>Show me</span></button></div></footer></section></div>`;
+        ${foot}</section></div>`;
 }
 function seen() { S().lastVersion = VERSION; saveSettings(); }
 /* ---------- a newer version on GitHub ---------- */

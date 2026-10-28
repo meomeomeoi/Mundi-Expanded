@@ -10,6 +10,19 @@ Fork rules (to keep pulling upstream fixes cheap):
 - Saves stay compatible with upstream Mundi: new data goes under new keys, nothing upstream is renamed.
 - Upstream is a git remote (`upstream`); merge its releases when they bring something useful.
 
+## Versions
+
+`0.2.0.N`: the first three numbers are the upstream Mundi version the fork is based on, the last one counts this
+fork's releases on top of it (after merging upstream 0.3.0 the next release is `0.3.0.1`). A release changes three
+places together (the build checks they agree):
+
+- `manifest.json` → `version` (what SillyTavern shows);
+- `src/core/version.ts` → `VERSION`, and a new entry at the top of `CHANGELOG` (shown once in the game after updating);
+- `CHANGELOG.md` (the full notes).
+
+Not every commit is a release: fixes can pile up under the current number, and the number goes up when something
+is worth telling players about.
+
 ## 1. Relationships between characters (first version: v0.2.0-x.1)
 
 Upstream tracks friendship and romance between **you** and each character. Ties between characters (sister of,

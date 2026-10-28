@@ -1,5 +1,19 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.1 · 2026-10-28
+
+The first release of the fork, based on Mundi 0.2.0.
+
+- **Relationships between characters** (Home): every pair of housemates has a value that changes, and every change
+  has a reason kept as a fact. At night the day's scenes are read for what changed, and (Off / Calm / Lively) small
+  things happen between housemates without you.
+- **Relationships app** in the phone: the house as a graph with you in the middle, statuses (upstream's ties), and
+  facts about two or three people. View only by default; editing is unlocked in the phone's Settings.
+- **A "Between them" block** in the scene prompt (can be turned off like the others).
+- Renamed to Mundi Expanded; the update notice follows this fork.
+- Fix: the chosen option of an open list was unreadable.
+
+
 ## 0.2.0 · 2026-10-25
 
 Everything since 0.1.0 (the last version on GitHub, commit `33837e1`).

@@ -1,9 +1,20 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
-export const VERSION = '0.2.0';
+// [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
+// fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
+export const VERSION = '0.2.0.1';
+/** The upstream Mundi version this fork is based on. */
+export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
-export interface Release { v: string; title: string; items: [string, string][] }
+export interface Release { v: string; title: string; items: [string, string][]; /** [expanded] a release of this fork (no upstream tour for it) */ fork?: boolean }
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
+    // [expanded] this fork's releases
+    { v: '0.2.0.1', fork: true, title: 'Relationships between characters', items: [
+        ['heart', 'In a Home, the characters\' relationships with each other change by themselves: every pair has a value, and every change has a reason written down.'],
+        ['moon', 'At night the day\'s scenes are read for what changed between the people in them, and small things happen between housemates without you (Off, Calm or Lively, in the phone\'s Settings).'],
+        ['users', 'A Relationships app in the phone: the house as a graph with you in the middle, statuses (sister, rival, ex…), and what is known about each pair.'],
+        ['lock', 'The app only shows by default; turn on editing in the phone\'s Settings to write facts, set statuses and move values by hand.'],
+    ] },
     { v: '0.2.0', title: 'Homes', items: [
         ['home', 'Home: a new way to play. One house, the characters you choose, and no work, money or bills: just the people and the story.'],
         ['users', 'A ready Home, The Shared House, or your own one made in the Home creator.'],
