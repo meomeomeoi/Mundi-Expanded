@@ -16,6 +16,7 @@ export const regCfg = () => {
     const r = s.regulator;
     r.profile ??= '';
     r.mode ??= 'message';
+    r.expr ??= 'st';
     if (!r.stats || r.stats.day !== today())
         r.stats = { day: today(), calls: 0, tin: 0, tout: 0, fails: 0 };
     return r;

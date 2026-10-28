@@ -12,11 +12,11 @@ import { ctx, quiet, chat, answerText } from '../st/bridge.js';
 
 export type RegMode = 'message' | 'night';
 interface Stats { day: string; calls: number; tin: number; tout: number; fails: number }
-interface RegCfg { profile: string; mode: RegMode; stats: Stats }
+interface RegCfg { profile: string; mode: RegMode; stats: Stats; /** facial expressions: SillyTavern's classifier, or a model for everyone in the scene */ expr: 'st' | 'mech' | 'main' }
 const today = () => new Date().toISOString().slice(0, 10);
 export const regCfg = (): RegCfg => {
     const s = settings() as any; s.regulator ??= {};
-    const r = s.regulator; r.profile ??= ''; r.mode ??= 'message';
+    const r = s.regulator; r.profile ??= ''; r.mode ??= 'message'; r.expr ??= 'st';
     if (!r.stats || r.stats.day !== today()) r.stats = { day: today(), calls: 0, tin: 0, tout: 0, fails: 0 };
     return r as RegCfg;
 };

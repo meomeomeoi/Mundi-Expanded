@@ -10,7 +10,7 @@ import { nativeHost } from './native.js';
 import { lockScene } from '../sim/life.js';
 import { soloOf } from './lifeui.js';
 import { judgeLine, judgeReaction } from '../sim/mood.js';
-import { state, notify, esc, game, toast, ROOT_ID, saveGame } from '../core/store.js';
+import { state, notify, esc, game, toast, ROOT_ID, saveGame, settings } from '../core/store.js';
 import { getWorld, worldFile, systemOn } from '../core/world.js';
 import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
 import { placeOf, isOuting } from '../sim/places.js';
@@ -112,9 +112,16 @@ function expressions() {
     const out = {};
     const list = chat();
     for (let i = list.length - 1; i >= 0 && i > list.length - 60; i--) {
+        // [expanded] everyone's faces given by a model with that line (listeners too); a line still waiting for its
+        // expression keeps the face from before (no flash of neutral)
+        const all = list[i].extra?.mundi_exprs;
+        if (all)
+            for (const [a, l] of Object.entries(all))
+                if (!(a in out))
+                    out[a] = String(l);
         const a = speakerOf(list[i]);
-        if (a && !(a in out))
-            out[a] = list[i].extra?.mundi_expr ?? null;
+        if (a && !(a in out) && list[i].extra?.mundi_expr)
+            out[a] = list[i].extra.mundi_expr;
     }
     return out;
 }
@@ -149,6 +156,7 @@ function background(g, w) {
     return `background-image:url('${worldFile(w, pictureAt(w, g.minutes, map.image, map.images))}');background-size:420% auto;background-position:${p.x}% ${p.y}%`;
 }
 import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
+import { exprPrompt, parseExprs, EXPR_SYSTEM } from '../sim/exprs.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
@@ -371,6 +379,8 @@ export function afterScene(_main) {
     if (state.generating || classifying !== -1)
         return;
     const list = chat();
+    if (byModel(list))
+        return; // [expanded] a model gives everyone here a face at once (Settings → Game)
     for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
         const m = list[i];
         if (m.is_user || m.is_system)
@@ -402,6 +412,68 @@ export function afterScene(_main) {
             setTimeout(notify, 3000); });
         break;
     }
+}
+// [expanded] Expressions by a model (sim/exprs.ts): the recent character lines without one, and everyone in the scene,
+// in one call. Each line gets its speaker's label; the newest keeps everyone's (mundi_exprs), so a listener's face shows
+// too. Fails (no answer, nothing usable): those lines go to SillyTavern's classifier as before.
+const MODEL_FAILED = new WeakSet();
+function byModel(list) {
+    const g = game();
+    const w = g && getWorld(g.world);
+    if (!g || !w || state.view !== 'scene')
+        return false;
+    let src = 'st';
+    try {
+        src = settings().regulator?.expr ?? 'st';
+    }
+    catch { /* default */ }
+    if (src !== 'mech' && src !== 'main')
+        return false;
+    const pending = [];
+    for (let i = list.length - 1; i >= 0 && i > list.length - 8; i--) {
+        const m = list[i];
+        if (!m.is_user && !m.is_system && !m.extra?.mundi_expr && !MODEL_FAILED.has(m) && speakerOf(m))
+            pending.push(m);
+    }
+    if (!pending.length)
+        return false;
+    const avatars = [...new Set([...presentAt(g, w, g.player.loc).map(r => r.avatar), ...pending.map(m => speakerOf(m))])].filter(a => g.cast[a] || charOf(a));
+    const people = avatars.map(a => ({ avatar: a, name: g.cast[a]?.name ?? charOf(a)?.name ?? a, labels: (state.sprites[a] ?? []).map((x) => String(x.label).toLowerCase()).filter(Boolean) }));
+    const lines = list.filter((m) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
+    classifying = list.length - 1;
+    const prompt = exprPrompt({ people, you: personaName(), lines });
+    (async () => {
+        const R = await import('../sim/regulator.js');
+        const ans = src === 'mech' ? await R.bgAsk(prompt, 1500, EXPR_SYSTEM) : await quiet(prompt, 1500, EXPR_SYSTEM);
+        return parseExprs(ans, people);
+    })().catch((e) => { console.warn('[Mundi Expanded] expressions', e); return {}; }).then(got => {
+        const newest = pending[0];
+        if (!Object.keys(got).length) {
+            for (const m of pending)
+                MODEL_FAILED.add(m);
+            return;
+        } // SillyTavern's classifier takes them
+        newest.extra = { ...(newest.extra ?? {}), mundi_exprs: got };
+        const judged = new Set();
+        for (const m of pending) {
+            const who = speakerOf(m);
+            const label = got[who];
+            if (!label) {
+                MODEL_FAILED.add(m);
+                continue;
+            }
+            m.extra = { ...(m.extra ?? {}), mundi_expr: label };
+            // in a world, how they react moves the bond (once per person, their newest line)
+            if (!judged.has(who) && g.cast[who]?.met) {
+                judged.add(who);
+                judgeReaction(g, who, label);
+            }
+        }
+        if (judged.size)
+            saveGame();
+        saveChat();
+    }).finally(() => { classifying = -1; notify(); });
+    return true;
 }
 Object.assign(ACT, {
     'sc-open': (el) => { SC.pick = el.dataset.v; SC.q = ''; if (SC.pick === 'bg')

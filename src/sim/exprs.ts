@@ -1,0 +1,47 @@
+// [expanded] Facial expressions by a model: everyone in the scene at once, one short call per reply. SillyTavern's
+// Expressions classifier reads one line at a time and gives its label to whoever spoke it: the ones who only listen
+// keep their old face (Masha being teased), what the line says about others counts for the speaker, and the local
+// model mostly guesses on long prose. The model reads the last lines and gives each person here a label from their
+// sprites' labels, speakers and listeners alike.
+import { looseJson } from './jsonfix.js';
+
+/** The labels of SillyTavern's classifier (go-emotions): every sprite set uses them. */
+export const EXPR_LABELS = ['admiration', 'amusement', 'anger', 'annoyance', 'approval', 'caring', 'confusion', 'curiosity', 'desire',
+    'disappointment', 'disapproval', 'disgust', 'embarrassment', 'excitement', 'fear', 'gratitude', 'grief', 'joy', 'love', 'nervousness',
+    'neutral', 'optimism', 'pride', 'realization', 'relief', 'remorse', 'sadness', 'surprise'];
+
+export type ExprSource = 'st' | 'mech' | 'main';
+export interface ExprWho { avatar: string; name: string; labels: string[] }
+
+export const EXPR_SYSTEM = 'You read a moment of an interactive fiction (a role-play between consenting adults) and give the facial expression each character has right now, from a fixed list of labels. You answer with one JSON object only.';
+
+/** The prompt: who is here, the last lines, the labels. */
+export function exprPrompt(p: { people: ExprWho[]; you: string; lines: { name: string; text: string }[] }): string {
+    const all = [...new Set(p.people.flatMap(x => x.labels))];
+    const own = p.people.filter(x => x.labels.length && x.labels.length < all.length);
+    return [
+        `[The people here: ${p.people.map(x => x.name).join(', ')}. ${p.you} is the player: no label for them.]`,
+        '[The last lines:]',
+        ...p.lines.map(l => `${l.name}: ${l.text}`),
+        `[For each of the people here: their face at the end of the last line, how they feel now. Those who did not speak too: how they react to what was said or done to them (teased, praised, ignored). What a line says about someone else is that person's, not the speaker's. Most of the time a face is neutral or mild; a strong one only when the moment shows it.]`,
+        `[Labels: ${all.join(', ')}. Only these.${own.length ? ` ${own.map(x => `${x.name} has only: ${x.labels.join(', ')}.`).join(' ')}` : ''}]`,
+        `[Answer: {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}]`,
+    ].join('\n');
+}
+
+const norm = (s: string) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+/** The answer → a label for each person (by avatar); a label they have no sprite for becomes neutral (or is left out). */
+export function parseExprs(text: string, people: ExprWho[]): Record<string, string> {
+    const j = looseJson(text); const out: Record<string, string> = {};
+    if (!j || typeof j !== 'object') return out;
+    for (const [k, v] of Object.entries(j)) {
+        const key = norm(k);
+        const who = people.find(x => norm(x.name) === key) ?? people.find(x => norm(x.name).split(/\s+/)[0] === key.split(/\s+/)[0]);
+        if (!who || typeof v !== 'string') continue;
+        const label = norm(v).replace(/[^a-z]/g, '');
+        const has = who.labels.length ? who.labels : EXPR_LABELS;
+        if (has.includes(label)) out[who.avatar] = label;
+        else if (has.includes('neutral')) out[who.avatar] = 'neutral';
+    }
+    return out;
+}
