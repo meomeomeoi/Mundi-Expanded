@@ -62,10 +62,20 @@ friend of…) are fixed labels with a tone. This fork lets the characters' relat
   without it, the day is read at night.
 - Not in this version: money and prices, recipes, spoilage, things in hand.
 
+## 3. Money and plans (0.2.0.3)
+
+- Money, off by default per save: wallet (upstream's) and a house fund; weekly shares and bills; paid groceries;
+  your job with a shift button; debts. Housemates have no wallets of their own.
+- Gifts: an attachment in the composer, plus GIFT / PAY / LEND / REPAY lines from the mechanics reader. Gifts move
+  friendship within limits and never romance.
+- Slow burn difficulty (Home only).
+- Plan activities with effects, and group plans (one upstream plan per person, linked).
+- Go out: saved places and a starter set with Mundi's pictures.
+
 ## Later (ideas, not designed yet)
 
 - **Deliveries**: ordering things home.
-- **Money and work in Home mode**: optional, reusing upstream's economy and jobs from the life-sim mode.
 - **Cooking**: recipes, ingredients from the inventory.
+- **Housemates' own wallets**, if the light version feels too thin.
 
 Each of these gets discussed and designed before any code.

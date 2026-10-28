@@ -1,12 +1,19 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.2';
+export const VERSION = '0.2.0.3';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.0.3', fork: true, title: 'Money and plans', items: [
+            ['wallet', 'Money in a Home, off by default (phone Settings): your wallet and the house fund, weekly shares and bills, paid groceries, and a job of yours with a "Go to work" button. A Money app shows it all.'],
+            ['heart', 'Gifts: the 🎁 next to the message box gives a thing of yours or money to someone here. How it lands depends on how they react; gifts help friendship a little, never love, and not without limit.'],
+            ['moon', 'Slow burn, a new Home difficulty: closeness takes weeks, love grows only out of friendship, and someone you just met is too soon to ask out.'],
+            ['calendar', 'Plans with a purpose: movie night, cooking together, drinks out… each one does something when it happens. Ask several people to the same plan.'],
+            ['map', 'Go out remembers where you went, with its picture, and starts you off with a dozen places with Mundi\'s pictures.'],
+        ] },
     { v: '0.2.0.2', fork: true, title: 'The house\'s things', items: [
             ['utensils', 'A Storage app in the phone: the fridge, the pantry and everyone\'s room, with labelled things (Kathie\'s pudding is Kathie\'s).'],
             ['home', 'Snacks, meals, cooking and coffee use what is in the kitchen; cooking leaves leftovers. When it runs out, they cannot be done until someone shops.'],

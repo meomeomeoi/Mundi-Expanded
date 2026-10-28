@@ -1,5 +1,28 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.3 · 2026-10-28
+
+- **Money in a Home** (off by default; phone Settings → "Money in this house"): your wallet (upstream's) and the
+  house fund. Housemates with an income chip in weekly, bills are paid from the fund, and a short fund makes money
+  "tight" in the scene (nothing is cut off). Groceries cost catalog prices: housemates' runs from the fund, yours
+  from the fund or your wallet. Your job: one of the world's or your own, a shift a day from the Money app (upstream's
+  four ways to work), a raise every few shifts; freelance actions come back at home. Debts between people.
+- **Gifts and money in the scene**: a 🎁 in the composer gives a thing of yours, money, or money for the house fund;
+  the line carries a note the scene reacts to. The mechanics reader judges the reaction as played and also notices
+  gifts, payments, loans and repayments in the story. A gift from you moves friendship within limits (half for each
+  earlier gift that week, +8 a week at most, nothing above 80, a bad gift in full) and never romance.
+- **Slow burn** (a Home difficulty): friendship gains halved; romance halved, at most 2 a day and always at least 25
+  below friendship; someone met during play is too soon to ask out for two weeks (people known at the start are not).
+  About 3 to 5 weeks of play from friends to a couple.
+- **Plan activities**: movie night, cook together, game night, a workout, a walk, coffee, dinner, drinks, a grocery
+  run. Each fills in the place and has an effect when it happens (how you feel, a little closeness, ingredients or a
+  snack from the house, money out of the house; "I'll pay for everyone"). **Group plans**: ask others to the same
+  plan; each answers on their own, the activity happens once, and the scene knows who is part of it.
+- **Go out places**: the places you went to (with the picture you chose) and a starter set with Mundi's pictures, as
+  picture chips; picking one fills in where and the background. Edit forgets or hides them.
+- Tests: money 13, slow burn 4, activities 5, places 6.
+
+
 ## Mundi Expanded 0.2.0.2 · 2026-10-28
 
 - **The house's things** (Home): the fridge, the pantry and a room per person (you too). Things have a count and
