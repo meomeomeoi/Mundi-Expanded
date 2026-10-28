@@ -221,8 +221,8 @@ export function sceneHtml() {
     return `<div class="mu-scene">
         <div class="mu-scene-bg" style="${background(g, w)}"></div>
         <div class="mu-sprites">${sprites}</div>
-        
-        <section class="mu-dialog">
+        ${dlgShowBtn()}
+        <section class="mu-dialog">${dlgHideBtn()}
             <div class="mu-log" data-keep="log" data-bottom>${logHtml()}</div>
             <div class="mu-composer">
                 ${modesHtml()}
@@ -307,8 +307,9 @@ export function chatHtml() {
     return `<div class="mu-scene is-chat">
         <div class="mu-scene-bg" style="${bg && bg !== 'none' ? `background-image:${esc(bg)};background-size:cover;background-position:center` : ''}"></div>
         <div class="mu-sprites">${sprites}</div>
+        ${dlgShowBtn()}
         ${group ? `<nav class="mu-people" aria-label="People here">${cast.map(a => `<span class="mu-person"><img src="${esc(thumb(a))}" alt=""><b data-notr>${esc(charOf(a)?.name ?? '')}</b>${cast.length > 1 ? `<button class="mu-ghost" data-act="sc-remove" data-avatar="${esc(a)}" title="Remove from the scene">${icon('x')}</button>` : ''}</span>`).join('')}</nav>` : ''}
-        <section class="mu-dialog">
+        <section class="mu-dialog">${dlgHideBtn()}
             <div class="mu-log" data-keep="log" data-bottom>${logHtml()}</div>
             <div class="mu-composer">
                 ${modesHtml()}
@@ -643,3 +644,13 @@ document.addEventListener('load', (e) => {
     if (log && STICK.get(log) !== false)
         log.scrollTop = log.scrollHeight;
 }, true);
+// [expanded] Hiding the dialogue box for a full look at the scene (the eye on the box, H; the eye at the bottom, H or Esc
+// bring it back). Only on screen: nothing in the game changes.
+export const DLG = { hidden: false };
+const dlgHideBtn = () => `<button class="mu-ibtn mu-ghost mu-dlg-hide" data-act="dlg-hide" title="Hide the box for a full look (H)" aria-label="Hide the dialogue box">${icon('eye')}</button>`;
+const dlgShowBtn = () => (DLG.hidden ? `<button class="mu-dlg-show" data-act="dlg-show" title="Show the box (H, Esc)" aria-label="Show the dialogue box">${icon('eyeoff')}<span>Show the box</span></button>` : '');
+export function toggleDlg(v = !DLG.hidden) { DLG.hidden = v; notify(); }
+Object.assign(ACT, {
+    'dlg-hide': () => toggleDlg(true),
+    'dlg-show': () => toggleDlg(false),
+});

@@ -28,7 +28,7 @@ export interface UiPrefs {
     sound: boolean; volume: number; music: boolean; musicVolume: number;
     hudAutoHide: boolean; dialogOpacity: number; accent: string;
     layout: 'vn' | 'classic' | 'cards'; vn: 'box' | 'nobox' | 'subtitle';   // how the scene shows the conversation
-    dialogPos?: 'center' | 'left'; spriteSize?: number; spriteY?: number; spriteW?: number; cardMode?: boolean;
+    dialogPos?: 'center' | 'left'; /** [expanded] characters over the dialogue box (cut by it) or above it (whole) */ spriteFit?: 'over' | 'above'; spriteSize?: number; spriteY?: number; spriteW?: number; cardMode?: boolean;
     font?: string; primary?: string; secondary?: string;
     chatSwap?: boolean; avatarShape?: 'none' | 'circle' | 'square' | 'rect'; imgLayout?: 'left' | 'center' | 'right' | 'wrap';
     dialogBlur?: number; colors?: Record<string, string>; dateFormat?: string; timeFormat?: '24' | '12';

@@ -1,0 +1,20 @@
+/* [expanded] The characters in a scene: over the dialogue box (as before) or above it (whole figures standing on its top
+   edge; --mu-dlg-space is the box's measured height, app.ts fitSprites), and the box hidden for a full look (H, the eye).
+   The phone layouts and the classic layout keep their own placement. */
+#mundi-root[data-spritefit="above"]:not([data-layout="classic"]):not([data-mobile]) .mu-sprites {
+    bottom: calc(var(--mu-dlg-space, 0px) + 4px); top: calc(80px * var(--mu-hud, 1)); transition: bottom .25s ease;
+    /* the slots (97-lists.css: each figure's width, how close they stand) follow the smaller height they have here */
+    --slot: min(34%, calc((100vh - var(--mu-dlg-space, 0px) - 80px) * .66 * var(--mu-sprite-size, 1))); }
+#mundi-root[data-spritefit="above"]:not([data-layout="classic"]):not([data-mobile]) .mu-sprite { height: calc(100% * var(--mu-sprite-size, 1)); }
+#mundi-root[data-spritefit="above"]:not([data-layout="classic"]):not([data-mobile]) .mu-sprite .is-avatar { margin-bottom: 0; height: 72%; max-height: 72%; }
+
+#mundi-root .mu-dialog { transition: translate .25s ease, opacity .25s ease; }
+#mundi-root.dlg-hidden .mu-dialog { translate: 0 calc(100% + 24px); opacity: 0; pointer-events: none; }
+#mundi-root .mu-dlg-hide { position: absolute; top: 8px; right: 10px; z-index: 2; width: 30px; height: 30px; padding: 0; opacity: .5; }
+#mundi-root .mu-dlg-hide:hover, #mundi-root .mu-dlg-hide:focus-visible { opacity: 1; }
+#mundi-root .mu-dlg-hide svg { width: 18px; height: 18px; }
+#mundi-root .mu-dlg-show { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 13; display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass-strong, rgba(18, 24, 38, .72)); color: inherit; opacity: .65;
+    backdrop-filter: blur(10px); cursor: pointer; }
+#mundi-root .mu-dlg-show:hover, #mundi-root .mu-dlg-show:focus-visible { opacity: 1; }
+#mundi-root .mu-dlg-show svg { width: 18px; height: 18px; }

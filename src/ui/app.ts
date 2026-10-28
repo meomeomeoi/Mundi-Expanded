@@ -30,7 +30,7 @@ import { combatHtml } from './combatui.js';
 import { audienceHtml } from './factionsui.js';
 import { diceHtml } from './dice.js';
 import { arrestHtml } from './adventureui.js';
-import { sceneHtml, afterScene, chatHtml } from './scene.js';
+import { sceneHtml, afterScene, chatHtml, DLG, toggleDlg } from './scene.js';
 import { worldCfgHtml } from './worldcfg.js';
 import { styleOf } from '../core/world.js';
 import { skinOf } from './skins.js';
@@ -55,6 +55,20 @@ const PALETTES: Record<string, string[]> = {
     red: ['#ff8e8e', '#ff6b6b', '#e23b41', '#c22a31', '#941d23', '#fff'], purple: ['#c3a4ff', '#a57cff', '#7c4ddb', '#653bbd', '#4b2a91', '#fff'],
     pink: ['#ff9fd0', '#ff7abd', '#e7489a', '#c8327f', '#98235f', '#fff'], yellow: ['#ffe07a', '#ffd04d', '#f0ad13', '#d18f05', '#9c6a00', '#3a2800'],
 };
+// [expanded] Characters "above the box": the sprites stand on the top edge of the dialogue box, measured (so it follows
+// the box's height slider, its position and the window), and the box can be hidden for a full look.
+function fitSprites(main: HTMLElement) {
+    const r = root(); if (!r) return;
+    const scene = main.querySelector<HTMLElement>('.mu-scene');
+    r.classList.toggle('dlg-hidden', DLG.hidden && !!scene);
+    const dlg = scene?.querySelector<HTMLElement>('.mu-dialog');
+    if (!scene || !dlg || DLG.hidden) { r.style.setProperty('--mu-dlg-space', '0px'); return; }
+    // offsets (not the bounding box): the box's slide-in transform must not move the characters while it plays
+    const space = dlg.offsetParent === scene ? scene.clientHeight - dlg.offsetTop : (scene.getBoundingClientRect().bottom - dlg.getBoundingClientRect().top) / uiZoom();
+    r.style.setProperty('--mu-dlg-space', `${Math.max(0, Math.round(space))}px`);
+}
+let fitQueued = false;
+window.addEventListener?.('resize', () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; const m = root()?.querySelector<HTMLElement>('#mundi-main'); if (m) fitSprites(m); }); });
 export function applyUi() {
     const r = root();
     if (!r) return;
@@ -79,6 +93,7 @@ export function applyUi() {
     r.dataset.imglayout = u.imgLayout || 'left';
     applyColors(r);
     r.dataset.dialogpos = u.dialogPos || 'center';
+    r.dataset.spritefit = u.spriteFit || 'over';   // [expanded]
     r.style.setProperty('--mu-sprite-size', String((u.spriteSize ?? 100) / 100));
     r.style.setProperty('--mu-sprite-w', String((u.spriteW ?? 100) / 100));
     r.style.setProperty('--mu-sprite-y', `${u.spriteY ?? 0}vh`);
@@ -133,7 +148,7 @@ export function render() {
     r.dataset.style = styleOf(shown);
     r.dataset.skin = skinOf(shown);
 
-    placeTutorial(main); tutorialTick(); stackHud(main);
+    placeTutorial(main); tutorialTick(); stackHud(main); fitSprites(main);   // [expanded]
     // the picture by the side (a click on a name) fits in the room left of the dialogue box
     { const side = main.querySelector<HTMLElement>('.mu-sidepic'), dlg = main.querySelector<HTMLElement>('.mu-dialog');
       if (side) { const room = dlg ? (dlg.getBoundingClientRect().left - main.getBoundingClientRect().left) / uiZoom() - 10 : 0; if (room > 160) main.style.setProperty('--side-w', `${Math.round(room)}px`); else main.style.removeProperty('--side-w'); } }
@@ -246,7 +261,10 @@ function attach(r: HTMLElement) {
             r.querySelector<HTMLElement>(`.mu-lb-nav.${e.key === 'ArrowLeft' ? 'is-prev' : 'is-next'}:not(:disabled)`)?.click();
             return;
         }
+        // [expanded] H hides / shows the dialogue box in a scene; Esc shows it again
+        if ((e.key === 'h' || e.key === 'H') && !e.ctrlKey && !e.metaKey && !e.altKey && r.querySelector('.mu-scene')) { toggleDlg(); return; }
         if (e.key !== 'Escape') return;
+        if (DLG.hidden && r.querySelector('.mu-scene')) { toggleDlg(false); return; }
         if (state.view === 'gallery' && closeLightbox()) return;
         if (phone.open && inGame()) { phone.open = false; notify(); return; }
         if (PL.card) { PL.card = ''; notify(); return; }

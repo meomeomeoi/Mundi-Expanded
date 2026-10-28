@@ -53,6 +53,7 @@ function tabInterface() {
                 <button class="mu-layout ${UI().layout === 'cards' ? 'is-on' : ''}" data-act="set-layout" data-v="cards"><i class="is-cards"><b></b><u></u><s></s></i><b>Cards</b><small>Each message with a big rounded picture of who speaks beside it.</small></button>
             </div>
             <div class="mu-field"><span>Dialogue box</span><div class="mu-chips">${([['center', 'Centered'], ['left', 'Left']] as [string, string][]).map(([id, label]) => `<button class="mu-chip ${(UI().dialogPos || 'center') === id ? 'is-on' : ''}" data-act="set-dialogpos" data-v="${id}">${label}</button>`).join('')}</div></div>
+            <div class="mu-field"><span>Characters</span><div class="mu-chips">${([['over', 'Over the box'], ['above', 'Above the box (whole)']] as [string, string][]).map(([id, label]) => `<button class="mu-chip ${(UI().spriteFit || 'over') === id ? 'is-on' : ''}" data-act="set-spritefit" data-v="${id}">${label}</button>`).join('')}</div><small class="mu-muted">${UI().spriteFit === 'above' ? 'Whole figures, standing on the dialogue box (smaller). H or the eye on the box hides it for a full look.' : 'Big, the dialogue box in front of them. H or the eye on the box hides it for a full look.'}</small></div>
             ${slider('Character size', 'spriteSize', 50, 160, '%')}${slider('Character width', 'spriteW', 60, 140, '%')}${slider('Character height (move up or down)', 'spriteY', -30, 30, 'vh')}
             ${check('Show the character card when there are no expression sprites', 'cardMode')}
         </section>
@@ -130,6 +131,7 @@ Object.assign(ACT, {
     'set-accent': (el) => { UI().accent = el.dataset.v!; (UI() as any).accentLocked = true; saveSettings(); applyLook(); notify(); },
     'set-skincolors': () => { (UI() as any).accentLocked = false; UI().secondary = undefined; saveSettings(); applyLook(); notify(); },
     'set-skin': (el) => { setSkin(el.dataset.style!, el.dataset.v!); saveSettings(); notify(); },
+    'set-spritefit': (el) => { UI().spriteFit = el.dataset.v === 'above' ? 'above' : 'over'; saveSettings(); applyLook(); notify(); },   // [expanded]
     'set-dialogpos': (el) => { UI().dialogPos = el.dataset.v as any; saveSettings(); applyLook(); notify(); },
     'set-layout': (el) => { UI().layout = el.dataset.v as any; saveSettings(); applyLook(); notify(); },
     'sfx-test': () => play('success'),
