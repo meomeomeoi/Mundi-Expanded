@@ -4,6 +4,7 @@
 import { esc, game, notify, saveGame, toast, type Save } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { ACT } from './reg.js';
+import { icon } from './icons.js';
 import { chatLore, loadLore, saveLore, newLoreEntry } from '../st/bridge.js';
 import * as E from '../sim/era.js';
 
@@ -15,16 +16,19 @@ const KEYS = [['1', ''], ['2', 'abc'], ['3', 'def'], ['4', 'ghi'], ['5', 'jkl'],
 /** The hardware under the screen. */
 export function skinChrome(): string {
     const g = game(); const s = E.skinOf(g ? G(g) : null);
+    // the arrows on the navigation key are drawn (four small marks around the middle), only up and down scroll
+    const arrows = '<u class="is-u"></u><u class="is-r"></u><u class="is-d"></u><u class="is-l"></u>';
     if (s === 'keypad') return `<div class="mu-sk-keys" aria-label="Keypad">
-        <div class="mu-sk-soft"><button data-act="ph-go" data-app="home" title="Menu">Menu</button>
-            <span class="mu-sk-dpad"><button data-act="sk-scroll" data-d="-1" aria-label="Up"></button><button data-act="sk-scroll" data-d="1" aria-label="Down"></button><i></i></span>
-            <button data-act="sk-back" title="Back">Back</button></div>
-        <div class="mu-sk-call"><button class="is-green" data-act="ph-go" data-app="messages" title="Messages" aria-label="Messages"></button><button class="is-red" data-act="ph-close" title="Close" aria-label="Close"></button></div>
-        <div class="mu-sk-pad">${KEYS.map(([k, l]) => `<span><b>${k}</b><small>${esc(l)}</small></span>`).join('')}</div></div>`;
+        <div class="mu-sk-soft"><button data-act="ph-go" data-app="home" title="Menu"><span>Menu</span></button>
+            <span class="mu-sk-dpad"><button data-act="sk-scroll" data-d="-1" aria-label="Up"></button><button data-act="sk-scroll" data-d="1" aria-label="Down"></button>${arrows}<i></i></span>
+            <button data-act="sk-back" title="Back"><span>Back</span></button></div>
+        <div class="mu-sk-call"><button class="is-green" data-act="ph-go" data-app="messages" title="Messages" aria-label="Messages">${icon('handset')}</button><button class="is-red" data-act="ph-close" title="Close" aria-label="Close">${icon('handset')}</button></div>
+        <div class="mu-sk-pad">${KEYS.map(([k, l]) => `<span><b>${k}</b><small>${esc(l)}</small></span>`).join('')}</div><i class="mu-sk-mic"></i></div>`;
     if (s === 'pda') return `<div class="mu-sk-pdabtns" aria-label="Buttons">
-        <button data-act="ph-go" data-app="plans" title="Calendar" aria-label="Calendar"></button><button data-act="ph-go" data-app="people" title="Contacts" aria-label="Contacts"></button>
-        <span class="mu-sk-dpad"><button data-act="sk-scroll" data-d="-1" aria-label="Up"></button><button data-act="sk-scroll" data-d="1" aria-label="Down"></button><button data-act="ph-go" data-app="home" aria-label="Home" class="is-ok"></button></span>
-        <button data-act="ph-go" data-app="messages" title="Messages" aria-label="Messages"></button><button data-act="sk-back" title="Back" aria-label="Back"></button></div>`;
+        <button data-act="ph-go" data-app="plans" title="Calendar" aria-label="Calendar">${icon('calendar')}</button><button data-act="ph-go" data-app="people" title="Contacts" aria-label="Contacts">${icon('users')}</button>
+        <span class="mu-sk-dpad"><button data-act="sk-scroll" data-d="-1" aria-label="Up"></button><button data-act="sk-scroll" data-d="1" aria-label="Down"></button>${arrows}<button data-act="ph-go" data-app="home" aria-label="Home" class="is-ok"></button></span>
+        <button data-act="ph-go" data-app="messages" title="Messages" aria-label="Messages">${icon('chat')}</button><button data-act="sk-back" title="Back" aria-label="Back">${icon('back')}</button>
+        <i class="mu-sk-grille"></i></div>`;
     return '';
 }
 Object.assign(ACT, {
