@@ -1,5 +1,6 @@
 import './furnishacts.js'; // what you can do with them (registers itself)
-import './orders.js'; // orders and deliveries (registers itself)
+import './orders.js';
+import './houseprops.js'; // orders and deliveries (registers itself)
 import { isScenario, styleOf } from '../core/world.js';
 import { placeOn, extraRooms } from './places.js';
 import { ownRoom } from './lifeday.js';

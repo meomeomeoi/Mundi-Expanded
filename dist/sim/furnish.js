@@ -324,3 +324,55 @@ export const CURB = ['armchair', 'bookshelf', 'desk', 'couch', 'table', 'aquariu
 /** In the storage room: an old thing, or decor. */
 export const RUMMAGE_THINGS = ['boardgames', 'guitar', 'turntable', 'easel', 'darts', 'yogamat', 'handheld', 'dvd'];
 export const RUMMAGE_DECOR = ['a box of old photos', 'a dusty lava lamp', 'a framed movie poster', 'string lights', 'a stack of old magazines', 'a vintage globe'];
+export const propsOf = (g) => (furnishOf(g).props ??= []);
+/** One person's vote: how they get along with who asks, whether they would use it, what it costs against the fund, and
+ *  whether it is for the house or for the asker's own room (much harder). `fund` Infinity: money is off. */
+export function voteOn(v, roll) {
+    if (v.price > v.fund)
+        return { yes: false, why: 'not enough in the fund' };
+    if (v.withProposer <= -15)
+        return { yes: false, why: 'not keen on whoever asks' };
+    let p = 0.35 + Math.max(0, v.withProposer) / 200 + (v.wants ? 0.25 : 0) - (v.forSelf ? 0.3 : 0) + (v.social - 50) / 500;
+    if (Number.isFinite(v.fund))
+        p += v.price > v.fund * 0.5 ? -0.25 : v.price < v.fund * 0.15 ? 0.1 : 0;
+    p = Math.max(0.05, Math.min(0.95, p));
+    return roll < p ? { yes: true, why: '' } : { yes: false, why: v.forSelf ? 'the fund is for the house, not one room' : Number.isFinite(v.fund) && v.price > v.fund * 0.5 ? 'too expensive right now' : 'does not see the point' };
+}
+/** The house's answer: more yes than no among those who voted (who asked counts as yes, and you when you voted). */
+export function verdict(p) {
+    const votes = [...Object.values(p.answers), 'yes', ...(p.by !== 'player' && p.you ? [p.you] : [])];
+    const yes = votes.filter(v => v === 'yes').length;
+    return yes * 2 > votes.length ? 'yes' : 'no';
+}
+const FOR_HOUSE = [['watch', 'tv'], ['game2', 'boardgames'], ['coffee', 'coffee'], ['music', 'stereo']];
+const FOR_SELF = { game: 'console', music: 'guitar', read: 'bookshelf', craft: 'easel', exercise: 'yogamat', work: 'laptop', watch: 'tv' };
+export function pickWant(people, houseHas, era, roll) {
+    const out = [];
+    const social = [...people].sort((a, b) => b.social - a.social);
+    for (const [a, cat] of FOR_HOUSE) {
+        const c = catOf(cat);
+        if (!c || !forEra(c, era) || houseHas(a) || !social.length)
+            continue;
+        const by = social.find(x => x.needs.includes(a)) ?? social[0];
+        out.push({ by: by.who, cat, forSelf: false, w: 2 });
+    }
+    for (const x of people)
+        for (const a of x.needs) {
+            const cat = FOR_SELF[a];
+            const c = cat && catOf(cat);
+            if (!c || !forEra(c, era) || x.canDo(a))
+                continue;
+            if (!out.some(o => o.by === x.who && o.cat === cat))
+                out.push({ by: x.who, cat: cat, forSelf: true, w: 1 });
+        }
+    if (!out.length)
+        return null;
+    let r = roll('want') * out.reduce((s, o) => s + o.w, 0);
+    for (const o of out) {
+        r -= o.w;
+        if (r < 0)
+            return { by: o.by, cat: o.cat, forSelf: o.forSelf };
+    }
+    const o = out[out.length - 1];
+    return { by: o.by, cat: o.cat, forSelf: o.forSelf };
+}

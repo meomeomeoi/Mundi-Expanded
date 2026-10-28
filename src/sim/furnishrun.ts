@@ -1,5 +1,6 @@
 import './furnishacts.js';   // what you can do with them (registers itself)
-import './orders.js';   // orders and deliveries (registers itself)
+import './orders.js';
+import './houseprops.js';   // orders and deliveries (registers itself)
 // [expanded] Rooms and their things at runtime (rules in furnish.ts): which games have them (a modern Home: the
 // manor's would need a catalog of its own), the rooms of this game, the common rooms furnished from the house's
 // template the first time, and what the scene is told about the room you are in.

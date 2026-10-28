@@ -13,6 +13,7 @@ import { furnishOn, eraOf, houseRooms, roomName, hallOf } from '../sim/furnishru
 import { placeOrder, unpackOrder, priceOfCat, SHOPPING, shopRoll, buyHere } from '../sim/orders.js';
 import { isOuting } from '../sim/places.js';
 import { outingOf } from '../sim/outing.js';
+import { proposeByYou } from '../sim/houseprops.js';
 
 export const OV = { open: '', room: '', busy: false };
 const G = (g: Save) => g as unknown as F.GLike;
@@ -108,6 +109,15 @@ Object.assign(ACT, {
         const c = F.catOf(el.dataset.v!)!;
         toast(c.size === 'small' || along ? `Bought: ${F.catName(c, eraOf(g))}. It goes home with you.` : `Bought: ${F.catName(c, eraOf(g))}. Delivered tomorrow.`, 'success');
         OV.open = ''; saveGame(); refreshPrompt(); notify();
+    },
+    // the house votes (in the house chat); bought from the fund when most say yes
+    'or-propose': async (el) => {
+        const g = game(); const w = g && getWorld(g.world); if (!g || !w || OV.busy) return;
+        const room = houseRooms(g, w).find(r => r.id === OV.room && !r.owner); if (!room) return;
+        OV.busy = true; notify();
+        try { const line = await proposeByYou(g, w, el.dataset.v!, room.id); if (line) toast(line, /ordered/.test(line) ? 'success' : 'info', { ms: 7000 }); OV.open = ''; }
+        catch (e: any) { toast(String(e?.message ?? e), 'error'); }
+        OV.busy = false; saveGame(); refreshPrompt(); notify();
     },
     'or-unpack': (el) => {
         const g = game(); const w = g && getWorld(g.world); if (!g || !w) return;

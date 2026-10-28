@@ -10,6 +10,9 @@ import { hm, weekday } from '../sim/time.js';
 import * as C from '../sim/chats.js';
 import { chatsOf, nameOf, sendToChat, unreadKey, TYPING, shownMsgs, typeMs } from '../sim/chatrun.js';
 import { pendingCall, answerCall, callText, startTalk } from '../sim/chatlife.js';
+import { pendingProp, answerProp, propText, propose, PROP_FREQS, propFreqOf } from '../sim/houseprops.js';
+import { furnishOf } from '../sim/furnish.js';
+import { furnishOn } from '../sim/furnishrun.js';
 export const GC = { draft: '', busy: false };
 // making or editing one of your chats: its name and members (id '' = a new one)
 export const GN = { open: false, id: '', name: '', members: [] };
@@ -51,6 +54,7 @@ export function gchatApp(g, w, id) {
             ${typing ? '<div class="mu-ph-msg is-typing"><i></i><i></i><i></i></div>' : ''}
             ${c.msgs.length ? '' : '<p class="mu-muted mu-pad">Nothing here yet. Say something to everyone.</p>'}</div>
         ${(() => { const k = pendingCall(g, c.id); return k ? `<div class="mu-gc-call"><span>${icon('calendar')}<b data-notr>${esc(callText(g, w, k))}</b></span><button class="mu-primary" data-act="gc-call" data-id="${esc(k.id)}" data-v="yes">I'm in</button><button class="mu-ghost" data-act="gc-call" data-id="${esc(k.id)}" data-v="no">Can't</button></div>` : ''; })()}
+        ${(() => { const p = pendingProp(g, c.id); return p ? `<div class="mu-gc-call"><span>${icon('download')}<b data-notr>${esc(propText(g, w, p))}</b></span><button class="mu-primary" data-act="gc-prop" data-id="${esc(p.id)}" data-v="yes">Buy it</button><button class="mu-ghost" data-act="gc-prop" data-id="${esc(p.id)}" data-v="no">No</button></div>` : ''; })()}
         <div class="mu-ph-compose"><input type="text" placeholder="Message to ${esc(c.name)}" value="${esc(GC.draft)}" data-input="gc-draft" data-focus="gc-draft" ${GC.busy ? 'disabled' : ''}>
             <button class="mu-ibtn mu-primary" data-act="gc-send" data-id="${esc(c.id)}" aria-label="Send" ${GC.busy ? 'disabled' : ''}>${icon('send')}</button></div>`;
 }
@@ -73,6 +77,14 @@ async function send(id) {
                 toast(why, 'info');
             else if (yes === 'yes')
                 toast('You are going: it is in your plans.', 'success');
+        }
+        // [expanded] 0.2.0.7: an answer to a purchase someone proposed ("buy it", "no")
+        const pr = !k ? pendingProp(g, id) : null;
+        const say = pr ? (/\b(buy it|get it|go for it)\b|покупа|бер[её]м/i.test(text) ? 'yes' : C.yourAnswer(text)) : null;
+        if (pr && say) {
+            const line = answerProp(g, w, pr.id, say === 'yes');
+            if (line)
+                setTimeout(() => toast(line, 'info', { ms: 7000 }), 2500);
         }
         const got = await sendToChat(g, w, id, text);
         // [expanded] told when the first answer shows (they appear one by one), unless you are looking at the chat then
@@ -102,6 +114,7 @@ Object.assign(ACT, {
         GC.draft = el.dataset.v === 'yes' ? "I'm in!" : "Can't make it, sorry.";
         await send(k.chat);
     },
+    'gc-prop': async (el) => { GC.draft = el.dataset.v === 'yes' ? "Yes, let's buy it!" : "No, I don't think we need it."; await send(C.HOUSE); },
 });
 Object.assign(INPUT, { 'gc-draft': (el) => { GC.draft = el.value; }, 'gn-name': (el) => { GN.name = el.value; } });
 Object.assign(ACT, {
@@ -157,7 +170,10 @@ export function chatSettingsHtml(g) {
         <b>Conversations without you</b><div class="mu-bd-seg">${C.FREQS.map(([id, label]) => `<button class="${x.freq === id ? 'is-on' : ''}" data-act="gc-freq" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${(() => { const f = C.FREQS.find(q => q[0] === x.freq); return f[2][1] ? `About ${f[2][0] === f[2][1] ? f[2][0] : `${f[2][0]}–${f[2][1]}`} a day: they talk about what happened (a film they saw, a fight, the fridge…).` : 'They only answer you.'; })()}</small>
         <div class="mu-row"><button class="mu-ghost" data-act="gc-now" data-v="talk" ${GC.busy ? 'aria-disabled="true"' : ''}>Conversation now</button><button class="mu-ghost" data-act="gc-now" data-v="call" ${GC.busy ? 'aria-disabled="true"' : ''}>Call now</button></div>
-        <small class="mu-muted">Starts one right away, with whoever is awake and not here with you (a call needs a free evening slot).</small></section>`;
+        <small class="mu-muted">Starts one right away, with whoever is awake and not here with you (a call needs a free evening slot).</small>
+        ${furnishOn(w) ? `<b>Purchases for the house</b><div class="mu-bd-seg">${PROP_FREQS.map(([id, label]) => `<button class="${propFreqOf(g) === id ? 'is-on' : ''}" data-act="gc-propfreq" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">Someone proposes in the house chat to buy something from the fund: for everyone, or for their own room (harder). The house votes; you can too.</small>
+        <div class="mu-row"><button class="mu-ghost" data-act="gc-propnow" ${GC.busy ? 'aria-disabled="true"' : ''}>Proposal now</button></div>` : ''}</section>`;
 }
 Object.assign(ACT, {
     'gc-writer': (el) => { const g = game(); if (!g)
@@ -174,6 +190,27 @@ Object.assign(ACT, {
             const got = await startTalk(g, w, el.dataset.v === 'call' ? 'call' : 'talk');
             if (!got.length)
                 toast(el.dataset.v === 'call' ? 'No call now: nobody free to host one this evening, or nobody awake.' : 'Nobody could start one now (asleep, or here with you).', 'info');
+        }
+        catch (e) {
+            toast(String(e?.message ?? e), 'error');
+        }
+        GC.busy = false;
+        saveGame();
+        notify();
+    },
+    'gc-propfreq': (el) => { const g = game(); if (!g)
+        return; furnishOf(g).propFreq = el.dataset.v || 'rare'; saveGame(); notify(); },
+    'gc-propnow': async () => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!g || !w || GC.busy)
+            return;
+        GC.busy = true;
+        notify();
+        try {
+            const got = await propose(g, w);
+            if (!got?.length)
+                toast('No proposal now: one is already open, nobody is awake and away from you, or nobody wants anything the house lacks.', 'info');
         }
         catch (e) {
             toast(String(e?.message ?? e), 'error');

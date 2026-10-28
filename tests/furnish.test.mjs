@@ -84,5 +84,21 @@ test('shops: kinds from the place\'s name, what each has, the flea market\'s few
     assert.notDeepEqual(f1.map(x => x.cat.id), f2.map(x => x.cat.id));
     assert.ok(F.CURB.every(F.catOf) && F.RUMMAGE_THINGS.every(F.catOf));
 });
+test('house purchases: votes, the verdict, what someone would ask for', () => {
+    const v = (o, roll = 0.5) => F.voteOn({ forSelf: false, price: 100, fund: 1000, withProposer: 20, wants: false, social: 50, ...o }, roll);
+    assert.deepEqual(v({ price: 2000 }), { yes: false, why: 'not enough in the fund' }); assert.equal(v({ withProposer: -40 }).yes, false);
+    assert.equal(v({}, 0.3).yes, true); assert.equal(v({ forSelf: true }, 0.3).yes, false);   // their own room: much harder
+    assert.equal(v({ wants: true }, 0.6).yes, true); assert.equal(v({ price: 900 }, 0.3).yes, false);   // too expensive right now
+    assert.equal(v({ fund: Infinity, price: 99999 }, 0.3).yes, true);   // money off: price does not matter
+    const p = (answers, you, by = 'k.png') => ({ by, answers, you });
+    assert.equal(F.verdict(p({ a: 'yes', b: 'no' })), 'yes'); assert.equal(F.verdict(p({ a: 'no', b: 'no' })), 'no');
+    assert.equal(F.verdict(p({ a: 'no' }, 'no')), 'no'); assert.equal(F.verdict(p({ a: 'no', b: 'no' }, 'yes')), 'no');   // 2 yes of 4: not more
+    assert.equal(F.verdict(p({ a: 'no' }, undefined, 'player')), 'no');
+    const roll = () => 0;
+    const people = [{ who: 'm', social: 20, needs: ['game'], canDo: () => false }, { who: 'k', social: 90, needs: ['watch'], canDo: () => true }];
+    assert.deepEqual(F.pickWant(people, (a) => a !== 'watch', 'now', roll), { by: 'k', cat: 'tv', forSelf: false });   // the house lacks a TV
+    assert.deepEqual(F.pickWant(people, () => true, 'now', roll), { by: 'm', cat: 'console', forSelf: true });           // Masha has no console
+    assert.equal(F.pickWant([{ who: 'k', social: 50, needs: [], canDo: () => true }], () => true, 'now', roll), null);
+});
 
 console.log(`furnish: ${n} tests passed`);
