@@ -95,7 +95,40 @@ their room; doors ignored the time, and nobody was ever asleep.
 - Conversations without you from the simulation's events, and calls for everyone with rule-decided answers.
 - Later: computer skins for the era, an app renaming per era, private messages starting on their own.
 
+## 6. Stabilization (0.2.0.6)
+
+Found in play and fixed: group chat answers (SillyTavern's group clean-up, timestamps, one by one), conversations
+without you while you sleep, expressions (classifier not ready, swipes, once per turn), a preset's "Send if empty"
+lines in group turns. And what they led to: expressions by a model for everyone in the scene, people who walk off in
+the story really go, characters above the dialogue box, the mechanics model's thinking level, the scene prompt's
+blocks for the house, notes and texts, the phone skins redrawn.
+
+## 7. Rooms and their things (0.2.0.7, planned)
+
+- **Fixtures**, a layer of its own (not the consumables of `stock`): things that stand in a room, have an owner (the
+  house, a character, you) and can do something. A catalog with what each one affords (watch, play, play together,
+  work, music, read, exercise, cook, bath…), the room it belongs in, a size (small / big) and its name per era; free
+  text for decor (posters, plants, photos) that only describes the room.
+- **What they do**: the scene is told what is in this room; they open actions here (yours and the characters'
+  activities: the gamer stays in with the PC); plans that need one (movie night needs a TV); someone else's things
+  are theirs.
+- **At the start**: common rooms from the house's template, bedrooms by the mechanics model from cards and profiles
+  (catalog only, plus decor), editable in the phone.
+- **Getting things**: ordering online (delivery in days, a courier at the door, a box in the hallway), buying in
+  person in Go out (shop kinds; big things delivered or carried with someone's help), finds (flea market, the curb,
+  the storage room), the story (the mechanics reader), gifts.
+- **House purchases** through the fund: proposals in the house chat (by the characters, for the house or their own
+  room, and by you), answers decided by rules and written by the AI, you vote with buttons; approved and paid from
+  the fund, then ordered.
+- **Your portrait**: your sprite in the lower left corner, emotions picked by you (or always neutral, or by the
+  expressions call), outfits like the characters', a frame in the era's style.
+
 ## Later (discussed, not designed yet)
+
+- **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
+  better sleep), wear and repairs (upstream's breakables), upgrading what you have. Not decided whether it is worth it.
+- **Housemates' own money**: wallets of their own, so they buy things for themselves (today they ask the house fund in
+  the chat), lend, owe and save up.
 
 - **Traits in Home** (Proficiency, Personality, Interests): today they only reach the prompt when the persona is
   created by the new-game wizard (an existing persona keeps them in its sheet, never in the prompt), and the d20 rolls
@@ -106,18 +139,12 @@ their room; doors ignored the time, and nobody was ever asleep.
   relationships (the same machinery as upstream's plans, without you).
 - **Errands from the chat**: "buy me milk" in a chat becoming an errand (the mechanics reader does it for scenes).
 - **Computers for the era**: a CRT computer with an ICQ-like window, as a thing in a room.
-- **Rooms and their things**: things per room (yours and each character's) that unlock actions there (a PC: games,
-  freelance, the chat; a guitar, an easel), change the owner's routine (the gamer stays in with the PC) and describe
-  the room to the AI. Set up front in the Home setup, bought with money, and bought by characters themselves at
-  night. Also: the room's style and mess (a lazy owner's room gets messy), a lock, gifts that stand on a shelf,
-  shared things for the whole house (a bigger TV, a coffee machine, a grill as a new plan activity), moving rooms,
-  photos from the Gallery on the wall.
+- **Rooms, more**: the room's style and mess (a lazy owner's room gets messy), a lock, moving rooms, photos from the
+  Gallery on the wall.
 - **Relationships, more**: trust as its own axis next to liking; secrets and gossip (a fact has the people who know
   it, and it travels along the ties, sometimes distorted); jealousy (romance with one hurts the pair of the two who
   care); couples between characters growing out of their value; unresolved fights that do not drift away until they
   are talked about in a scene; opinions about your partner.
-- **Deliveries**: ordering things home.
 - **Cooking**: recipes, ingredients from the inventory.
-- **Housemates' own wallets**, if the light version feels too thin.
 
 Each of these gets discussed and designed before any code.
