@@ -1,5 +1,6 @@
 import { romOf } from '../sim/romance.js';
 // The phone (Modern world): messages, people, jobs, bank and homes. Opens over the map or the scene.
+import { skinClass, skinChrome } from './phoneskin.js'; // [expanded]
 import { askingFrom, answerAdvice } from '../sim/happenings.js';
 import { approvalOf, approvalWord } from '../sim/living.js';
 import { missingCourses, interviewChance, triedToday } from '../sim/skills.js';
@@ -542,11 +543,11 @@ export function phoneHtml() {
     if (BOOK)
         return bookHtml(g, w, body);
     const unread = phoneUnread();
-    return `<div class="mu-phone ${P.closing ? 'is-closing' : ''}" role="dialog" aria-label="Phone"><div class="mu-ph-status">
+    return `<div class="mu-phone ${P.closing ? 'is-closing' : ''} ${skinClass() /* [expanded] */}" role="dialog" aria-label="Phone"><div class="mu-ph-status">
             <span class="mu-ph-left"><b>${hm(g.minutes)}</b>${unread ? `<i class="mu-ph-notif" title="${unread}">${icon('chat')}</i>` : ''}</span>
             <span class="mu-ph-right">${SIGNAL}${icon('wifi')}<span class="mu-ph-batt"><small>100%</small><i><b></b></i></span></span></div>
         <div class="mu-ph-screen ${wallpaper() ? 'has-bg' : ''}" data-keep="ph-screen" style="${wallpaper() ? `--ph-bg:${esc(cssUrl(wallpaper()))}` : ''}">${body}</div>
-        <button class="mu-ph-close" data-act="ph-close" aria-label="${esc(T('closeDevice'))}"></button></div>`;
+        ${skinChrome() /* [expanded] keypad, PDA buttons */}<button class="mu-ph-close" data-act="ph-close" aria-label="${esc(T('closeDevice'))}"></button></div>`;
 }
 /* ---------- the medieval journal: an open book, contents on the left, the chosen section on the right ---------- */
 const RIBBONS = [10, 20, 30, 40, 50, 60, 70, 80]; // cloth bookmarks along the right edge (top of each, in % of the book's height)

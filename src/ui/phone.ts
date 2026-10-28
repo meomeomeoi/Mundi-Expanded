@@ -1,5 +1,6 @@
 import { romOf } from '../sim/romance.js';
 // The phone (Modern world): messages, people, jobs, bank and homes. Opens over the map or the scene.
+import { skinClass, skinChrome } from './phoneskin.js';   // [expanded]
 import { askingFrom, answerAdvice } from '../sim/happenings.js';
 import { approvalOf, approvalWord } from '../sim/living.js';
 import { missingCourses, interviewChance, triedToday } from '../sim/skills.js';
@@ -453,11 +454,11 @@ export function phoneHtml(): string {
         : P.app === 'social' ? socialApp(g) : P.app === 'post' ? postApp(g) : P.app === 'dating' ? datingApp(g, w) : P.app === 'dprofile' ? datingProfileApp(g, w) : P.app === 'matches' ? matchesApp(g) : P.app === 'plans' ? calendarApp(g, w, head(appName('plans'), 'home')) : P.app === 'journal' ? journalApp(g, w, head(appName('journal'), 'home')) : P.app === 'shop' ? shopApp(g, w, head(appName('shop'), 'home')) : P.app === 'goals' ? goalsApp(g, w, hd('goals')) : P.app === 'sheet' ? sheetApp(g, w, hd('sheet')) : P.app === 'quests' ? questsApp(g, w, hd('quests')) : P.app === 'grimoire' ? grimoireApp(g, w, head(appName('grimoire'), 'home')) : P.app === 'party' ? partyApp(g, w, hd('party')) : P.app === 'standing' ? standingApp(g, w, hd('standing')) : P.app === 'pets' ? petsApp(g, w, hd('pets')) : P.app === 'factions' ? factionsApp(g, w, hd('factions')) : P.app === 'assets' ? holdingsApp(g, w, head(appName('assets'), 'home')) : P.app === 'tower' ? towerApp(g, w, hd('tower')) : P.app === 'contracts' ? contractsApp(g, w, hd('contracts')) : P.app === 'workshop' ? workshopApp(g, w, head(appName('workshop'), 'home')) : P.app === 'trophies' ? trophiesApp(g, w, hd('trophies')) : P.app === 'blade' ? bladeApp(g, w, hd('blade')) : P.app === 'soulbond' ? soulApp(g, w, hd('soulbond')) : P.app === 'health' ? healthApp(g, w, head(appName('health'), 'home')) : P.app === 'settings' ? settingsApp() : P.app === 'profile' ? profileApp(g, w, hd('profile', T('profile'))) : BOOK ? bookFront(g, w) : homeApp(g, w);
     if (BOOK) return bookHtml(g, w, body);
     const unread = phoneUnread();
-    return `<div class="mu-phone ${P.closing ? 'is-closing' : ''}" role="dialog" aria-label="Phone"><div class="mu-ph-status">
+    return `<div class="mu-phone ${P.closing ? 'is-closing' : ''} ${skinClass() /* [expanded] */}" role="dialog" aria-label="Phone"><div class="mu-ph-status">
             <span class="mu-ph-left"><b>${hm(g.minutes)}</b>${unread ? `<i class="mu-ph-notif" title="${unread}">${icon('chat')}</i>` : ''}</span>
             <span class="mu-ph-right">${SIGNAL}${icon('wifi')}<span class="mu-ph-batt"><small>100%</small><i><b></b></i></span></span></div>
         <div class="mu-ph-screen ${wallpaper() ? 'has-bg' : ''}" data-keep="ph-screen" style="${wallpaper() ? `--ph-bg:${esc(cssUrl(wallpaper()))}` : ''}">${body}</div>
-        <button class="mu-ph-close" data-act="ph-close" aria-label="${esc(T('closeDevice'))}"></button></div>`;
+        ${skinChrome() /* [expanded] keypad, PDA buttons */}<button class="mu-ph-close" data-act="ph-close" aria-label="${esc(T('closeDevice'))}"></button></div>`;
 }
 /* ---------- the medieval journal: an open book, contents on the left, the chosen section on the right ---------- */
 

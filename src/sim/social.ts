@@ -1,5 +1,6 @@
 // Relationships, meet-ups and text messages. Bond grows when you talk to someone (in a scene or by phone);
 // a meet-up puts her at a place you chose for two hours; at a high bond you can ask her to be your partner.
+import { eraTextLine } from './era.js';   // [expanded]
 import { notify, nowAbs, cfg, type Save, type Resident } from '../core/store.js';
 import { type WorldDef, messageKind, aiVoice, isScenario, getWorld } from '../core/world.js';
 import { difficultyOf } from './bills.js';
@@ -99,6 +100,7 @@ function textTranscript(g: Save, w: WorldDef, r: Resident, note = ''): string {
         `[They are ${letters ? 'writing letters' : 'texting'}, not together. ${r.name} talks about their own day (what they are doing, how they feel, what they will do today) and answers what ${me} wrote. ${r.name} does not know where ${me} is or what ${me} is doing unless ${me} said it in these messages (never guess it, never mention ${me}'s place or home on their own), and does not keep repeating plans they already agreed on, unless ${me} brings them up.]`,
         `[${r.name}: ${about}${c?.personality ? ` Personality: ${String(c.personality).replace(/\s+/g, ' ').slice(0, 300)}` : ''}]`,
         `[Each ${letters ? 'letter' : 'message'} is short (one to three sentences), ${aiVoice(w)}, written in ${aiLangName(g.lang)}, and answers the ${letters ? 'letter' : 'message'} right before it.]`,
+        ...(eraTextLine(g as any) ? [`[${eraTextLine(g as any)}]`] : []),   // [expanded] the era
         ...thread.slice(-14).map(t => `${t.me ? me : r.name}: ${t.text.replace(/\s+/g, ' ')}`),
         ...(note ? [`[${note}]`] : []),
     ].join('\n');

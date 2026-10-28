@@ -6,7 +6,8 @@ import { isWeekend } from './time.js';
 import { placeOn, extraRooms, isOuting } from './places.js';
 import { whereNow, OUT } from './people.js';
 import { homeJobOf, onShift, npcOut } from './hometime.js';
-import { charOf } from '../st/bridge.js';
+import { charOf, chatLore } from '../st/bridge.js';
+import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
 import { houseNotes, presentNotes } from './lifehooks.js';
 import { bondsOf, pairKey } from './bonds.js';
@@ -75,6 +76,7 @@ export function asleepNow(r: Resident, at: number): boolean | null {
 export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     if (!isScenario(w)) return [];
     const now = nowAbs(g); const out: string[] = [];
+    const era = eraPromptLine(g as any, !!chatLore()); if (era) out.push(era);
     const roomName = (id: string) => w.places.find(p => p.id === id)?.name.toLowerCase() ?? extraRooms(g).find(p => p.id === id)?.name.toLowerCase() ?? '';
     const doing = present.map(r => {
         const s = slotAt(g, w, r, now); if (!s) return '';

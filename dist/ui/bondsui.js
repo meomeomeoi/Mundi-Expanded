@@ -2,6 +2,7 @@
 // their relationships as lines), and what is known about a pair or a person. By default it only shows; editing is
 // unlocked in the phone's Settings (per save), where the life-without-you setting lives too. Rules in sim/bonds.ts.
 import { houseRulesHtml } from './profileui.js';
+import { eraSettingsHtml } from './phoneskin.js';
 import { saveGame, notify, esc, game } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { thumb, personaThumb, personaName } from '../st/bridge.js';
@@ -209,7 +210,7 @@ export function bondsSettingsHtml() {
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-money" ${g.house?.on ? 'checked' : ''}><span>Money in this house</span></label>
         <small class="mu-muted">${g.house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small>
-        ${houseRulesHtml(g)}</section>`;
+        ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}`;
 }
 /* ---------- actions ---------- */
 const done = () => { saveGame(); refreshPrompt(); notify(); };
