@@ -34,8 +34,20 @@ export function ctxFor(g: Save, w: WorldDef, r: Resident, day: number): P.DayCtx
 // How two characters get along (Mundi Expanded's pair value; 0 when unknown). Read without creating anything.
 const pairValue = (g: Save, a: string, b: string) => (bondsOf(g as any).pairs[pairKey(a, b)]?.v ?? 0);
 const memo = new Map<string, Record<string, P.Slot[]>>();
+// [expanded] A plan asked for again in the same piece of work (one drawing of the screen, one prompt) is the one just
+// made: whereNow asks for everyone's day for each person, dozens of times a drawing, and each time built a key out of
+// every profile (JSON.stringify). Forgotten once that work is done (a microtask), so any change is seen next time.
+const tick = new Map<number, Record<string, P.Slot[]>>(); let tickOf: object | null = null; let tickQueued = false;
 /** Everyone's day at once (each from their profile, then drawn to friends and away from enemies). */
 export function housePlan(g: Save, w: WorldDef, day: number): Record<string, P.Slot[]> {
+    if (tickOf !== g) { tick.clear(); tickOf = g; }
+    const hit = tick.get(day); if (hit) return hit;
+    const plan = housePlanNow(g, w, day);
+    tick.set(day, plan);
+    if (!tickQueued) { tickQueued = true; queueMicrotask(() => { tick.clear(); tickOf = null; tickQueued = false; }); }
+    return plan;
+}
+function housePlanNow(g: Save, w: WorldDef, day: number): Record<string, P.Slot[]> {
     const lx = P.lifexOf(G(g));
     const people = Object.values(g.cast).filter(r => lx.profiles[r.avatar]);
     if (!people.length) return {};

@@ -34,8 +34,30 @@ export function ctxFor(g, w, r, day) {
 // How two characters get along (Mundi Expanded's pair value; 0 when unknown). Read without creating anything.
 const pairValue = (g, a, b) => (bondsOf(g).pairs[pairKey(a, b)]?.v ?? 0);
 const memo = new Map();
+// [expanded] A plan asked for again in the same piece of work (one drawing of the screen, one prompt) is the one just
+// made: whereNow asks for everyone's day for each person, dozens of times a drawing, and each time built a key out of
+// every profile (JSON.stringify). Forgotten once that work is done (a microtask), so any change is seen next time.
+const tick = new Map();
+let tickOf = null;
+let tickQueued = false;
 /** Everyone's day at once (each from their profile, then drawn to friends and away from enemies). */
 export function housePlan(g, w, day) {
+    if (tickOf !== g) {
+        tick.clear();
+        tickOf = g;
+    }
+    const hit = tick.get(day);
+    if (hit)
+        return hit;
+    const plan = housePlanNow(g, w, day);
+    tick.set(day, plan);
+    if (!tickQueued) {
+        tickQueued = true;
+        queueMicrotask(() => { tick.clear(); tickOf = null; tickQueued = false; });
+    }
+    return plan;
+}
+function housePlanNow(g, w, day) {
     const lx = P.lifexOf(G(g));
     const people = Object.values(g.cast).filter(r => lx.profiles[r.avatar]);
     if (!people.length)
