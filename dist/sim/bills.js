@@ -12,6 +12,8 @@ import { lex, appRef } from '../core/lexicon.js';
 export const DIFFICULTIES = [
     { id: 'easy', name: 'Easy', desc: 'Work pays more, things cost less, and you start with more money.', homeDesc: 'Friendship and love grow fast.', pay: 1.25, price: 0.8, start: 1.5, bond: 1.5 },
     { id: 'normal', name: 'Normal', desc: 'The balance the world was made with.', homeDesc: 'Relationships grow at their usual pace.', pay: 1, price: 1, start: 1, bond: 1 },
+    // [expanded] Home only: closeness takes weeks (see sim/slow.ts)
+    { id: 'slow', name: 'Slow burn', desc: 'The balance the world was made with.', homeDesc: 'Closeness takes weeks: every gain is halved, love grows only out of friendship (2 a day at most), and someone new is too soon to ask out.', pay: 1, price: 1, start: 1, bond: 0.5 },
     { id: 'hard', name: 'Hard', desc: 'Work pays less, everything costs more, and you start with little. Every bill counts.', homeDesc: 'Trust is earned slowly: friendship and love take time.', pay: 0.8, price: 1.25, start: 0.6, bond: 0.6 },
 ];
 export const difficultyOf = (g) => DIFFICULTIES.find(d => d.id === (cfg(g).difficulty ?? 'normal')) ?? DIFFICULTIES[1];

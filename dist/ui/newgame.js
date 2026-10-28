@@ -336,7 +336,7 @@ function stepReview() {
         <ul class="mu-muted mu-review-list">${wz.examples ? '<li>the example characters\' cards</li>' : ''}${wz.heroMode === 'existing' ? '' : '<li>your persona</li>'}<li>the lorebook “Mundi - ${esc(w.name)}”</li><li>a group chat for this game (each save is a chat of that group)</li></ul>
     </div><div class="mu-panel mu-review">
         <h4>Difficulty</h4>
-        <div class="mu-heropick is-start mu-diff">${DIFFICULTIES.map(d => `<button class="mu-herocard ${(wz.difficulty ?? 'normal') === d.id ? 'is-on' : ''}" data-act="ng-diff" data-v="${d.id}"><b>${d.name}</b><p>${home ? d.homeDesc : d.desc}</p></button>`).join('')}</div>
+        <div class="mu-heropick is-start mu-diff">${DIFFICULTIES.filter(d => d.id !== 'slow' || home) /* [expanded] */.map(d => `<button class="mu-herocard ${(wz.difficulty ?? 'normal') === d.id ? 'is-on' : ''}" data-act="ng-diff" data-v="${d.id}"><b>${d.name}</b><p>${home ? d.homeDesc : d.desc}</p></button>`).join('')}</div>
         ${memoriesHtml()}
     </div></div>`;
 }

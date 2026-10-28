@@ -7,6 +7,7 @@ import { charOf, personaName, sayLine, translateTo } from '../st/bridge.js';
 import { whereNow } from './people.js';
 import { aiLangName } from '../core/i18n.js';
 import { hm, weekday } from './time.js';
+import { slowBump } from './slowburn.js'; // [expanded]
 import { placeOf } from './places.js';
 export function social(g) {
     const s = (g.social ??= {});
@@ -34,6 +35,7 @@ export function bondLabel(g, avatar) {
 }
 // Moves bond without the daily cap (keeping or missing a date, a match).
 export function bump(g, avatar, delta) {
+    delta = slowBump(g, avatar, delta); // [expanded] slow burn halves gains
     const s = social(g);
     s.bond[avatar] = Math.max(0, Math.min(100, (s.bond[avatar] ?? 0) + delta));
 }

@@ -84,4 +84,5 @@ fi
 node tests/bonds.test.mjs || { echo "BONDS TESTS FAILED"; exit 1; }
 node tests/stock.test.mjs || { echo "STOCK TESTS FAILED"; exit 1; }
 node tests/money.test.mjs || { echo "MONEY TESTS FAILED"; exit 1; }
+node tests/slow.test.mjs || { echo "SLOW TESTS FAILED"; exit 1; }
 echo "build ok"

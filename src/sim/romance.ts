@@ -7,6 +7,7 @@ import { social, bondOf, bump } from './social.js';
 import { approvalOf, approve } from './living.js';
 import { note } from './facts.js';
 import { romanceBlocked, canTryForBaby } from './family.js';
+import { slowRomance, knownNote } from './slowburn.js';   // [expanded]
 import { getWorld, systemOn, type SystemId } from '../core/world.js';
 // Is a system on in this save's world (romance, children)?
 export const sysOn = (g: Save, id: SystemId) => systemOn(getWorld(g.world), id);
@@ -77,7 +78,7 @@ export function readiness(g: Save, avatar: string, name: string, k: AskKind): st
         : 'would most likely say no, or feel uncomfortable: it is too soon';
     return `[{{user}} is asking ${name} ${k === 'date' ? 'to be a couple' : k === 'propose' ? 'to marry them' : k === 'marry' ? 'to get married now' : 'to try for a baby together'}. Where they stand: ${ft}, romance: ${rt}${a <= -15 ? `, and ${name} disapproves of how {{user}} behaves` : ''}. Realistically ${name} ${lean}. ` +
         (k === 'date' && partnersOf(g).some(a => a !== avatar) ? (polyOn(g) ? `${name} knows {{user}} is already with someone; relationships are open here, so that is fine. ` : `${name} knows {{user}} is already with someone else, which matters to most people. `) : '') +
-        `Let ${name}'s personality decide within that; do not make ${name} agree just to please. Write ${name}'s honest reaction, and make the answer clear (yes, no, or that they need time to think).]`;
+        `Let ${name}'s personality decide within that; do not make ${name} agree just to please. Write ${name}'s honest reaction, and make the answer clear (yes, no, or that they need time to think).]` + knownNote(g, avatar, name);   // [expanded] slow burn: someone new is too soon
 }
 
 // Open relationships (World → Rules): no jealousy, several partners at once, and everyone knows it.
@@ -144,7 +145,7 @@ export function applyVerdict(g: Save, people: { avatar: string; name: string }[]
         const df = Math.max(-3, Math.min(3, Number(m[2]))) * 3, dr = Math.max(-3, Math.min(3, Number(m[3]))) * 3;
         const f0 = bondOf(g, p.avatar), r0 = romValue(g, p.avatar);
         if (df) bump(g, p.avatar, df);
-        if (dr && sysOn(g, 'romance') && !romanceBlocked(g, p.avatar)) addRomance(g, p.avatar, dr);
+        if (dr && sysOn(g, 'romance') && !romanceBlocked(g, p.avatar)) addRomance(g, p.avatar, slowRomance(g, p.avatar, dr, romValue(g, p.avatar), bondOf(g, p.avatar)));   // [expanded] slow burn
         out.push({ avatar: p.avatar, name: p.name, why: m[4].trim().slice(0, 160), f0, f1: bondOf(g, p.avatar), r0, r1: romValue(g, p.avatar) });
     }
     return out;
