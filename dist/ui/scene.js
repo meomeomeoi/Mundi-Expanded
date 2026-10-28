@@ -394,6 +394,7 @@ export function afterScene(_main) {
         classifying = i;
         let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
+            console.info(`[Mundi Expanded] expressions: SillyTavern's classifier for ${m.name}: ${label || '(nothing: tried again later)'}`);
             if (!label)
                 return;
             ok = true;
@@ -442,17 +443,21 @@ function byModel(list) {
     const lines = list.filter((m) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1;
     const prompt = exprPrompt({ people, you: personaName(), lines });
+    console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
         const R = await import('../sim/regulator.js');
         const ans = src === 'mech' ? await R.bgAsk(prompt, 1500, EXPR_SYSTEM) : await quiet(prompt, 1500, EXPR_SYSTEM);
-        return parseExprs(ans, people);
-    })().catch((e) => { console.warn('[Mundi Expanded] expressions', e); return {}; }).then(got => {
+        const got = parseExprs(ans, people);
+        console.info('[Mundi Expanded] expressions: answer', JSON.stringify(ans).slice(0, 400), '→', got);
+        return got;
+    })().catch((e) => { console.warn('[Mundi Expanded] expressions: the call failed', e); return {}; }).then(got => {
         const newest = pending[0];
         if (!Object.keys(got).length) {
+            console.warn('[Mundi Expanded] expressions: nothing usable, SillyTavern\'s classifier takes these lines');
             for (const m of pending)
                 MODEL_FAILED.add(m);
             return;
-        } // SillyTavern's classifier takes them
+        }
         newest.extra = { ...(newest.extra ?? {}), mundi_exprs: got };
         const judged = new Set();
         for (const m of pending) {

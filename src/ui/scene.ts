@@ -375,6 +375,7 @@ export function afterScene(_main: HTMLElement) {
         TRIED.set(m, tries + 1); classifying = i;
         let ok = false;
         expressionOf(cleanText(m.mes)).then(label => {
+            console.info(`[Mundi Expanded] expressions: SillyTavern's classifier for ${m.name}: ${label || '(nothing: tried again later)'}`);
             if (!label) return;
             ok = true;
             m.extra = { ...(m.extra ?? {}), mundi_expr: label };
@@ -404,13 +405,16 @@ function byModel(list: any[]): boolean {
     const lines = list.filter((m: any) => !m.is_system && String(m.mes ?? '').trim()).slice(-6).map((m: any) => ({ name: m.is_user ? personaName() : String(m.name ?? ''), text: cleanText(m.mes).replace(/\s+/g, ' ').slice(0, 900) }));
     classifying = list.length - 1;
     const prompt = exprPrompt({ people, you: personaName(), lines });
+    console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
         const R = await import('../sim/regulator.js');
         const ans = src === 'mech' ? await R.bgAsk(prompt, 1500, EXPR_SYSTEM) : await quiet(prompt, 1500, EXPR_SYSTEM);
-        return parseExprs(ans, people);
-    })().catch((e) => { console.warn('[Mundi Expanded] expressions', e); return {} as Record<string, string>; }).then(got => {
+        const got = parseExprs(ans, people);
+        console.info('[Mundi Expanded] expressions: answer', JSON.stringify(ans).slice(0, 400), '→', got);
+        return got;
+    })().catch((e) => { console.warn('[Mundi Expanded] expressions: the call failed', e); return {} as Record<string, string>; }).then(got => {
         const newest = pending[0];
-        if (!Object.keys(got).length) { for (const m of pending) MODEL_FAILED.add(m); return; }   // SillyTavern's classifier takes them
+        if (!Object.keys(got).length) { console.warn('[Mundi Expanded] expressions: nothing usable, SillyTavern\'s classifier takes these lines'); for (const m of pending) MODEL_FAILED.add(m); return; }
         newest.extra = { ...(newest.extra ?? {}), mundi_exprs: got };
         const judged = new Set<string>();
         for (const m of pending) {
