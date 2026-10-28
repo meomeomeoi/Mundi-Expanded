@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.5';
+export const VERSION = '0.2.0.6';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,14 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.6', fork: true, title: 'Faces, footsteps and fixes', items: [
+        ['users', 'Faces for everyone in the scene: once a turn is over, the mechanics model gives every person here an expression from their sprites, listeners too (teased, praised, ignored). Settings → Game → Facial expressions. A swipe is read again.'],
+        ['map', 'People who walk off in the story really go: "I\'m heading out to the patio" takes them there for a while, and whoever agrees to come along follows you from room to room.'],
+        ['chat', 'Group chats, fixed: the answers arrive, one by one as if typed, at the right time; conversations without you happen even while you sleep. Conversation now / Call now in the chat settings.'],
+        ['eye', 'Characters above the dialogue box, whole (Settings → Layout), and H (or the eye on the box) hides it for a full look.'],
+        ['phone', 'The keypad phone and the PDA, redrawn: brushed metal and graphite, a glass screen, keys you want to press.'],
+        ['gear', 'Cheaper and steadier: the mechanics model thinks only as much as needed, group turns can share one prompt (for caching), a preset\'s "Send if empty" lines no longer move the clock or clutter the story, and the scene prompt keeps the house, your notes and the texts in blocks of their own.'],
+    ] },
     { v: '0.2.0.5', fork: true, title: 'The phone and the chats', items: [
         ['phone', 'Three phones: the smartphone, a keypad phone and a PDA, with working keys. And an era for the house (today, the early 2010s, the 2000s): written into the game\'s lorebook, and texting follows it.'],
         ['chat', 'The house group chat: write to everyone, and whoever feels like it answers. Make your own groups of two to four.'],

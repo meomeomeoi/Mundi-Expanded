@@ -1,5 +1,33 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.6 · 2026-10-29
+
+A release of fixes found in play, and the things they led to.
+
+- **Expressions by a model** (Settings → Game → Mechanics model → Facial expressions): once a turn is over, one short
+  call gives every person in the scene an expression from their own sprites' labels, speakers and listeners alike.
+  SillyTavern's classifier stays the default and the fallback. Expressions belong to the text they were read from (a
+  swipe is read again), are written only when nothing is being generated, and move the bond once per message.
+- **Walking off**: the same call says who walks off in the story (to any room of the house, someone's bedroom, their
+  own room or out of the house) and who goes along with you. Where they went wins over the routine and the scene lock
+  for an hour of game time; a swipe undoes it.
+- **Group chats, fixed**: answers were thrown away by SillyTavern's group clean-up (now read raw: `generateRawData`),
+  came from the future, appeared all at once (now one by one, as if typed); conversations without you were lost while
+  you slept, on the first day, or when two fell in one jump. The prompt knows the part of the day and who is asleep;
+  writing in a chat you are in is meeting you. Conversation now / Call now buttons.
+- **Group turns**: a preset's "Send if empty" line before each member is recognised (it no longer moves the clock or
+  starts a read) and hidden from the story once the turn is over. An option joins everyone here's cards into one
+  prompt, so prompt caching can work for the whole turn.
+- **Mechanics model**: how much it may think (least by default; OpenRouter and Google); the exchange reader says in the
+  console when and why it skips.
+- **Scene**: characters over the dialogue box or above it (whole); H or the eye hides the box. The floor buttons show
+  strangers too. The scene prompt has blocks of its own for the house (dropped last), what they are doing, your notes
+  (always sent) and the texts.
+- **Phone skins** redrawn with materials: grain and sheen on the body, a glass frame, an LCD with its pixel grid, domed
+  keys, engraved hardware buttons.
+- Faster: the house's plan of the day is worked out once per drawing.
+- Tests: chats 12, exprs 4.
+
 ## Mundi Expanded 0.2.0.5 · 2026-10-28
 
 - **Era** (Home, phone Settings): today, the early 2010s or the 2000s. One entry of its own in the game's lorebook
