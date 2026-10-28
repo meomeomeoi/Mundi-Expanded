@@ -13,7 +13,7 @@ import { romanceButtons } from './relui.js';
 import { outfitOf, wearOutfit, charOf } from '../st/bridge.js';
 import { outfitsOf, outfitLabel } from './outfits.js';
 
-export const RAD = { who: '' };
+export const RAD = { who: '', cy: 0, r: 0, at: '', side: 'full' as 'full' | 'l' | 'r' };   // [expanded] cy, r: the ring's centre (px from the sprite's top) and radius, measured once open
 
 const btn = (act: string, who: string, ic: string, label: string, extra = '') => `<button data-act="${act}" data-who="${esc(who)}" ${extra}>${icon(ic)}<span>${esc(label)}</span></button>`;
 // The buttons of an HTML snippet (romance, stay), so they sit on the arc like the others.
@@ -38,11 +38,30 @@ function outfits(avatar: string): string[] {
     return [`<button data-act="spr-outfit" data-who="${esc(avatar)}" data-o="" class="${cur ? '' : 'is-on'}">👕<span>Default</span></button>`,
         ...list.map(o => `<button data-act="spr-outfit" data-who="${esc(avatar)}" data-o="${esc(o)}" class="${cur.toLowerCase() === o.toLowerCase() ? 'is-on' : ''}">👗<span>${esc(outfitLabel(o))}</span></button>`)];
 }
-// Puts the buttons on an arc: angle from top to bottom on each side.
-const arc = (items: string[], side: 'l' | 'r') => {
-    const n = items.length, step = n > 1 ? Math.min(17, 100 / (n - 1)) : 0;
-    return items.map((h, k) => h.replace('<button', `<button style="--a:${((k - (n - 1) / 2) * step).toFixed(1)}deg;--k:${k}" data-rad="${side}"`)).join('');
-};
+// [expanded] A ring like the Sims' pie menu, centred on the face, in pixels (it used to be in % of the whole sprite,
+// which runs far below the text box, so the last buttons ended up under it). With outfits, the actions take the right
+// half and the outfits the left; without, the actions go all the way round.
+type Pos = { x: number; y: number; side: 'l' | 'r' | 'c' };
+// All the way round, from the top.
+function ring(n: number, r: number): Pos[] {
+    return Array.from({ length: n }, (_, k) => {
+        const a = ((-90 + (360 / n) * k) * Math.PI) / 180, x = Math.cos(a) * r, y = Math.sin(a) * r;
+        return { x, y, side: Math.abs(x) < r * 0.25 ? 'c' : x > 0 ? 'r' : 'l' } as Pos;
+    });
+}
+// A half on one side: rows a fixed step apart (they never overlap), bent into an arc.
+const STEP = 40;
+function half(n: number, r: number, side: 'l' | 'r'): Pos[] {
+    const R = Math.max(r, ((n - 1) * STEP) / 2 + 30);
+    return Array.from({ length: n }, (_, k) => {
+        const y = (k - (n - 1) / 2) * STEP, x = Math.sqrt(Math.max(0, R * R - y * y)) * 0.8 + 24;
+        return { x: side === 'r' ? x : -x, y, side } as Pos;
+    });
+}
+export const ringRadius = (n: number) => (n <= 4 ? 115 : n <= 6 ? 135 : 150);
+// How far a menu reaches up and down from its centre.
+const reach = (n: number, full: boolean, r: number) => (full ? r : ((n - 1) * STEP) / 2) + 20;
+const place = (items: string[], pos: Pos[], k0 = 0) => items.map((h, i) => h.replace('<button', `<button style="--x:${pos[i].x.toFixed(0)}px;--y:${pos[i].y.toFixed(0)}px;--k:${i + k0}" data-rad="${pos[i].side}"`)).join('');
 
 // The menu for one sprite (empty when closed). `r` is null for someone who is not one of the world's people (a scenario's card).
 export function radialHtml(avatar: string, r: Resident | null): string {
@@ -50,15 +69,46 @@ export function radialHtml(avatar: string, r: Resident | null): string {
     const g = game(); const w = g && getWorld(g.world); if (!g || !w) return '';
     const right = r ? actions(g, w, r) : [], left = outfits(avatar);
     if (!right.length && !left.length) return '';
-    return `<div class="mu-radial" role="menu" aria-label="${esc(r?.name ?? String(charOf(avatar)?.name ?? ''))}">
-        <div class="mu-rad-side is-left">${arc(left, 'l')}</div><div class="mu-rad-side is-right">${arc(right, 'r')}</div></div>`;
+    const R = RAD.r || ringRadius(right.length);
+    let html: string;
+    if (!left.length && RAD.side === 'full') html = place(right, ring(right.length, R));
+    else {
+        // the actions on the roomier side (right unless measured otherwise), the outfits on the other
+        const a: 'l' | 'r' = RAD.side === 'l' ? 'l' : 'r', b: 'l' | 'r' = a === 'r' ? 'l' : 'r';
+        html = place(right, half(right.length, R, a)) + (left.length ? place(left, half(left.length, R, b), right.length) : '');
+    }
+    const measured = RAD.at === avatar;
+    if (!measured) setTimeout(() => measure(avatar, R, right.length, left.length), 30);
+    return `<div class="mu-radial ${measured ? '' : 'is-measuring'}" role="menu" style="--cy:${measured ? `${RAD.cy}px` : '28%'}" aria-label="${esc(r?.name ?? String(charOf(avatar)?.name ?? ''))}">${html}</div>`;
 }
+// Once open: the centre goes on the face, high enough that the ring stays above the text box and below the top.
+function measure(avatar: string, R: number, nRight: number, nLeft: number) {
+    if (RAD.who !== avatar) return;
+    const fig = document.querySelector<HTMLElement>('#mundi-root .mu-sprite.is-menu');
+    const img = fig?.querySelector<HTMLElement>(':scope > img, :scope > .is-avatar');
+    if (!fig || !img) { Object.assign(RAD, { at: avatar, cy: 160, side: nLeft ? 'r' : 'full' }); notify(); return; }
+    const f = fig.getBoundingClientRect(), im = img.getBoundingClientRect();
+    const box = document.querySelector<HTMLElement>('#mundi-root .mu-dialog')?.getBoundingClientRect();
+    const stage = fig.closest<HTMLElement>('.mu-sprites')?.getBoundingClientRect() ?? f;
+    const top = Math.max(stage.top, 0) + 16, bottom = (box && box.top > top ? box.top : Math.min(stage.bottom, window.innerHeight)) - 16;
+    // full ring only with room for labels (about 190 px) on both sides; else the roomier half
+    const cx = f.left + f.width / 2, roomL = cx - Math.max(stage.left, 0), roomR = Math.min(stage.right, window.innerWidth) - cx;
+    const side: 'full' | 'l' | 'r' = !nLeft && roomL > R + 190 && roomR > R + 190 ? 'full' : roomR >= roomL ? 'r' : 'l';
+    let r = R; const full = side === 'full';
+    if (full && bottom - top < 2 * reach(nRight, true, r)) r = Math.max(80, (bottom - top) / 2 - 20);
+    const up = reach(Math.max(nRight, nLeft), full, r);
+    const face = im.top + Math.min(im.height * 0.24, 230);   // a sprite's face is near its top
+    const cy = Math.min(Math.max(face, top + up), bottom - up);
+    Object.assign(RAD, { at: avatar, cy: Math.round(cy - f.top), r: Math.round(r), side });
+    notify();
+}
+window.addEventListener?.('resize', () => { if (RAD.who) { RAD.at = ''; RAD.r = 0; RAD.side = 'full'; notify(); } });
 
 Object.assign(ACT, {
     'spr-menu': (el, e) => {
         if ((e?.target as HTMLElement)?.closest?.('.mu-radial')) return;
         const who = el.dataset.who ?? '';
-        RAD.who = RAD.who === who ? '' : who; notify();
+        RAD.who = RAD.who === who ? '' : who; RAD.at = ''; RAD.r = 0; RAD.side = 'full'; notify();
     },
     'spr-close': () => { if (RAD.who) { RAD.who = ''; notify(); } },
     'spr-outfit': async (el) => {
