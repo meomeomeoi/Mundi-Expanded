@@ -24,7 +24,6 @@ const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
 const pairValue = (g, a, b) => bondsOf(g).pairs[pairKey(a, b)]?.v ?? 0;
 const names = (g, who) => { const n = who.map(a => g.cast[a]?.name ?? '?'); return n.length <= 1 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n.at(-1)}`; };
 const hh = (m) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:00`;
-let busy = false;
 /** What happened lately that the house may talk about. */
 export function newsOf(g, w) {
     const now = nowAbs(g);
@@ -66,10 +65,7 @@ function topicFor(g, w, n, opener) {
 }
 /** A conversation now (fired at one of the day's hours; by hand in tests). */
 export async function startTalk(g, w, force) {
-    if (busy)
-        return [];
-    busy = true;
-    try {
+    {
         const now = nowAbs(g);
         const news = newsOf(g, w);
         const n = C.pickNews(news, H(`${now}|news`));
@@ -98,9 +94,6 @@ export async function startTalk(g, w, force) {
         const msgs = await write(g, w, c, [opener, ...rest], topicFor(g, w, n, opener), news.filter(x => x.text).map(x => x.text));
         tell(g, c, msgs);
         return msgs;
-    }
-    finally {
-        busy = false;
     }
 }
 /* ---------- their own chats ---------- */
@@ -206,22 +199,25 @@ function tell(g, c, msgs) {
             toast(`${c.name} · ${nameOf(g, msgs[0].by)}: ${msgs[0].text.slice(0, 70)}`, 'info');
     }).catch(() => { }), typeMs(msgs[0].text, true));
 }
-// The day's hours at midnight; a conversation when one comes.
-onDay.push((g, w) => {
+// The day's hours at midnight (or, [expanded], the first time a day without them is seen: the first day of a game, a
+// save from before; hours already gone count as done, so nothing bursts out at once); a conversation when one comes.
+const dayHours = (g) => { const x = chatsOf(g); x.talks = { day: g.day, hours: C.dayTalks(x.freq, (k) => H(`${g.world}|${g.day}|talk|${k}`)), done: [] }; return x.talks; };
+onDay.push((g, w) => { if (isScenario(w))
+    dayHours(g); return []; });
+// [expanded] also while you sleep (they live on; the messages wait in the phone): before, sleeping through the day lost
+// all of its conversations. Who can start and answer is still only who is awake then (their own bedtimes).
+onHour.push((g, w) => {
     if (!isScenario(w))
         return [];
     const x = chatsOf(g);
-    x.talks = { day: g.day, hours: C.dayTalks(x.freq, (k) => H(`${g.world}|${g.day}|talk|${k}`)), done: [] };
-    return [];
-});
-onHour.push((g, w) => {
-    if (!isScenario(w) || g.asleep)
-        return [];
-    const x = chatsOf(g);
-    const t = x.talks;
-    if (!t || t.day !== g.day || x.freq === 'off')
+    if (x.freq === 'off')
         return [];
     const h = Math.floor(g.minutes / 60);
+    let t = x.talks;
+    if (!t || t.day !== g.day) {
+        t = dayHours(g);
+        t.done = t.hours.filter(x2 => x2 < h);
+    }
     const due = t.hours.find(x2 => x2 <= h && !t.done.includes(x2));
     if (due === undefined)
         return [];

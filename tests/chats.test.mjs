@@ -83,4 +83,10 @@ test('the night reads the day\'s chats you are in (not theirs, not other days)',
     assert.deepEqual(d.lines, ['[House chat] K: hi', '[House chat] Gleb: yo']); assert.deepEqual(d.authors, ['k']);
 });
 
+test('the prompt says who is asleep (and nothing when nobody is)', () => {
+    const base = { chatName: 'House', when: 'Monday, 02:00 (night)', lang: 'English', voice: 'casual', era: '', members: [{ name: 'Kathie', about: '' }, { name: 'Finn', about: '' }], you: 'Gleb', youIn: true, known: '', news: [], history: [], writers: ['Kathie'] };
+    assert.match(C.chatPrompt({ ...base, asleep: ['Finn'] }), /Asleep right now: Finn\./);
+    assert.doesNotMatch(C.chatPrompt(base), /Asleep/); assert.match(C.chatPrompt(base), /02:00 \(night\)/);
+});
+
 console.log(`chats: ${n} tests passed`);

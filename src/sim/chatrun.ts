@@ -8,7 +8,7 @@ import { bondOf, social } from './social.js';
 import { bondsOf, pairKey, personalityOf } from './bonds.js';
 import { whereNow, OUT } from './people.js';
 import { isSleeping } from './plans.js';
-import { weekday, hm } from './time.js';
+import { weekday, hm, period } from './time.js';
 import { liveDigest } from './livelog.js';
 import { eraTextLine } from './era.js';
 import { presentNotes } from './lifehooks.js';
@@ -72,19 +72,28 @@ const about = (r: Resident) => { const c: any = charOf(r.avatar); return persona
 
 /** Writes the next messages of `writers` (in order) and posts them, a minute or two apart. */
 /** `loud`: you wrote, so a failure is shown (conversations without you only log it). */
+// [expanded] One AI call at a time: conversations fired by one long jump (or while you sleep) wait their turn instead of
+// being dropped. Everything about a conversation (who, when, the prompt) is decided at its moment, before it waits.
+let SERIAL: Promise<unknown> = Promise.resolve();
+function inTurn<T>(f: () => Promise<T>): Promise<T> { const p = SERIAL.then(f, f); SERIAL = p.catch(() => undefined); return p; }
+
 export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], topic = '', news: string[] = [], loud = false): Promise<C.Msg[]> {
     const ws = writers.map(a => g.cast[a]).filter(Boolean) as Resident[]; if (!ws.length) return [];
+    const at0 = nowAbs(g);   // the moment it happens (a jump goes on while the AI writes)
+    const asleep = c.members.filter(a => g.cast[a] && !writers.includes(a) && isSleeping(g.cast[a], at0)).map(a => g.cast[a].name);
     const prompt = C.chatPrompt({
-        chatName: c.name, when: `${weekday(g.day)}, ${hm(g.minutes)}`, lang: aiLangName(g.lang), voice: aiVoice(w), era: eraTextLine(g as any),
+        chatName: c.name, when: `${weekday(g.day)}, ${hm(g.minutes)} (${period(w, g.minutes).name.toLowerCase()})`, asleep, lang: aiLangName(g.lang), voice: aiVoice(w), era: eraTextLine(g as any),
         members: c.members.map(a => g.cast[a]).filter(Boolean).map(r => ({ name: r.name, about: about(r) })), you: personaName(), youIn: c.you,
         known: liveDigest(g, w, ws.map(r => r.avatar), { lines: 8, chars: 1200 }), news,
         history: c.msgs.slice(-16).map(m => ({ name: nameOf(g, m.by), text: m.text })), writers: ws.map(r => r.name), topic,
     });
     const x = chatsOf(g); let ans = ''; let failed = '';
-    TYPING.chat = c.id; TYPING.who = ws.map(r => r.avatar); notify();
     try {
-        if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); ans = await bgAsk(prompt, 2500, C.CHAT_SYSTEM); }
-        else ans = await quiet(prompt, 2500, C.CHAT_SYSTEM);
+        ans = await inTurn(async () => {
+            TYPING.chat = c.id; TYPING.who = ws.map(r => r.avatar); notify();
+            if (x.writer === 'mech') { const { bgAsk } = await import('./regulator.js'); return bgAsk(prompt, 2500, C.CHAT_SYSTEM); }
+            return quiet(prompt, 2500, C.CHAT_SYSTEM);
+        });
     } catch (e: any) { failed = String(e?.message ?? e); console.warn('[Mundi Expanded] group chat', e); }
     finally { if (TYPING.chat === c.id) { TYPING.chat = ''; TYPING.who = []; } }
     // [expanded] the answer can take a while: write into the save and the chat as they are NOW (the chat may have been
@@ -97,11 +106,12 @@ export async function write(g: Save, w: WorldDef, c: C.Chat, writers: string[], 
         notify(); return [];
     }
     const out: C.Msg[] = [];
-    // [expanded] never ahead of the game's clock: with the clock moved only by what you do, "a minute or two later"
-    // stayed in the future (answers at 10:02 while it is 10:00). The answers end at the time they arrive, a minute apart
-    // backwards when there is room, never before the last message already in the chat (so after yours, at the same minute).
-    const at = nowAbs(g2); const after = c2.msgs.at(-1)?.at ?? -Infinity;
-    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, Math.max(after, at - (lines.length - 1 - i))); if (m) out.push(m); });
+    // [expanded] when: from the moment the conversation happened (not when the AI's answer came, which after a jump or
+    // your sleep is hours later), a minute apart; never ahead of the game's clock (with the clock moved only by what you
+    // do, "a minute later" stayed in the future), never before the last message already in the chat. So an answer to
+    // you is at your message's minute, and a conversation at 16:00 is at 16:00, 16:01…
+    const clock = nowAbs(g2); const after = c2.msgs.at(-1)?.at ?? -Infinity;
+    lines.forEach((l, i) => { const m = C.post(c2, l.by, l.text, Math.max(after, Math.min(at0 + i, clock))); if (m) out.push(m); });
     reveal(c2.id, out);   // unread counts grow as they show
     return out;
 }

@@ -9,7 +9,7 @@ import { social } from '../sim/social.js';
 import { hm, weekday } from '../sim/time.js';
 import * as C from '../sim/chats.js';
 import { chatsOf, nameOf, sendToChat, unreadKey, TYPING, shownMsgs, typeMs } from '../sim/chatrun.js';
-import { pendingCall, answerCall, callText } from '../sim/chatlife.js';
+import { pendingCall, answerCall, callText, startTalk } from '../sim/chatlife.js';
 export const GC = { draft: '', busy: false };
 // making or editing one of your chats: its name and members (id '' = a new one)
 export const GN = { open: false, id: '', name: '', members: [] };
@@ -155,11 +155,33 @@ export function chatSettingsHtml(g) {
         <b>Written by</b><div class="mu-bd-seg"><button class="${x.writer === 'main' ? 'is-on' : ''}" data-act="gc-writer" data-v="main">The main model</button><button class="${x.writer === 'mech' ? 'is-on' : ''}" data-act="gc-writer" data-v="mech">The mechanics model</button></div>
         <small class="mu-muted">${x.writer === 'main' ? 'The same model as the story: the best messages.' : 'Cheaper, plainer (Settings → Game; without one, the main model).'}</small>
         <b>Conversations without you</b><div class="mu-bd-seg">${C.FREQS.map(([id, label]) => `<button class="${x.freq === id ? 'is-on' : ''}" data-act="gc-freq" data-v="${id}">${label}</button>`).join('')}</div>
-        <small class="mu-muted">${(() => { const f = C.FREQS.find(q => q[0] === x.freq); return f[2][1] ? `About ${f[2][0] === f[2][1] ? f[2][0] : `${f[2][0]}–${f[2][1]}`} a day: they talk about what happened (a film they saw, a fight, the fridge…).` : 'They only answer you.'; })()}</small></section>`;
+        <small class="mu-muted">${(() => { const f = C.FREQS.find(q => q[0] === x.freq); return f[2][1] ? `About ${f[2][0] === f[2][1] ? f[2][0] : `${f[2][0]}–${f[2][1]}`} a day: they talk about what happened (a film they saw, a fight, the fridge…).` : 'They only answer you.'; })()}</small>
+        <div class="mu-row"><button class="mu-ghost" data-act="gc-now" data-v="talk" ${GC.busy ? 'aria-disabled="true"' : ''}>Conversation now</button><button class="mu-ghost" data-act="gc-now" data-v="call" ${GC.busy ? 'aria-disabled="true"' : ''}>Call now</button></div>
+        <small class="mu-muted">Starts one right away, with whoever is awake and not here with you (a call needs a free evening slot).</small></section>`;
 }
 Object.assign(ACT, {
     'gc-writer': (el) => { const g = game(); if (!g)
         return; chatsOf(g).writer = el.dataset.v === 'mech' ? 'mech' : 'main'; saveGame(); notify(); },
+    // [expanded] a conversation without you, right now (to see it without waiting for its hour)
+    'gc-now': async (el) => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!g || !w || GC.busy)
+            return;
+        GC.busy = true;
+        notify();
+        try {
+            const got = await startTalk(g, w, el.dataset.v === 'call' ? 'call' : 'talk');
+            if (!got.length)
+                toast(el.dataset.v === 'call' ? 'No call now: nobody free to host one this evening, or nobody awake.' : 'Nobody could start one now (asleep, or here with you).', 'info');
+        }
+        catch (e) {
+            toast(String(e?.message ?? e), 'error');
+        }
+        GC.busy = false;
+        saveGame();
+        notify();
+    },
     'gc-freq': (el) => { const g = game(); if (!g)
         return; chatsOf(g).freq = el.dataset.v || 'calm'; saveGame(); notify(); },
 });

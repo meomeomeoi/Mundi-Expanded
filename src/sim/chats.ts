@@ -73,6 +73,7 @@ export interface PromptIn {
     history: { name: string; text: string }[];
     writers: string[];        // who writes now, in order
     topic?: string;           // what to write about (a conversation without you)
+    asleep?: string[];        // [expanded] members asleep now: they do not write, the others know it
 }
 export const CHAT_SYSTEM = 'You write the messages of characters in a group chat on their phones, for an interactive fiction (a role-play between consenting adults). Each message sounds like that character. You write only the messages asked for, in the format "Name: message", one per line, nothing else.';
 export function chatPrompt(p: PromptIn): string {
@@ -80,6 +81,7 @@ export function chatPrompt(p: PromptIn): string {
         `[Group chat "${p.chatName}" on their phones. ${p.when}. Members: ${[...p.members.map(m => m.name), ...(p.youIn ? [p.you] : [])].join(', ')}. They are texting, not together in one room.]`,
         ...p.members.map(m => `[${m.name}: ${m.about}]`),
         `[Messages are short (one or two sentences), casual, ${p.voice}, written in ${p.lang}.${p.era ? ` ${p.era}` : ''} Each reacts to what was said before; they may tease, joke, ask, ignore, or disagree, in character. No one describes actions or narrates.]`,
+        ...(p.asleep?.length ? [`[Asleep right now: ${p.asleep.join(', ')}. They do not write; the others may know they are sleeping.]`] : []),
         ...(p.known ? [p.known] : []),
         ...(p.news.length ? [`[Recent things in the house they may know about: ${p.news.join(' ')}]`] : []),
         ...(p.history.length ? ['[The chat so far:]', ...p.history.map(h => `${h.name}: ${h.text}`)] : ['[The chat is quiet so far.]']),
