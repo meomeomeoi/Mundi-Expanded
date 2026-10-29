@@ -81,3 +81,38 @@
 /* on the line: the caller's picture in a phone frame, at the side */
 #mundi-root .mu-sprite.is-call { scale: .62; translate: 0 -18%; filter: drop-shadow(0 0 0 transparent); }
 #mundi-root .mu-sprite.is-call > img { border-radius: 26px; border: 6px solid #15171d; background: radial-gradient(circle at 50% 30%, #3b4a6b, #151b2a); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); padding-top: 18px; }
+
+/* [expanded] 0.2.0.10: things to do together (a film, a match, rock-paper-scissors, a coin) */
+#mundi-root .mu-tg-menu, #mundi-root .mu-tg-pick { position: absolute; z-index: 61; left: 50%; bottom: 120px; transform: translateX(-50%); width: min(440px, calc(100% - 24px)); display: grid; gap: 10px; padding: 14px; border-radius: 18px; animation: mu-rise .18s ease-out; }
+#mundi-root .mu-tg-menu { grid-template-columns: 1fr 1fr; }
+#mundi-root .mu-tg-menu > button { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; font-size: 1.05em; }
+#mundi-root .mu-tg-menu > button[aria-disabled] { opacity: .45; }
+#mundi-root .mu-tg-menu > button span { font-size: .85em; }
+#mundi-root .mu-tg-menu .mu-field { grid-column: 1 / -1; }
+#mundi-root .mu-tg-pick .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-tg-pick .mu-chip img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; }
+#mundi-root .mu-tg-screen { position: absolute; z-index: 61; left: 50%; top: 14px; transform: translateX(-50%); width: min(560px, calc(100% - 24px)); display: grid; gap: 8px; pointer-events: none; }
+#mundi-root .mu-tg-screen > * { pointer-events: auto; }
+#mundi-root .mu-tg-tv { position: relative; padding: 16px 18px 20px; border-radius: 14px; background: #0b0d12; color: #f4f1e8; box-shadow: 0 0 0 6px #1b1d22, 0 0 40px rgba(120, 160, 255, .25), 0 10px 30px rgba(0, 0, 0, .5); text-align: center; overflow: hidden; }
+#mundi-root .mu-tg-tv::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .03) 0 2px, transparent 2px 4px); pointer-events: none; }
+#mundi-root .mu-tg-tv small { display: block; opacity: .6; letter-spacing: .08em; text-transform: uppercase; font-size: .7em; margin-bottom: 6px; }
+#mundi-root .mu-tg-tv p { margin: 0; font-size: 1.02em; line-height: 1.4; min-height: 2.8em; animation: mu-sub .4s ease-out; text-shadow: 0 1px 2px #000; }
+#mundi-root .mu-tg-tv > i { position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--k, 0) * 100%); background: #e44; transition: width .6s; }
+@keyframes mu-sub { from { opacity: 0; transform: translateY(4px); } }
+#mundi-root .mu-tg-react { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+#mundi-root .mu-tg-react > button:not(.mu-ghost):not(.mu-primary) { font-size: 1.3em; width: 42px; height: 42px; border-radius: 50%; padding: 0; transition: transform .12s; }
+#mundi-root .mu-tg-react > button:active { transform: scale(1.25); }
+#mundi-root .mu-tg-score { display: flex; justify-content: space-between; font-size: .95em; margin: 4px 0 10px; }
+#mundi-root .mu-tg-score b { font-size: 1.4em; margin: 0 6px; }
+#mundi-root .mu-tg-track { position: relative; height: 18px; border-radius: 9px; background: #222631; overflow: hidden; }
+#mundi-root .mu-tg-zone { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #3fbf7f, #6fe0a0); opacity: .85; }
+#mundi-root .mu-tg-mark { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #fff; box-shadow: 0 0 8px #fff; left: 0; }
+#mundi-root .mu-tg-hit { min-width: 140px; }
+#mundi-root .mu-tg-rps .mu-tg-hands .mu-chip { font-size: 1.8em; padding: 6px 16px; }
+#mundi-root .mu-tg-last { margin: 0; text-align: center; font-size: 1.2em; }
+#mundi-root .mu-tg-coin { margin: 0; text-align: center; font-size: 3em; animation: mu-flip 1.1s cubic-bezier(.3, .7, .4, 1); }
+@keyframes mu-flip { 0% { transform: rotateX(0) translateY(0); } 50% { transform: rotateX(900deg) translateY(-40px); } 100% { transform: rotateX(1800deg) translateY(0); } }
+#mundi-root .mu-sprite .mu-bubble { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); max-width: 180px; padding: 5px 10px; border-radius: 14px; background: rgba(255, 255, 255, .95); color: #222; font-size: .78em; line-height: 1.25; text-align: center; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); pointer-events: none; animation: mu-pop .3s cubic-bezier(.2, 1.6, .5, 1); z-index: 3; }
+#mundi-root .mu-sprite .mu-bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: rgba(255, 255, 255, .95); border-bottom: 0; }
+@keyframes mu-pop { from { opacity: 0; transform: translateX(-50%) scale(.6); } }
+@keyframes mu-rise { from { opacity: 0; transform: translate(-50%, 8px); } }

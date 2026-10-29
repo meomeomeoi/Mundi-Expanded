@@ -161,6 +161,7 @@ function background(g: Save, w: WorldDef) {
 }
 
 import { giftButton, giftHtml, withGift } from './giftui.js';   // [expanded]
+import { togetherButton, togetherHtml, reactionOf } from './together.js';   // [expanded] 0.2.0.10
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM, type ExprWho } from '../sim/exprs.js';   // [expanded]
 import { applyMoves, movePlaces } from '../sim/goes.js';   // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
@@ -227,7 +228,7 @@ export function sceneHtml() {
     const speaking = here.length > 1 ? (() => { const l = chat(); for (let i = l.length - 1; i >= 0 && i > l.length - 6; i--) { const a = speakerOf(l[i]); if (a) return a; if (l[i].is_user) return ''; } return ''; })() : '';
     const sprites = here.map((r, k) => {
         const src = spriteFor(r.avatar, ex[r.avatar] ?? null);
-        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
+        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${reactionOf(r.avatar) /* [expanded] */}${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
         <div class="mu-scene-bg" style="${background(g, w)}"></div>
@@ -244,7 +245,7 @@ export function sceneHtml() {
             : `<button class="mu-primary" data-act="send">Send</button>
                        <button data-act="continue" title="The character continues their last line" ${nobody ? 'disabled' : ''}>${icon('forward')}</button>
                        <button data-act="regenerate" title="Regenerate the last answer" ${nobody ? 'disabled' : ''}>${icon('redo')}</button>
-                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${diceButton(nobody)}${giftButton(nobody) /* [expanded] */}${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
+                       <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${diceButton(nobody)}${giftButton(nobody) /* [expanded] */}${togetherButton(nobody) /* [expanded] */}${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
                 </div>
             </div>
         </section>
@@ -252,7 +253,7 @@ export function sceneHtml() {
         ${portraitHtml()}${youPicHtml(ex.__you ?? null) /* [expanded] */}${lightboxHtml()}${lookConfirmHtml()}
         ${extMenuHtml()}
         ${toolsHtml()}
-        ${giftHtml() /* [expanded] */}
+        ${giftHtml() /* [expanded] */}${togetherHtml() /* [expanded] */}
     </div>`;
 }
 
