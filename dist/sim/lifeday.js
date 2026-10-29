@@ -10,7 +10,7 @@ import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
 import * as FU from './furnish.js'; // [expanded] 0.2.0.7
-import { houseNotes, presentNotes, phoneNotes } from './lifehooks.js';
+import { houseNotes, presentNotes, phoneNotes, planMods } from './lifehooks.js';
 import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
 const G = (g) => g;
@@ -57,7 +57,9 @@ export function housePlan(g, w, day) {
     const hit = tick.get(day);
     if (hit)
         return hit;
-    const plan = housePlanNow(g, w, day);
+    let plan = housePlanNow(g, w, day);
+    for (const f of planMods)
+        plan = f(g, w, day, plan); // [expanded] 0.2.0.8: secret meetings
     tick.set(day, plan);
     if (!tickQueued) {
         tickQueued = true;

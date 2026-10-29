@@ -175,6 +175,10 @@ function mapsPickerHtml(g, w, shown) {
             <i style="background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, m.image, m.images)))}')">${m.id === here ? `<em>${icon('pin')} You</em>` : ''}</i>
             <b data-notr>${esc(m.name)}</b><small data-notr>${esc(m.area ?? (m.parent ? w.maps.find(x => x.id === m.parent)?.name ?? '' : 'Main map'))}${m.trip ? ` · ${m.trip} min` : ''}</small>${knownHtml(g, w, m.id)}</button>`).join('')}</div></section></div>`;
 }
+// [expanded] 0.2.0.8: a bedroom with its door closed (not the one you are in): who is inside is not seen, only that
+// someone is (whoever sleeps there alone looks the same as two people meeting in secret).
+const shut = (g, w, loc) => isScenario(w) && loc.startsWith('home:') && loc !== g.player.loc;
+const shutFaces = '<span class="faces is-shut"><i>someone is inside</i></span>';
 // A scenario: no floor plan, the rooms of the house as pictures (as they look now); click one to go there.
 function roomsHtml(g, w) {
     const kindPic = (p) => { const k = p.home ? w.homes.kinds[p.id === playerHomeId ? g.player.home.kind : (w.homes.zones.find(z => z.id === g.cast[String(p.id).slice(5)]?.home.zone)?.kind ?? '')] : null; return k ? pictureAt(w, g.minutes, k.image, k.images) : ''; };
@@ -184,8 +188,9 @@ function roomsHtml(g, w) {
         const pic = p.home ? kindPic(p) : pictureAt(w, g.minutes, p.bg, p.bgs);
         const here = presentAt(g, w, p.id);
         const you = p.id === g.player.loc;
-        return `<button class="mu-room ${you ? 'is-you' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
-            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`;
+        const closed = here.length > 0 && shut(g, w, p.id); // [expanded] 0.2.0.8
+        return `<button class="mu-room ${you ? 'is-you' : ''} ${closed ? 'is-shut' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
+            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${closed ? shutFaces : here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`;
     };
     const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3></div>`;
     // floors set in the creator (no picture of the plan): the rooms floor by floor, one block above the other
@@ -205,7 +210,7 @@ function roomsHtml(g, w) {
 }
 // [expanded] Who is on a floor: the people the floor's rooms show (the button counted only people you know, so it showed
 // fewer faces than the rooms below it).
-const presentFloor = (g, w, floorId) => residents(g).filter(r => r.avatar !== selfOf(g) && floorOf(g, w, whereNow(g, w, r)) === floorId);
+const presentFloor = (g, w, floorId) => residents(g).filter(r => r.avatar !== selfOf(g) && floorOf(g, w, whereNow(g, w, r)) === floorId && !shut(g, w, whereNow(g, w, r))); // [expanded] 0.2.0.8: not who is behind a closed door
 // A scenario with a floor plan: the floor you are on, each room where it is (click to go there), the floors at the
 // bottom left, and the rooms not on the plan yet with a red "!".
 export const PV = { floor: '', at: '' };
@@ -217,7 +222,8 @@ function planHtml(g, w) {
     }
     const floor = plan.floors.find(f => f.id === PV.floor) ?? plan.floors.find(f => f.id === floorOf(g, w, g.player.loc)) ?? plan.floors[0];
     const kindPic = (loc) => { const k = loc === playerHomeId ? w.homes.kinds[g.player.home.kind] : w.homes.kinds[w.homes.zones.find(z => z.id === g.cast[loc.slice(5)]?.home.zone)?.kind ?? '']; return k ? pictureAt(w, g.minutes, k.image, k.images) : ''; };
-    const faces = (loc) => { const here = presentAt(g, w, loc); return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : ''; };
+    const faces = (loc) => { const here = presentAt(g, w, loc); if (here.length && shut(g, w, loc))
+        return shutFaces; return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : ''; };
     const rooms = plan.rooms.filter(r => r.floor === floor.id).map(r => {
         const t = planTarget(g, w, r);
         const box = `left:${r.x}%;top:${r.y}%;width:${r.w}%;height:${r.h}%`;
@@ -231,7 +237,7 @@ function planHtml(g, w) {
         const pic = p.home ? kindPic(t.loc) : pictureAt(w, g.minutes, p.bg, p.bgs);
         const you = t.loc === g.player.loc;
         const name = t.loc === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room");
-        return `<button class="mu-plan-room ${you ? 'is-you' : ''}" style="${box}" data-act="go" data-loc="${esc(t.loc)}" title="${you ? 'You are here' : `Go to ${esc(name)}`}">
+        return `<button class="mu-plan-room ${you ? 'is-you' : ''} ${shut(g, w, t.loc) && presentAt(g, w, t.loc).length ? 'is-shut' : ''}" style="${box}" data-act="go" data-loc="${esc(t.loc)}" title="${you ? 'You are here' : `Go to ${esc(name)}`}">
             <i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}"></i><b data-notr>${esc(name)}</b>${faces(t.loc)}${you ? `<em>${icon('pin')} You</em>` : ''}</button>`;
     }).join('');
     const lost = unplaced(g, w);

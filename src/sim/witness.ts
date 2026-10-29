@@ -12,6 +12,7 @@ import { dayStart } from './diary.js';
 import { partnersOf, romanceTier } from './romance.js';
 import { bondsOf, tieKnowLines, YOU, type GLike } from './bonds.js';
 import { knowOf, knows, howText, type Knowable } from './knows.js';
+import { sawTogether } from './secretsrun.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const hm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -21,7 +22,9 @@ const list = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1
 export function stamp(id: number) {
     const g = game(); const w = g && getWorld(g.world); if (!g || !w || !isScenario(w)) return;
     const m: any = chat()[id]; if (!m || m.is_system || isFiller(m) || m.extra?.mundi_here) return;
-    m.extra = { ...(m.extra ?? {}), mundi_here: presentAt(g, w, g.player.loc).map(r => r.avatar), mundi_loc: g.player.loc, mundi_at: nowAbs(g) };
+    const here = presentAt(g, w, g.player.loc).map(r => r.avatar);
+    m.extra = { ...(m.extra ?? {}), mundi_here: here, mundi_loc: g.player.loc, mundi_at: nowAbs(g) };
+    sawTogether(g, here, g.player.loc);   // a secret couple together in a bedroom, in front of you
 }
 
 export interface Stretch { loc: string; here: string[]; from: number; to: number; spoke: string[]; start: number; end: number }

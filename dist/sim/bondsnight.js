@@ -8,8 +8,14 @@ import { onDay } from './hooks.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
 import { placeOf } from './places.js';
-import { profileOf, ORIENTS, STATUSES } from './profile.js';
-import { bondsOf, YOU, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
+import { profileOf, nosyOf, ORIENTS, STATUSES } from './profile.js';
+import { tieK, learn } from './knows.js';
+import { hearFight } from './secrets.js';
+const Hh = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+} h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
+import { bondsOf, YOU, factK, parseFound, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
 const G = (g) => g;
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 // The daily drift back toward where each pair started (no AI; runs as the day turns, also while you sleep).
@@ -90,7 +96,18 @@ export async function bondsNight(g, w, day, range) {
         b.lastNight = day;
         return [];
     }
-    const prompt = nightPrompt(gl, { day, user: me, premise: String(g.cfg?.start?.text || w.scenario?.premise || ''), people, convo, spoke, life: b.life });
+    // [expanded] 0.2.0.8: the secrets (secret ties, your secret relationships), for "who found out today"
+    const nm = (a) => (a === YOU ? me : g.cast[a]?.name ?? a);
+    const secrets = [];
+    for (const t of (gl.living?.ties ?? []))
+        if (t.secret && (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b])) {
+            const k = tieK(t);
+            secrets.push({ text: `${nm(t.a)} and ${nm(t.b)}: ${t.type}`, known: [t.a, t.b, ...Object.keys(t.know ?? {}).filter(x => t.know[x].lvl === 'knows')].map(nm), k, store: t });
+        }
+    for (const [a, h] of Object.entries(b.hide ?? {}))
+        if (g.cast[a])
+            secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know[x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
+    const prompt = nightPrompt(gl, { day, user: me, premise: String(g.cfg?.start?.text || w.scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })) });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM); // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw))
@@ -105,6 +122,20 @@ export async function bondsNight(g, w, day, range) {
         const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen });
         if (c)
             changes.push(c);
+    }
+    // [expanded] 0.2.0.8: secrets found out in today's scenes
+    const findName = (q) => { const t = q.trim().toLowerCase(); if (t === me.toLowerCase() || t === '{{user}}' || t === 'the player')
+        return YOU; const hit = people.filter(p => p.name.toLowerCase() === t || p.name.toLowerCase().split(/\s+/)[0] === t.split(/\s+/)[0]); return hit.length === 1 ? hit[0].avatar : null; };
+    for (const f of parseFound(raw, findName, secrets.length))
+        learn(secrets[f.i].k, f.who, { lvl: 'knows', how: 'saw', day }, secrets[f.i].store);
+    // loud fights without you are heard through the walls by whoever is nosy enough
+    for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
+        const fact = b.facts.filter(f => f.kind === 'episode' && f.text === c.text).at(-1);
+        if (!fact || factK(fact).pub === 'private')
+            continue;
+        for (const r of Object.values(g.cast))
+            if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g, r.avatar))))
+                learn(factK(fact), r.avatar, { lvl: 'knows', how: 'saw', day, ver: 'heard it through the walls' }, fact);
     }
     b.lastNight = day;
     saveGame();

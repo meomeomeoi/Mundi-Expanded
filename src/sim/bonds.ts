@@ -281,11 +281,11 @@ export function tieKnowLines(g: GLike, present: string[]): string[] {
         const sus = un.filter(a => knowOf(k, a)?.lvl === 'suspects');
         const knowers = here.filter(a => !k.parts.includes(a) && knows(k, a));
         if (inScene.length) {
-            out.push(`A secret: ${word(t)}.${un.length ? ` ${list(un.map(name))} ${un.length > 1 ? 'do' : 'does'} not know: ${inScene.filter(a => a !== YOU).length ? 'they hide it in front of them' : 'it is not shown'}.` : ' Everyone here knows.'}${sus.length ? ` ${list(sus.map(name))} only suspect${sus.length > 1 ? '' : 's'} it (hints, never stated).` : ''}`);
+            out.push(`A secret: ${word(t)}.${un.length ? ` ${list(un.map(name))} ${un.length > 1 ? 'do' : 'does'} not know: ${inScene.filter(a => a !== YOU).length ? 'they hide it in front of them' : 'it is not shown'}.` : ' Everyone here knows.'}${sus.length ? ` ${list(sus.map(a => { const v = knowOf(k, a)?.ver; return v ? `${name(a)} (${v})` : name(a); }))} only suspect${sus.length > 1 ? '' : 's'} it (hints, never stated).` : ''}`);
         } else for (const a of knowers) {
-            out.push(`${name(a)} knows a secret (${howText(knowOf(k, a)!, name)}): ${word(t)}. They keep it to themselves unless they decide otherwise.`);
+            { const x = knowOf(k, a)!; out.push(`${name(a)} knows a secret (${x.ver ?? howText(x, name)}): ${word(t)}. They keep it to themselves unless they decide otherwise.`); }
         }
-        if (!inScene.length) for (const a of sus) out.push(`${name(a)} suspects that ${word(t).replace(/ is /, ' might be ')} (a hunch: hints, never stated).`);
+        if (!inScene.length) for (const a of sus) { const v = knowOf(k, a)?.ver; out.push(`${name(a)} suspects that ${word(t).replace(/ is /, ' might be ')} (${v ? `${v}; ` : ''}a hunch: hints, never stated).`); }
     }
     return [...(house.length ? [`Known to everyone in the house: ${house.slice(0, 10).join('; ')}.`] : []), ...out.slice(0, 6)];
 }
@@ -308,6 +308,7 @@ export interface NightInput {
     /** today's conversation, "Name: line" per line ('' when none) */ convo: string;
     /** who spoke today among the people */ spoke: string[];
     life: Life;
+    /** [expanded] 0.2.0.8: the house's secrets (the reader says who found one out today) */ secrets?: { text: string; known: string[] }[];
 }
 export const NIGHT_SYSTEM = 'You keep the records of an interactive fiction (a role-play story between consenting adults): how the people sharing a house get along with each other. The story may include dark or mature events; you do not judge or soften them, you only note plainly what changed between the characters. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
 /** A reply with neither part's heading is not an answer (a refusal, or something else entirely). */
@@ -341,6 +342,8 @@ export function nightPrompt(g: GLike, n: NightInput): string {
         scene
             ? `What was said today:\n${n.convo}\n\nList what changed between these people (not with ${n.user}) because of today's scenes: only real moments that were in the conversation (a fight, a kindness, teasing that hurt, a shared laugh, help, a secret kept…). Step from -3 to +3. If nothing changed between them, write NONE.`
             : 'There were no scenes with two of them today: write NONE.',
+        ...(scene && n.secrets?.length ? ['', `Secrets in the house (never reveal them yourself): ${n.secrets.map((x, i) => `${i + 1}. ${x.text} (known to: ${x.known.join(', ')})`).join(' ')}`,
+            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. Only what clearly happened in the scenes.`] : []),
         '',
         'PART 2 — life in the house without ' + n.user + '.',
         n.life === 'off' ? 'Turned off: write NONE.' : `${off} It must fit who they are and how they get along now, and not repeat what happened lately.`,
@@ -404,4 +407,15 @@ export function parseNight(raw: string, people: CastLike[], life: Life): Parsed[
         off = off.slice(0, 3).map(x => { if (Math.abs(x.delta) === 3) { big++; if (big > 1) return { ...x, delta: Math.sign(x.delta) * 2 }; } return x; });
     }
     return [...scene, ...off];
+}
+
+/** [expanded] 0.2.0.8: the night's "FOUND | who | number" lines: who found out which secret (indexes from 0). */
+export function parseFound(raw: string, find: (name: string) => string | null, count: number): { who: string; i: number }[] {
+    const out: { who: string; i: number }[] = [];
+    for (const line of String(raw ?? '').split('\n')) {
+        const m = line.trim().replace(/^[-*•]\s*/, '').match(/^FOUND\s*\|\s*(.+?)\s*\|\s*#?(\d+)/i); if (!m) continue;
+        const i = Number(m[2]) - 1; const who = find(m[1]);
+        if (who && i >= 0 && i < count && !out.some(x => x.who === who && x.i === i)) out.push({ who, i });
+    }
+    return out.slice(0, 4);
 }
