@@ -123,6 +123,60 @@ blocks for the house, notes and texts, the phone skins redrawn.
 - **Your portrait**: your sprite in the lower left corner, emotions picked by you (or always neutral, or by the
   expressions call), outfits like the characters', a frame in the era's style.
 
+## 8. Relationships 2.0: who knows what (0.2.0.8, designed)
+
+Today the AI hears about a pair only when one of the two is in the scene, and in a Home the day's lines stay in the
+chat until you sleep, so the model has read conversations the people here never heard. This release gives every fact
+the people who know it, and makes secrets, discovery and gossip out of the story. Rules decide everything; the AI
+only words it, and no new calls are made (the night call grows by about a third).
+
+- **Knowledge.** Each fact has a publicity (public / witnessed / private) and who knows it: suspects or knows, how
+  (saw it, was told, heard it second- or third-hand), and a version (a story garbled by retelling can be wrong:
+  "Masha is seeing Kathie" when it is Leah). Nobody lies on purpose yet. Defaults by kind: family, couples, exes,
+  roommates and partners are known to the house; fights and enmities to whoever saw them; secrets to the ones in them.
+  The night reader decides from the scene what was secret (whispering, a closed door, "don't tell anyone"); by
+  default, a bedroom alone is private and the kitchen with everyone is public. Facts do not get forgotten, they cool:
+  old news is not retold and is not sent. No migration of old saves.
+- **You too**: your romances and enmities can be secret, and upstream's jealousy fires only when they find out.
+- **In the scene**: what the people here know, absent pairs included, and how they know it, with the instruction to
+  let it show in how they act rather than announce it. Each line of the day keeps who was in the room ("earlier today,
+  in Masha's room, only Masha and {{user}} were there: the others do not know what was said unless told"), and a
+  privacy line ("alone in her room, the door closed: nobody can overhear" / "five people here: side conversations").
+  A block of its own in the prompt, cut early.
+- **Discovery** from the day plans (who is awake, who is in the same or the next room): per occurrence, the chance
+  that someone notices is 1 - Π(1 - visibility · access · (1 - care)). A five-minute meeting at night in a bedroom is
+  about 0.5%; a kiss in the kitchen is seen by everyone there. Loud things (a fight) are heard through walls. One clue
+  makes a suspicion, a second one knowledge. A secret meeting is in the plans; a room with its door closed is shaded
+  on the floor map with only "someone is inside". What the AI writes in a scene counts: a slip in front of others is
+  them seeing it.
+- **Gossip**, each night, between people who spent time together (the plans, and their own group chats, where it
+  spreads within the chat at once): juiciness · (1 - discretion) · loyalty to the people it is about · trust in the
+  listener · opportunity. A promise to keep it (caught by the reader) nearly stops it, but slips happen (parties).
+  Nobody tells the person it is about; a jealous ex may be told on purpose. A house setting: discreet / usual /
+  gossips. **They gossip with you** too, in a scene or a text, by how close you are: your main way to learn things.
+  Nothing leaves the house; out of it (a cinema, a café) only housemates who are there see it, and there is a tiny
+  chance that "someone saw you" reaches the house as a vague story.
+- **Limits**: at most a few rumors alive in the house (a setting); a new big one pushes out the oldest small one;
+  at most one or two new ones a night. Small secrets mostly stop after one telling.
+- **Consequences** by rules (the AI words them): jealousy, "you knew and said nothing", anger at whoever talked.
+  Whoever found out "wants to talk about it": it pushes the topic into the chat and the scene and does not drift away
+  until it is talked about. **Trust**, a second axis next to liking, between them and toward you: it decides what is
+  told to whom, and drops when a secret is spilled. A long, steady secret couple may come out on their own, which
+  ends the rumor.
+- **Off-screen shifts** come from the story only (the night's small events count): about once every two to four
+  weeks of game time on calm (a setting), and only with a reason (a high value, past episodes, time together). Romance
+  between housemates: off / only from the story (default: there was flirting or a hint before) / may grow on its own,
+  always checked against the cards. Small secrets too, more often and lighter: borrowed without asking, broke it and
+  said nothing, lost the job, a debt.
+- **Profiles** get discretion, nosiness, orientation and relationship status (single, with someone outside the house,
+  married…), from the card, editable in People.
+- **Relationships app**: what you know, with where from ("saw it yourself", "from Kathie, second-hand",
+  "you suspect"); who else knows only if you know it; your suspicions. Toasts only for your own discoveries; hints in
+  the morning diary ("Kathie kept glancing at Masha all evening"). **Show the truth** (off by default, per save, next
+  to the edit unlock): everything, with what you do not know marked.
+- **Settings for limits**: rumors alive at once, things in a room, thoughts kept per pair.
+- Children stay out of all of it.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
@@ -145,17 +199,8 @@ blocks for the house, notes and texts, the phone skins redrawn.
   it, and it travels along the ties, sometimes distorted); jealousy (romance with one hurts the pair of the two who
   care); couples between characters growing out of their value; unresolved fights that do not drift away until they
   are talked about in a scene; opinions about your partner.
-  - **Who knows what.** Today the AI hears about a pair only when one of the two is in the scene (the others never
-    learn that Masha and Leah are dating, nor that you are with Masha, unless she is there). Ties by how public they
-    are: known to the whole house (family, couples, exes, roommates, your partner), known to whoever saw it or was
-    told (fights, enmities, a crush), private (secrets). Sent for the people here, absent pairs included; the cards
-    only say what their own author wrote, and an absent character's card is not in the prompt at all.
-  - **Witnesses of the day.** In a Home the day's lines stay in the chat until you sleep (walking room to room is one
-    scene), so the model has read conversations the people here never heard. Each stretch keeps who was there, and
-    the prompt says "earlier today, in Masha's room, only Masha and {{user}} were there: the others do not know what
-    was said unless told".
-  - **Privacy in the scene**: "alone in her room, the door closed: nobody can overhear" against "five people here: side
-    conversations, not everyone hears everything".
 - **Cooking**: recipes, ingredients from the inventory.
+- **Finding things out on purpose**: following someone, asking around, listening at a door (after 0.2.0.8, where you
+  only learn things as they come: through walls, by stumbling on them, from gossip).
 
 Each of these gets discussed and designed before any code.
