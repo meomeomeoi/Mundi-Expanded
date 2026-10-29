@@ -163,7 +163,9 @@ import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM } from '../sim/exprs.js'; // [expanded]
 import { applyMoves, movePlaces } from '../sim/goes.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
-import { youPicHtml, youAuto, youLabels } from './youpic.js'; // [expanded] 0.2.0.7: your portrait
+import { youPicHtml, youAuto, youLabels } from './youpic.js';
+import { beatsHtml, beatWanted, showBeat, personaText, clearBeat } from './beats.js'; // [expanded] 0.2.0.10
+import { parseBeat } from '../sim/exprs.js'; // [expanded] 0.2.0.7: your portrait
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
 function lineHtml(m, i, last, lastChar) {
@@ -229,18 +231,26 @@ export function sceneHtml() {
     const withSprite = here.filter(r => !!spriteFor(r.avatar, ex[r.avatar] ?? null)).length;
     const sv = stageVars(here.map(r => r.avatar), a => !!spriteFor(a, ex[a] ?? null));
     void withSprite;
+    // [expanded] 0.2.0.10: who spoke last steps forward a little (the others ease back)
+    const speaking = here.length > 1 ? (() => { const l = chat(); for (let i = l.length - 1; i >= 0 && i > l.length - 6; i--) {
+        const a = speakerOf(l[i]);
+        if (a)
+            return a;
+        if (l[i].is_user)
+            return '';
+    } return ''; })() : '';
     const sprites = here.map((r, k) => {
         const src = spriteFor(r.avatar, ex[r.avatar] ?? null);
-        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
+        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
         <div class="mu-scene-bg" style="${background(g, w)}"></div>
-        <div class="mu-sprites">${sprites}</div>
+        <div class="mu-sprites ${speaking ? 'has-speaker' : ''}">${sprites}</div>
         ${dlgShowBtn()}
         <section class="mu-dialog">${dlgHideBtn()}
             <div class="mu-log" data-keep="log" data-bottom>${logHtml()}</div>
             <div class="mu-composer">
-                ${modesHtml()}
+                ${beatsHtml() /* [expanded] */}${modesHtml()}
                 <textarea data-focus="composer" rows="2" placeholder="${nobody ? 'You are alone here. Write what you do or think; the narrator describes the moment.' : 'Write what you say or do…'}">${esc(state.composer)}</textarea>
                 <div class="mu-composer-tools">
                     ${state.generating
@@ -417,7 +427,24 @@ const TRIED = new Map();
 export const GENACT = { at: 0 };
 const QUIET_MS = 2500;
 let quietTimer = null;
+// [expanded] 0.2.0.10: a new face makes a little hop (the moment the picture changes is hidden in it)
+const FACES = new Map();
+function hops(main) {
+    main.querySelectorAll('.mu-sprite[data-who]').forEach(f => {
+        const who = f.dataset.who;
+        const src = f.querySelector('img')?.getAttribute('src') ?? '';
+        const was = FACES.get(who);
+        FACES.set(who, src);
+        if (was && src && was !== src) {
+            f.classList.remove('is-hop');
+            void f.offsetWidth;
+            f.classList.add('is-hop');
+            setTimeout(() => f.classList.remove('is-hop'), 500);
+        }
+    });
+}
 export function afterScene(_main) {
+    hops(_main);
     // [expanded] not between two members of one group turn: once the whole turn is over (one call for it, and nothing
     // written to the chat while SillyTavern is still adding lines to it). Two signs: SillyTavern's group flag, and a
     // quiet moment (the next member starts right after the one before, so 2.5 s without a generation is the turn's end)
@@ -496,12 +523,20 @@ function byModel(list) {
     // newest turn only (a line read again after a swipe undoes what its old text did)
     const newestLine = list.indexOf(pending[0]);
     const places = isScenario(w) && newestLine === list.length - 1 ? movePlaces(g, w) : undefined;
-    const prompt = exprPrompt({ people, you: personaName(), lines, places, youToo });
+    const wantBeat = newestLine === list.length - 1 && beatWanted(); // [expanded] 0.2.0.10: quick reactions, now and then
+    const prompt = exprPrompt({ people, you: personaName(), lines, places, youToo, ...(wantBeat ? { beat: { persona: personaText() } } : {}) });
     console.info(`[Mundi Expanded] expressions: asking the ${src === 'mech' ? 'mechanics' : 'main'} model for ${people.map(p => `${p.name} (${p.labels.length || 'all'} labels)`).join(', ')}; ${pending.length} line(s) waiting`);
     (async () => {
         const R = await import('../sim/regulator.js');
         const ans = src === 'mech' ? await R.bgAsk(prompt, 1500, EXPR_SYSTEM) : await quiet(prompt, 1500, EXPR_SYSTEM);
         const got = parseExprs(ans, people);
+        if (wantBeat) {
+            const b = parseBeat(ans);
+            if (b && currentChatId() === chatId) {
+                console.info('[Mundi Expanded] quick reactions:', b);
+                showBeat(b);
+            }
+        }
         console.info('[Mundi Expanded] expressions: answer', JSON.stringify(ans).slice(0, 400), '→', got);
         if (places) {
             const mv = parseMoves(ans, people.filter(p => p.avatar !== '__you' && presentAt(g, w, g.player.loc).some(r => r.avatar === p.avatar)), places);
@@ -604,6 +639,7 @@ Object.assign(ACT, {
         notify();
     },
     send: async () => {
+        clearBeat(false); // [expanded] said: the quick reactions go
         const raw = state.composer.trim();
         if (!raw)
             return;

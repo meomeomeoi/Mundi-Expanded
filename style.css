@@ -2029,6 +2029,25 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-h3-btn { display: inline-flex; align-items: center; gap: 6px; }
 #mundi-root .mu-rooms-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 #mundi-root .mu-alpha { display: inline-block; justify-self: start; padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #1a1205; background: linear-gradient(135deg, #ffd45a, #ff9f3a); box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+/* [expanded] 0.2.0.10: quick reactions over the message box */
+#mundi-root .mu-beats { position: relative; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 2px 8px; animation: mu-beat-in .25s ease-out; }
+#mundi-root .mu-beat { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+#mundi-root .mu-beat:hover { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
+#mundi-root .mu-beats.is-timed .mu-beat { border-color: color-mix(in srgb, #ffb347 70%, transparent); }
+#mundi-root .mu-beat-x { width: 24px; height: 24px; padding: 0; opacity: .5; margin-left: auto; }
+#mundi-root .mu-beat-bar { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #ffb347, #ff6a3d); transform-origin: left; transform: scaleX(var(--p)); animation: mu-beat-run var(--t) linear forwards; }
+@keyframes mu-beat-run { to { transform: scaleX(0); } }
+@keyframes mu-beat-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* [expanded] 0.2.0.10: living sprites. Breathing (from the bottom edge, so a picture cut at the knees never shows its
+   edge), a hop when the face changes, the one who spoke last a little forward and the others eased back. */
+#mundi-root .mu-sprites .mu-sprite > img { transform-origin: bottom center; animation: mu-breathe 4.6s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -1.3s); }
+@keyframes mu-breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.004 1.008; } }
+#mundi-root .mu-sprite { transition: scale .35s ease, filter .35s ease; transform-origin: bottom center; }
+#mundi-root .mu-sprites.has-speaker .mu-sprite.is-speaking { scale: 1.025; z-index: 3; }
+#mundi-root .mu-sprites.has-speaker .mu-sprite:not(.is-speaking) { filter: brightness(.86) saturate(.92); }
+#mundi-root .mu-sprite.is-hop { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes mu-hop { 0% { translate: 0 0; } 35% { translate: 0 -2.2%; } 100% { translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) { #mundi-root .mu-sprites .mu-sprite > img, #mundi-root .mu-sprite.is-hop { animation: none; } }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }

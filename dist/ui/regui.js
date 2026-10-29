@@ -2,6 +2,7 @@
 import { saveSettings, notify } from '../core/store.js';
 import { INPUT } from './reg.js';
 import { regCfg, profiles } from '../sim/regulator.js';
+import { beatCfg } from './beats.js';
 export function regulatorSettingsHtml() {
     const c = regCfg();
     const list = profiles();
@@ -16,6 +17,9 @@ export function regulatorSettingsHtml() {
         ${c.profile ? `<label class="mu-field"><span>When</span><select data-input="reg-mode">${opt('message', 'After each message (when you send the next one)', c.mode === 'message')}${opt('night', 'Only at night', c.mode === 'night')}</select></label>` : ''}
         <label class="mu-field"><span>Facial expressions (sprites)</span><select data-input="reg-expr">${opt('st', "SillyTavern's Expressions classifier (its own setting: Local, LLM…)", c.expr === 'st')}${opt('mech', 'The mechanics model: everyone in the scene, one short call per reply', c.expr === 'mech')}${opt('main', 'The main model: the same, with the story model', c.expr === 'main')}</select></label>
         <small class="mu-muted">${c.expr === 'st' ? 'One line at a time: the one who spoke gets a face, the others keep theirs.' : `Speakers and listeners alike (teased, praised, ignored), from each one's sprite labels.${c.expr === 'mech' && !c.profile ? ' No mechanics model is set: the main model is used.' : ''} If the call fails, SillyTavern's classifier is used.`}</small>
+        ${c.expr !== 'st' ? `<div class="mu-field"><span>Quick reactions <small class="mu-muted">(over the message box, now and then)</small></span><div class="mu-bd-seg">${['off', 'rare', 'normal'].map(v => `<button class="${beatCfg().beats === v ? 'is-on' : ''}" data-act="bt-freq" data-v="${v}">${v === 'off' ? 'Off' : v === 'rare' ? 'Rarely' : 'Sometimes'}</button>`).join('')}</div>
+            <label class="mu-check"><input type="checkbox" data-input="bt-timer" ${beatCfg().beatTimer ? 'checked' : ''}><span>A timer when it cannot wait<small>Something tossed to you, open arms, everyone waiting: a bar runs out, and doing nothing is a hesitation.</small></span></label>
+            <small class="mu-muted">When a line puts you on the spot in a light way (a tease, a quick question, something sudden): two or three short options for who your persona is. Never for serious moments; your own words always work.</small></div>` : ''}
         ${c.profile ? `<label class="mu-field"><span>How much it thinks</span><select data-input="reg-think">${opt('min', 'As little as it can (default)', c.think === 'min')}${opt('low', 'A little', c.think === 'low')}${opt('auto', "The model's own default", c.think === 'auto')}</select></label>
         <small class="mu-muted">Its calls go without your chat preset, so the preset's reasoning setting does not reach them. Sent to OpenRouter and Google (AI Studio, Vertex); other APIs keep their default.</small>` : ''}
         <label class="mu-check"><input type="checkbox" data-input="reg-join" ${c.joinCards ? 'checked' : ''}><span>Group turns: everyone here's cards in the prompt, the same for each speaker<small>SillyTavern's "join character cards". Each one who answers in a turn starts from the same prompt, so a model with prompt caching (Gemini, Claude, DeepSeek…) pays the shared part once: see "Cached" in your provider's log. The first answer of a turn is longer (all the cards); it pays off only if your preset does not start with {{char}}. Applies at once.</small></span></label>

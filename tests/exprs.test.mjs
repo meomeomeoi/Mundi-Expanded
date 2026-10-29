@@ -35,4 +35,14 @@ test('the prompt asks for moves only with places', () => {
     assert.match(p, /"Patio", "own room" or "out of the house"/); assert.match(p, /"faces": \{/); assert.match(p, /not Maya/);
 });
 
+test('quick reactions (0.2.0.10): parsed, spaced out, written for the persona', () => {
+    const b = E.parseBeat('{"faces":{"Masha":"joy"},"beat":{"kind":"tease","options":["Ha-ha, very funny","*rolls eyes*","Says the one who burned the rice"],"timer":true}}');
+    assert.equal(b.kind, 'tease'); assert.equal(b.options.length, 3); assert.equal(b.timer, false, 'no timer for a tease');
+    assert.equal(E.parseBeat('{"faces":{},"beat":null}'), null); assert.equal(E.parseBeat('{"beat":{"kind":"hug","options":["a","b"]}}'), null);
+    assert.equal(E.parseBeat('{"beat":{"kind":"physical","options":["*catches it*","*ducks*"],"timer":true}}').timer, true);
+    assert.ok(!E.beatAllowed('rare', 3)); assert.ok(E.beatAllowed('rare', 5)); assert.ok(!E.beatAllowed('off', 99)); assert.ok(E.beatAllowed('normal', 3));
+    const p = E.exprPrompt({ people: [{ avatar: 'm', name: 'Masha', labels: [] }], you: 'Gleb', lines: [{ name: 'Masha', text: 'hi' }], beat: { persona: 'A shy student who rarely swears.' } });
+    assert.match(p, /A shy student who rarely swears/); assert.match(p, /"beat": null or/); assert.match(p, /Never for serious or emotional moments/);
+});
+
 console.log(`exprs: ${n} tests passed`);

@@ -19,10 +19,14 @@ export function exprPrompt(p) {
         ...p.lines.map(l => `${l.name}: ${l.text}`),
         `[For each of the people here: their face at the end of the last line, how they feel now. Those who did not speak too: how they react to what was said or done to them (teased, praised, ignored). What a line says about someone else is that person's, not the speaker's. Most of the time a face is neutral or mild; a strong one only when the moment shows it.]`,
         `[Labels: ${all.join(', ')}. Only these.${own.length ? ` ${own.map(x => `${x.name} has only: ${x.labels.join(', ')}.`).join(' ')}` : ''}]`,
+        ...(p.beat ? [
+            `[Also, "beat": only if the very last line puts ${p.you} on the spot in a light, quick way: a joke or a tease aimed at ${p.you} ("tease"), a quick everyday question or offer that waits for an answer right now ("ask"), something sudden (a secret blurted, something falls, someone bursts in: "sudden"), something physical offered to ${p.you} (open arms for a hug, a raised hand for a high five, something tossed: "physical"), everyone falling silent and looking at ${p.you} ("spot"). Never for serious or emotional moments (a confession, someone upset or crying, a real fight), and never for ordinary talk: then "beat": null, which is most of the time.`,
+            `[With a beat: 2 or 3 very short options (2 to 6 words) for what ${p.you} could quickly do or say, in the language of the lines; an action in *asterisks*. They must fit who ${p.you} is: ${p.beat.persona ? p.beat.persona.replace(/\s+/g, ' ').slice(0, 500) : 'no description given (keep them neutral)'}. Make them different from each other (warm, cheeky, awkward…), never crude unless ${p.you} is. "timer": true only when it truly cannot wait (something thrown, arms open, everyone waiting).]`,
+        ] : []),
         ...(p.places ? [
             `[Also, from the last lines only: who walks off from here right now, and where to ("moves"): one of ${p.places.map(x => `"${x.name}"`).join(', ')}, "own room" or "out of the house". Only someone who clearly goes now (not "I'll come later", not a step toward the door, not ${p.you}). And who goes along with ${p.you} ("follows"): ${p.you} asked them to come, or they offered and it was taken, and they now follow ${p.you} from room to room. Most of the time both are empty.]`,
-            `[Answer: {"faces": {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}, "moves": {}, "follows": []}]`,
-        ] : [`[Answer: {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}]`]),
+            `[Answer: {"faces": {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}, "moves": {}, "follows": []${p.beat ? ', "beat": null or {"kind": "tease", "options": ["…", "…"], "timer": false}' : ''}}]`,
+        ] : [p.beat ? `[Answer: {"faces": {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}, "beat": null or {"kind": "tease", "options": ["…", "…"], "timer": false}}]` : `[Answer: {${p.people.map(x => `"${x.name}": "label"`).join(', ')}}]`]),
     ].join('\n');
 }
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -84,4 +88,23 @@ export function parseMoves(text, people, places) {
                 follows.push(who.avatar);
         }
     return { moves, follows };
+}
+const KINDS = ['tease', 'ask', 'sudden', 'physical', 'spot'];
+/** The answer's "beat" (null: none, or not usable). Two or three short, different options. */
+export function parseBeat(text) {
+    const j = looseJson(text);
+    const b = j && typeof j === 'object' ? j.beat : null;
+    if (!b || typeof b !== 'object' || !KINDS.includes(b.kind))
+        return null;
+    const opts = (Array.isArray(b.options) ? b.options : []).map((x) => String(x ?? '').replace(/\s+/g, ' ').trim()).filter((x) => x && x.length <= 60);
+    const uniq = [...new Set(opts)].slice(0, 3);
+    if (uniq.length < 2)
+        return null;
+    return { kind: b.kind, options: uniq, timer: b.timer === true && (b.kind === 'physical' || b.kind === 'ask' || b.kind === 'spot') };
+}
+/** Whether a beat may show now: not off, not right after the last one (every `gap` messages of yours at least). */
+export function beatAllowed(freq, sinceLast) {
+    if (freq === 'off')
+        return false;
+    return sinceLast >= (freq === 'rare' ? 5 : 3);
 }
