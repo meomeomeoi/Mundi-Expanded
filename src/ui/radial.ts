@@ -12,10 +12,11 @@ import { stayButton } from './events.js';
 import { romanceButtons } from './relui.js';
 import { outfitOf, wearOutfit, charOf } from '../st/bridge.js';
 import { outfitsOf, outfitLabel } from './outfits.js';
+import { guestButtons } from './guestsui.js';
 
 export const RAD = { who: '', cy: 0, r: 0, at: '', side: 'full' as 'full' | 'l' | 'r' };   // [expanded] cy, r: the ring's centre (px from the sprite's top) and radius, measured once open
 
-const btn = (act: string, who: string, ic: string, label: string, extra = '') => `<button data-act="${act}" data-who="${esc(who)}" ${extra}>${icon(ic)}<span>${esc(label)}</span></button>`;
+const btn = (act: string, who: string, ic: string, label: string, extra = '') => `<button data-act="${esc(act)}" data-who="${esc(who)}" ${extra}>${icon(ic)}<span>${esc(label)}</span></button>`;
 // The buttons of an HTML snippet (romance, stay), so they sit on the arc like the others.
 const buttonsIn = (html: string) => html.match(/<button[\s\S]*?<\/button>/g) ?? [];
 
@@ -28,7 +29,7 @@ function actions(g: Save, w: WorldDef, r: Resident): string[] {
         : btn('pc-along', r.avatar, 'users', 'Come with me', b >= ALONG_BOND || isPartner(g, r.avatar) ? '' : `aria-disabled="true" title="Get closer first (${b}/${ALONG_BOND})"`));
     out.push(btn('pc-plan', r.avatar, 'pin', 'Make plans'));
     out.push(solo ? `<button data-act="solo-off">${icon('users')}<span>Talk with everyone</span></button>` : btn('solo-on', r.avatar, 'chat', 'Talk only with them'));
-    out.push(...buttonsIn(stayButton(r.avatar)), ...buttonsIn(romanceButtons(r.avatar)));
+    out.push(...buttonsIn(stayButton(r.avatar)), ...guestButtons(g, r.avatar), ...buttonsIn(romanceButtons(r.avatar)));
     if (isScenario(w)) out.push(btn('rd-watch', r.avatar, 'eye', 'Keep an eye on them'));   // [expanded] 0.2.0.9
     out.push(btn('pc-open', r.avatar, 'user', 'Their card'));
     return out;

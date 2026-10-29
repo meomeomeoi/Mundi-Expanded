@@ -2,16 +2,17 @@
 // (what the place is, who is there; at your own place, what you can do). Clicking a pin goes there.
 import { doorFlow, sleepAttr } from './doors.js'; // [expanded]
 import { lex, appRef } from '../core/lexicon.js';
+import { safeUrl, setHtml } from '../core/safe.js';
 import { showTransition } from './lifeui.js';
 import { lockedOut } from '../sim/bills.js';
 import { afterAction, doorAnswer, sleepMood } from '../sim/life.js';
 import { hobbyNeed, practice } from '../sim/hobbies.js';
 import { afterEvent } from '../sim/cityevents.js';
-import { state, notify, esc, game, toast, saveGame, ROOT_ID, nowAbs, uiZoom } from '../core/store.js';
+import { state, notify, esc, game, toast, saveGame, ROOT_ID, nowAbs, uiZoom, UI } from '../core/store.js';
 import { runPlans } from './plans.js';
 import { maybeBump } from './bump.js';
 import { rollAction, gradeName } from '../sim/dice.js';
-import { setPrompt, chat } from '../st/bridge.js'; // [expanded] chat
+import { setPrompt, sendCanned, chat } from '../st/bridge.js'; // [expanded] chat
 import { beforeTravel, beforeSleep } from '../sim/plans.js';
 import { getWorld, worldFile, systemOn, isScenario } from '../core/world.js';
 import { openNow, pictureAt } from '../sim/daynight.js';
@@ -33,7 +34,7 @@ import { actionSound, lifeSound } from './sfx.js';
 import { refreshPrompt } from '../sim/prompt.js';
 import { applyAction, canAfford, money, actionsHere, addStatus, tooTired } from '../sim/needs.js';
 import { shiftsToPromote, isOpen, fits, hire, rankOf, pendingBranch } from '../sim/work.js';
-import { advance, weekday } from '../sim/time.js';
+import { advance, weekday, hm } from '../sim/time.js';
 import { syncScene } from '../sim/game.js';
 import { endVisit } from '../sim/visits.js';
 import { can3d, house3dHtml } from './house3d.js'; // [expanded] the house in 3D (prototype)
@@ -120,7 +121,7 @@ function showPop(pin, touch) {
     }
     const loc = pin.dataset.loc;
     popFor = loc;
-    pop.innerHTML = popHtml(g, w, loc, touch);
+    setHtml(pop, popHtml(g, w, loc, touch));
     pop.classList.toggle('is-here', loc === g.player.loc);
     const zz = uiZoom(), b0 = mapEl.getBoundingClientRect(), r = pin.querySelector('.dot').getBoundingClientRect(), whole = pin.getBoundingClientRect();
     const box = { width: b0.width / zz, height: b0.height / zz };
@@ -172,9 +173,9 @@ function mapsPickerHtml(g, w, shown) {
     const order = top.flatMap(t => [t, ...w.maps.filter(m => m.parent === t.id), ...w.maps.filter(m => m.parent && m.parent !== t.id && w.maps.find(x => x.id === m.parent)?.parent === t.id)]);
     const list = [...order, ...w.maps.filter(m => !order.includes(m))];
     return `<div class="mu-worlds-veil" data-act="maps-pick"><section class="mu-worlds mh-glass" role="dialog" aria-label="Maps" data-keep="maps">
-        <header><h3>${icon('home')} ${esc(w.name)}</h3><button class="mu-ibtn mu-ghost" data-act="maps-pick" title="Close">${icon('x')}</button></header>
+        <header><h3>${icon('home')} ${esc(w.realm?.name ?? w.name)}</h3><button class="mu-ibtn mu-ghost" data-act="maps-pick" title="Close">${icon('x')}</button></header>
         <div class="mu-worlds-grid">${list.map(m => `<button class="mu-world-dot ${m.id === shown ? 'is-on' : ''}" data-act="maps-go" data-map="${esc(m.id)}">
-            <i style="background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, m.image, m.images)))}')">${m.id === here ? `<em>${icon('pin')} You</em>` : ''}</i>
+            <i style="background-image:url('${safeUrl(worldFile(w, pictureAt(w, g.minutes, m.image, m.images)))}')">${m.id === here ? `<em>${icon('pin')} You</em>` : ''}</i>
             <b data-notr>${esc(m.name)}</b><small data-notr>${esc(m.area ?? (m.parent ? w.maps.find(x => x.id === m.parent)?.name ?? '' : 'Main map'))}${m.trip ? ` · ${m.trip} min` : ''}</small>${knownHtml(g, w, m.id)}</button>`).join('')}</div></section></div>`;
 }
 // [expanded] 0.2.0.8: a bedroom with its door closed (not the one you are in): who is inside is not seen, only that
@@ -193,7 +194,7 @@ function roomsHtml(g, w) {
         const you = p.id === g.player.loc;
         const gh = fog ? fogFaces(g, w, p.id, 5, r => thumb(r.avatar)) : null; // [expanded] 0.2.0.11: the fog
         const closed = (here.length > 0 || !!gh?.ghost) && shut(g, w, p.id); // [expanded] 0.2.0.8
-        return `<button class="mu-room ${you ? 'is-you' : ''} ${closed ? 'is-shut' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
+        return `<button class="mu-room ${you ? 'is-you' : ''} ${closed ? 'is-shut' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${safeUrl(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
             <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${closed ? shutFaces : here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : gh?.html ?? ''}</button>`;
     };
     const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3>${can3d(w) ? `<button class="mu-h3-btn" data-act="h3-open" title="The house in 3D (prototype)">${icon('home')}<span>3D</span><span class="mu-alpha">alpha</span></button>` : ''}</div>`;
@@ -250,11 +251,11 @@ function planHtml(g, w) {
         const you = t.loc === g.player.loc;
         const name = t.loc === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room");
         return `<button class="mu-plan-room ${you ? 'is-you' : ''} ${shut(g, w, t.loc) && presentAt(g, w, t.loc).length ? 'is-shut' : ''}" style="${box}" data-act="go" data-loc="${esc(t.loc)}" title="${you ? 'You are here' : `Go to ${esc(name)}`}">
-            <i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}"></i><b data-notr>${esc(name)}</b>${faces(t.loc)}${you ? `<em>${icon('pin')} You</em>` : ''}</button>`;
+            <i style="${pic ? `background-image:url('${safeUrl(worldFile(w, pic))}')` : ''}"></i><b data-notr>${esc(name)}</b>${faces(t.loc)}${you ? `<em>${icon('pin')} You</em>` : ''}</button>`;
     }).join('');
     const lost = unplaced(g, w);
     const ratio = floor.ratio ?? 1.6;
-    return `<div class="mu-map is-plan"><div class="mu-plan-stage"><div class="mu-plan ${floor.image ? 'has-pic' : ''} ${plan.labels === false ? 'no-labels' : ''}" style="--r:${ratio};${plan.glow ? `--glow:${esc(plan.glow)};` : ''}${floor.image ? `background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, floor.image, floor.images) ?? floor.image))}')` : ''}">${rooms}</div></div>
+    return `<div class="mu-map is-plan"><div class="mu-plan-stage"><div class="mu-plan ${floor.image ? 'has-pic' : ''} ${plan.labels === false ? 'no-labels' : ''}" style="--r:${ratio};${plan.glow ? `--glow:${esc(plan.glow)};` : ''}${floor.image ? `background-image:url('${safeUrl(worldFile(w, pictureAt(w, g.minutes, floor.image, floor.images) ?? floor.image))}')` : ''}">${rooms}</div></div>
         <div class="mu-plan-bar">${can3d(w) ? `<button class="mu-h3-btn" data-act="h3-open" title="The house in 3D: walk through it, or see it as a dollhouse (prototype)">${icon('home')}<span>3D</span><span class="mu-alpha">alpha</span></button>` : ''}${lost.length ? `<div class="mu-plan-lost"><small>Not on the plan</small>${lost.map(p => {
         const name = p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room");
         return `<button data-act="go" data-loc="${esc(p.id)}" class="${p.id === g.player.loc ? 'is-you' : ''}" title="${esc(name)}: where this room is on the floor plan is not set yet (World creator › Maps › Floor plan). Click to go there."><b class="mu-plan-bang">!</b><span data-notr>${esc(name)}</span></button>`;
@@ -279,7 +280,7 @@ export function mapHtml() {
         ${away ? `<button data-act="open-map" data-map="">${icon('pin')}<span>Back to where you are</span></button>` : ''}<b data-notr>${esc(map.name)}</b></div>` : '';
     return `<div class="mu-map">${nav}${mapsPicker ? mapsPickerHtml(g, w, map.id) : ''}
         <div class="mu-stage" data-stage>
-            <div class="mu-mapimg" style="--r:${map.ratio};background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, map.image, map.images)))}')">${pinsHtml(g, w)}</div>
+            <div class="mu-mapimg" style="--r:${map.ratio};background-image:url('${safeUrl(worldFile(w, pictureAt(w, g.minutes, map.image, map.images)))}')">${pinsHtml(g, w)}</div>
             <div class="mu-zoom">
                 <button data-act="zoom" data-d="in" title="Zoom in">+</button>
                 <button data-act="zoom" data-d="out" title="Zoom out">−</button>
@@ -514,7 +515,10 @@ async function goTo(loc) {
     state.view = 'scene';
     notify();
 }
-async function sleep() {
+// `wakeAt`: wake up at that moment (absolute minutes) instead of in the morning ("Sleep until the party"): a nap
+// rests you in proportion to how long it lasted, and the day goes on (no diary unless a new day began).
+export const sleepUntil = (wakeAt) => sleep(wakeAt);
+async function sleep(wakeAt) {
     const { g, w } = ctxW();
     const stay = stayOf(g);
     const away = !!stay && stay.where === g.player.loc && g.player.loc !== playerHomeId;
@@ -527,7 +531,9 @@ async function sleep() {
         return;
     }
     const until = w.sleep.until;
-    const mins = g.minutes < until ? until - g.minutes : 1440 - g.minutes + until;
+    const night = g.minutes < until ? until - g.minutes : 1440 - g.minutes + until;
+    const mins = wakeAt !== undefined ? Math.max(0, Math.min(night, wakeAt - nowAbs(g))) : night;
+    const part = wakeAt !== undefined ? Math.min(1, mins / (8 * 60)) : 1; // how much of a full night's rest
     const dayEnded = g.day;
     const dayLines = { start: dayStart(g), end: chat().length }; // [expanded] the day's lines, for the relationships
     await endVisit(g, w);
@@ -539,16 +545,17 @@ async function sleep() {
         const d = w.statuses.find(s => s.id === id);
         if (!d)
             continue;
-        g.player.stats[id] = Math.min(d.max, (id === 'energy' ? v : (g.player.stats[id] ?? d.start) + v));
+        const cur = g.player.stats[id] ?? d.start;
+        g.player.stats[id] = Math.min(d.max, (id === 'energy' ? (part >= 1 ? v : Math.max(cur, cur + (v - cur) * part)) : cur + v * part));
         if (d.decay?.awakeOnly)
             g.tick[`decay:${id}`] = nowAbs(g); // the waking day starts counting now
     }
-    if (isRpg(w))
+    if (isRpg(w) && part >= 0.75)
         longRest(g, w); // RPG: a long rest (hit points, focus, preparing spells)
     // a night's sleep leaves you hungry, thirsty and in need of a wash; a good bed lifts the mood
     for (const [id, v] of Object.entries({ hunger: -20, thirst: -25, hygiene: -25 }))
-        addStatus(g, w, id, v);
-    {
+        addStatus(g, w, id, Math.round(v * part));
+    if (part >= 0.5) {
         const m = sleepMood(g, w);
         if (m)
             addStatus(g, w, 'mood', m);
@@ -560,6 +567,11 @@ async function sleep() {
     lifeSound('sleep');
     if (isScenario(w))
         state.view = 'scene'; // Home: you wake up where you were
+    if (g.day === dayEnded) {
+        showTransition('Rested', `${weekday(g.day)} · ${hm(g.minutes)}`, 'night');
+        notify();
+        return;
+    } // a nap: the same day goes on
     showTransition(`Day ${g.day}`, weekday(g.day), 'night');
     notify();
     // the day becomes a diary entry (one AI call), while the night passes on screen
@@ -719,11 +731,13 @@ Object.assign(ACT, {
             // the AI only tells the story of the result the engine decided
             if (state.view === 'scene')
                 setPrompt('mundi_roll', `[Just now {{user}} tried to ${a.label.toLowerCase()}: ${gradeName(roll.grade).toLowerCase()}. ${roll.text} Narrate it in that light if it comes up.]`);
+            narrateNow(a.label);
         }
         else {
             toast(`${a.name}: done.`, 'success');
-            if (isScenario(w) && state.view === 'scene')
+            if (state.view === 'scene')
                 setPrompt('mundi_roll', `[Just now {{user}} chose to ${a.label.toLowerCase()}. Narrate how it goes, in the scene.]`);
+            narrateNow(a.label);
         }
         maybeBump(g, w);
         notify();
@@ -731,3 +745,10 @@ Object.assign(ACT, {
     zoom: (el) => zoomBy(el.dataset.d === 'in' ? 1.3 : 1 / 1.3),
     'zoom-fit': () => applyMapView(true),
 });
+// "The AI narrates what you do right away" (Settings → Game, on by default): the action goes into the chat as what you
+// do, so the AI answers with how it goes (the hint above tells it the result).
+function narrateNow(label) {
+    if (state.view !== 'scene' || state.generating || UI().narrateActions === false)
+        return;
+    sendCanned(`*${label.charAt(0).toLowerCase()}${label.slice(1)}*`);
+}

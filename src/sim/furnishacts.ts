@@ -18,7 +18,9 @@ import * as F from './furnish.js';
 
 const G = (g: Save) => g as unknown as F.GLike;
 /** The world's actions that need a thing, by id. */
-export const WORLD_NEEDS: Record<string, F.Afford> = { 'x-tv': 'watch', 'x-treadmill': 'exercise', 'x-workout': 'exercise', 'x-coffee': 'coffee', cook: 'cook', 'x-freelance': 'work', 'x-paint': 'craft' };
+export const WORLD_NEEDS: Record<string, F.Afford> = { 'x-games': 'game', 'x-tv': 'watch', 'x-treadmill': 'exercise', 'x-workout': 'exercise', 'x-coffee': 'coffee', cook: 'cook', 'x-freelance': 'work', 'x-paint': 'craft' };
+/** [expanded] Mundi 0.2.1's room actions that do what a thing here would offer, without needing it (no second "read"). */
+const COVERS: Record<string, F.Afford> = { 'x-read': 'read' };
 const low = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 const ACTS: Partial<Record<F.Afford, { label: (n: string) => string; icon: string; minutes: number; effects: Record<string, number> }>> = {
     watch: { label: n => `Watch something on the ${low(n)}`, icon: '📺', minutes: 90, effects: { mood: 6, energy: -2 } },
@@ -43,7 +45,7 @@ actionMods.push((g, w, list) => {
     const things = F.fixturesIn(G(g), room).filter(x => !x.decor && (x.owner === 'house' || x.owner === 'player' || here.includes(x.owner)));
     const can = (a: F.Afford) => things.find(x => F.affordsOf(x).includes(a)) ?? null;
     const kept = list.filter(a => !WORLD_NEEDS[a.id] || can(WORLD_NEEDS[a.id]));
-    const covered = new Set(kept.map(a => WORLD_NEEDS[a.id]).filter(Boolean));
+    const covered = new Set(kept.map(a => WORLD_NEEDS[a.id] ?? COVERS[a.id]).filter(Boolean));
     const add: ActionDef[] = [];
     for (const [afford, d] of Object.entries(ACTS) as [F.Afford, NonNullable<typeof ACTS[F.Afford]>][]) {
         if (covered.has(afford)) continue;

@@ -1,11 +1,20 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
-// [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
-// fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.11';
+// [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
+// number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
+// two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
+export const VERSION = '0.2.1-11.1';
 /** The upstream Mundi version this fork is based on. */
-export const BASE = VERSION.split('.').slice(0, 3).join('.');
+export const BASE = VERSION.split('-')[0];
+/** This fork's own release number (11.1). */
+export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
+    { v: '0.2.1-11.1', fork: true, title: 'Mundi 0.2.1 inside', items: [
+            ['bell', 'Everything from Mundi 0.2.1: visitors and the doorbell, guests from outside at parties, going out with anyone and on to another place, things to do that fit the room, needs if you want them, rain sounds, the dialog box on the left, sprites on either side.'],
+            ['lock', 'Mundi 0.2.1\'s safety fixes: world files, cards and messages can no longer run code or press Mundi\'s buttons.'],
+            ['chat', 'This world → AI context lists everything that calls the AI, each with its own switch.'],
+            ['gear', 'New version numbers: the upstream Mundi version, then Expanded\'s own (0.2.1-11.1: Expanded 11.1 on Mundi 0.2.1).'],
+        ] },
     // [expanded] this fork's releases
     { v: '0.2.0.11', fork: true, title: 'Their move', items: [
             ['chat', 'Walk into a room and a conversation may already be going: two of them, three, or everyone, mostly about nothing in particular (their interests, the worst job they ever had, who would die first in a horror movie), now and then about the house\'s news. Listen, join in or walk past; they may pull you in, or fall silent when it is about you.'],
@@ -85,6 +94,16 @@ export const CHANGELOG = [
             ['users', 'A Relationships app in the phone: the house as a graph with you in the middle, statuses (sister, rival, ex…), and what is known about each pair.'],
             ['lock', 'The app only shows by default; turn on editing in the phone\'s Settings to write facts, set statuses and move values by hand.'],
         ] },
+    { v: '0.2.1', title: 'Fixes and improvements for Home mode', items: [
+            ['bell', "Visitors: invite people over from the Calendar. They arrive about an hour later, ring the doorbell and stay until you say goodbye. You choose where each one sleeps."],
+            ['users', "Parties can have guests from outside, or happen somewhere out. Edit the guests on the party card, and ask someone to stay after the party."],
+            ['home', "What you can do fits the room: eating in the kitchen and the dining room, washing up in the bathrooms, the TV and video games in the living room, swimming at the pool… Your own Homes too."],
+            ['utensils', "Needs, if you want them: hunger, thirst, mood and hygiene, shown under the clock (This Home → Needs)."],
+            ['moon', "Sleeping through a party or a date asks first, and Sleep until wakes you up just in time."],
+            ['chat', "The AI narrates what you do right away. Everything that calls the AI can be turned off in This world → AI context."],
+            ['image', "Rain sounds, sprites on the left or the right in Cards, and the dialog box on the left in Visual novel."],
+            ['lock', "Safety fixes (thanks, coldasblues). A spouse added later shows as Married, and playful slaps no longer cost bond."],
+        ] },
     { v: '0.2.0', title: 'Homes', items: [
             ['home', 'Home: a new way to play. One house, the characters you choose, and no work, money or bills: just the people and the story.'],
             ['users', 'A ready Home, The Shared House, or your own one made in the Home creator.'],
@@ -98,7 +117,7 @@ export const CHANGELOG = [
 ];
 // "0.2.0" > "0.1.3"
 export function newer(a, b) {
-    const pa = a.split('.').map(n => parseInt(n, 10) || 0), pb = b.split('.').map(n => parseInt(n, 10) || 0);
+    const pa = a.split(/[.-]/).map(n => parseInt(n, 10) || 0), pb = b.split(/[.-]/).map(n => parseInt(n, 10) || 0); // [expanded] "0.2.1-11.1" too
     for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
         const d = (pa[i] ?? 0) - (pb[i] ?? 0);
         if (d)

@@ -12,9 +12,11 @@ Fork rules (to keep pulling upstream fixes cheap):
 
 ## Versions
 
-`0.2.0.N`: the first three numbers are the upstream Mundi version the fork is based on, the last one counts this
-fork's releases on top of it (after merging upstream 0.3.0 the next release is `0.3.0.1`). A release changes three
-places together (the build checks they agree):
+`0.2.1-11.1`: the upstream Mundi version the fork is built on, a dash, and Expanded's own release number, which goes
+on across upstream versions (Expanded 11.1 on Mundi 0.2.1; merging upstream 0.3.0 makes it `0.3.0-N`, N going on from
+where it was). A dot after it (11.1) is a smaller release on top of 11: fixes, a merge, a prototype. Until 0.2.0.11 the
+two were glued together as a fourth part (`0.2.0.11` = Expanded 11 on Mundi 0.2.0); the game compares both forms.
+A release changes three places together (the build checks they agree):
 
 - `manifest.json` → `version` (what SillyTavern shows);
 - `src/core/version.ts` → `VERSION`, and a new entry at the top of `CHANGELOG` (shown once in the game after updating);

@@ -403,6 +403,8 @@ afterSync.push((g, w, here) => {
 });
 /** They go to their room (had enough company): for an hour, and the story says so. */
 function leave(g, w, r) {
+    if (r.guest)
+        return; // a visitor has no room of their own to go to (Mundi 0.2.1)
     const s = social(g);
     const now = nowAbs(g);
     const to = ownRoom(r);

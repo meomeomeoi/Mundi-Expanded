@@ -20,6 +20,14 @@ if [ -f tests/prompt.test.mjs ]; then
 node tests/prompt.test.mjs > /tmp/mundi-prompt-test.log 2>&1 || { grep -v "^\[Mundi\]" /tmp/mundi-prompt-test.log; echo "PROMPT TESTS FAILED"; exit 1; }
 echo "prompt: $(tail -1 /tmp/mundi-prompt-test.log)"
 fi
+if [ -f tests/guests.test.mjs ]; then
+node tests/guests.test.mjs > /tmp/mundi-guests-test.log 2>&1 || { grep -v "^\[Mundi\]" /tmp/mundi-guests-test.log; echo "GUEST TESTS FAILED"; exit 1; }
+echo "guests: $(tail -1 /tmp/mundi-guests-test.log)"
+fi
+if [ -f tests/security.test.mjs ]; then
+node tests/security.test.mjs > /tmp/mundi-security-test.log 2>&1 || { grep -v "^\[Mundi\]" /tmp/mundi-security-test.log; echo "SECURITY TESTS FAILED"; exit 1; }
+echo "$(tail -1 /tmp/mundi-security-test.log)"
+fi
 if [ -f tests/world.test.mjs ]; then
 node tests/world.test.mjs > /tmp/mundi-world-test.log 2>&1 || { grep -v "^\[Mundi\]" /tmp/mundi-world-test.log; echo "WORLD TESTS FAILED"; exit 1; }
 echo "world: $(tail -1 /tmp/mundi-world-test.log)"

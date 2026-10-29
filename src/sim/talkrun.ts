@@ -260,6 +260,7 @@ afterSync.push((g, w, here) => {
 });
 /** They go to their room (had enough company): for an hour, and the story says so. */
 function leave(g: Save, w: WorldDef, r: Resident) {
+    if ((r as any).guest) return;   // a visitor has no room of their own to go to (Mundi 0.2.1)
     const s: any = social(g); const now = nowAbs(g); const to = ownRoom(r); if (to === g.player.loc) return;
     (s.went ??= {})[r.avatar] = { loc: to, until: now + 60, line: -1 };
     s.with = (s.with ?? []).filter((c: any) => c.avatar !== r.avatar);
