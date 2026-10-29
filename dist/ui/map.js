@@ -35,6 +35,7 @@ import { shiftsToPromote, isOpen, fits, hire, rankOf, pendingBranch } from '../s
 import { advance, weekday } from '../sim/time.js';
 import { syncScene } from '../sim/game.js';
 import { endVisit } from '../sim/visits.js';
+import { can3d, house3dHtml } from './house3d.js'; // [expanded] the house in 3D (prototype)
 import { toolsHtml } from './tools.js';
 import { ACT } from './reg.js';
 import { featureOn } from '../sim/creator.js';
@@ -192,7 +193,7 @@ function roomsHtml(g, w) {
         return `<button class="mu-room ${you ? 'is-you' : ''} ${closed ? 'is-shut' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
             <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${closed ? shutFaces : here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`;
     };
-    const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3></div>`;
+    const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3>${can3d(w) ? `<button class="mu-h3-btn" data-act="h3-open" title="The house in 3D (prototype)">${icon('home')}<span>3D</span></button>` : ''}</div>`;
     // floors set in the creator (no picture of the plan): the rooms floor by floor, one block above the other
     if (floorsOn(w)) {
         const all = [...yours, ...rooms, ...beds];
@@ -202,7 +203,7 @@ function roomsHtml(g, w) {
         const rest = [];
         return `<div class="mu-map is-rooms"><div class="mu-rooms" data-keep="rooms">${head}
             ${blocks.map(([name, l]) => `<h4 class="mu-rooms-floor" ${/^Floor \d+$/.test(name) ? '' : 'data-notr'}>${esc(name)}</h4><div class="mu-rooms-grid">${l.map(card).join('')}</div>`).join('')}
-            ${rest.length ? `<h4 class="mu-rooms-floor">Other rooms</h4><div class="mu-rooms-grid">${rest.map(card).join('')}</div>` : ''}</div>${toolsHtml()}</div>`;
+            ${rest.length ? `<h4 class="mu-rooms-floor">Other rooms</h4><div class="mu-rooms-grid">${rest.map(card).join('')}</div>` : ''}</div>${toolsHtml()}${house3dHtml()}</div>`;
     }
     return `<div class="mu-map is-rooms"><div class="mu-rooms" data-keep="rooms">${head}
         <div class="mu-rooms-grid">${[...yours, ...rooms].map(card).join('')}</div>
@@ -243,7 +244,7 @@ function planHtml(g, w) {
     const lost = unplaced(g, w);
     const ratio = floor.ratio ?? 1.6;
     return `<div class="mu-map is-plan"><div class="mu-plan-stage"><div class="mu-plan ${floor.image ? 'has-pic' : ''} ${plan.labels === false ? 'no-labels' : ''}" style="--r:${ratio};${plan.glow ? `--glow:${esc(plan.glow)};` : ''}${floor.image ? `background-image:url('${esc(worldFile(w, pictureAt(w, g.minutes, floor.image, floor.images) ?? floor.image))}')` : ''}">${rooms}</div></div>
-        <div class="mu-plan-bar">${lost.length ? `<div class="mu-plan-lost"><small>Not on the plan</small>${lost.map(p => {
+        <div class="mu-plan-bar">${can3d(w) ? `<button class="mu-h3-btn" data-act="h3-open" title="The house in 3D: walk through it, or see it as a dollhouse (prototype)">${icon('home')}<span>3D</span></button>` : ''}${lost.length ? `<div class="mu-plan-lost"><small>Not on the plan</small>${lost.map(p => {
         const name = p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room");
         return `<button data-act="go" data-loc="${esc(p.id)}" class="${p.id === g.player.loc ? 'is-you' : ''}" title="${esc(name)}: where this room is on the floor plan is not set yet (World creator › Maps › Floor plan). Click to go there."><b class="mu-plan-bang">!</b><span data-notr>${esc(name)}</span></button>`;
     }).join('')}</div>` : ''}
@@ -251,7 +252,7 @@ function planHtml(g, w) {
         const who = presentFloor(g, w, f.id); // [expanded] everyone the rooms show (strangers too, as "Someone"), as they show them
         return `<button class="${f.id === floor.id ? 'is-on' : ''}" data-act="plan-floor" data-id="${esc(f.id)}">${who.length ? `<span class="mu-floor-faces">${who.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r)} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${who.length > 5 ? `<i>+${who.length - 5}</i>` : ''}</span>` : ''}${floorOf(g, w, g.player.loc) === f.id ? icon('pin') : ''}<span ${/^Floor \d+$/.test(f.name) ? '' : 'data-notr'}>${esc(f.name)}</span></button>`;
     }).join('')}</nav>` : ''}</div>
-        ${toolsHtml()}</div>`;
+        ${toolsHtml()}${house3dHtml() /* [expanded] */}</div>`;
 }
 export function mapHtml() {
     const { g, w } = ctxW();

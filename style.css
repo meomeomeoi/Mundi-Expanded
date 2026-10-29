@@ -2016,6 +2016,18 @@ body.mundi-open #toast-container { display: none !important; }
 /* [expanded] 0.2.0.9: a failed mechanics call, with "Try again" (stays until closed) */
 #mundi-root .mu-toast.mu-retry { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 #mundi-root .mu-retry-btn { padding: 3px 10px; font-size: 12px; border-radius: 8px; }
+/* [expanded] The house in 3D (prototype) */
+#mundi-root .mu-h3 { position: absolute; inset: 0; z-index: 40; background: #0b0d12; }
+#mundi-root .mu-h3-stage { position: absolute; inset: 0; }
+#mundi-root .mu-h3-top { position: absolute; top: 12px; left: 14px; display: grid; gap: 2px; padding: 8px 14px; border-radius: 12px; background: rgba(12, 14, 20, .55); backdrop-filter: blur(8px); color: #fff; pointer-events: none; }
+#mundi-root .mu-h3-top b { font-size: 17px; } #mundi-root .mu-h3-floor { font-size: 12px; opacity: .75; }
+#mundi-root .mu-h3-tools { position: absolute; top: 12px; right: 14px; display: flex; gap: 8px; align-items: center; }
+#mundi-root .mu-h3-tools .mu-bd-seg { background: rgba(12, 14, 20, .55); backdrop-filter: blur(8px); border-radius: 10px; }
+#mundi-root .mu-h3-tools button svg { width: 15px; height: 15px; }
+#mundi-root .mu-h3-pick { position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; padding: 8px 10px 8px 16px; border-radius: 14px; background: rgba(12, 14, 20, .7); backdrop-filter: blur(8px); color: #fff; font-weight: 700; }
+#mundi-root .mu-h3-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); padding: 4px 12px; border-radius: 10px; background: rgba(12, 14, 20, .45); color: #e8e8ee; font-size: 12px; pointer-events: none; white-space: nowrap; }
+#mundi-root .mu-h3-btn { display: inline-flex; align-items: center; gap: 6px; }
+#mundi-root .mu-rooms-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }
