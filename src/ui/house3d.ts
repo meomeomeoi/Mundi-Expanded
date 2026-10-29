@@ -20,6 +20,8 @@ export const H3 = { open: false, room: '', floor: '', mode: 'walk' as 'walk' | '
 let view: View3 | null = null;
 const SPR = new Map<string, string>();
 const libUrl = () => new URL('../../lib/three.module.min.js', import.meta.url).href;
+const loaderUrl = () => new URL('../../lib/GLTFLoader.js', import.meta.url).href;
+const assetsUrl = () => new URL('../../assets/furniture/', import.meta.url).href;
 export const can3d = (w: WorldDef | null | undefined) => !!w && isScenario(w) && planOn(w) && (w.plan?.rooms?.length ?? 0) > 2;
 
 function layout(g: Save, w: WorldDef) {
@@ -53,6 +55,12 @@ async function peopleOf(g: Save, w: WorldDef, loc: Map<string, string>): Promise
     return { people: out, closed, inside };
 }
 
+// what stands in each room (the house's things, 0.2.0.7): by plan room
+function thingsOf(g: Save, loc: Map<string, string>): Record<string, string[]> {
+    const items: any[] = (g as any).furnishx?.items ?? []; const out: Record<string, string[]> = {};
+    for (const [id, l] of loc) { const room = l === playerHomeId ? 'home:player' : l; const cats = items.filter(x => x.room === room && x.cat).map(x => String(x.cat)); if (cats.length) out[id] = [...new Set(cats)]; }
+    return out;
+}
 export function house3dHtml(): string {
     if (!H3.open) return '';
     const name = H3.room;
@@ -71,6 +79,7 @@ export async function open3d() {
     await new Promise(r => setTimeout(r, 30));
     const el = document.querySelector<HTMLElement>('#mundi-root .mu-h3-stage'); if (!el) return;
     const THREE = await import(/* @vite-ignore */ libUrl());
+    let loader: any = null; try { const { GLTFLoader } = await import(/* @vite-ignore */ loaderUrl()); loader = new GLTFLoader(); } catch (e) { console.warn('[Mundi Expanded] 3D: no furniture models, simple shapes instead', e); }
     const { mountHouse } = await import('./house3dview.js');
     const { house, loc } = layout(g, w); ctx = { loc };
     const back = new Map([...loc].map(([k, v]) => [v, k]));
@@ -80,6 +89,7 @@ export async function open3d() {
     view?.dispose();
     view = mountHouse(el, THREE, house, {
         floor: startFloor, start, time: timeOf(g), mode: H3.mode, people: ppl.people, closed: ppl.closed, inside: ppl.inside,
+        ...(loader ? { loader, assets: assetsUrl() } : {}), things: thingsOf(g, loc),
         onRoom: (r, f) => { H3.room = r?.name ?? ''; H3.floor = f.name; notify(); },
         onPick: (p) => { H3.pick = { id: p.id, name: p.name }; notify(); },
         onDoor: (r) => { const l = loc.get(r.id); if (l && l !== g.player.loc) go(l); },

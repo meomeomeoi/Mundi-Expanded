@@ -17,6 +17,8 @@ export const H3 = { open: false, room: '', floor: '', mode: 'walk', pick: null }
 let view = null;
 const SPR = new Map();
 const libUrl = () => new URL('../../lib/three.module.min.js', import.meta.url).href;
+const loaderUrl = () => new URL('../../lib/GLTFLoader.js', import.meta.url).href;
+const assetsUrl = () => new URL('../../assets/furniture/', import.meta.url).href;
 export const can3d = (w) => !!w && isScenario(w) && planOn(w) && (w.plan?.rooms?.length ?? 0) > 2;
 function layout(g, w) {
     const loc = new Map(); // plan room → place
@@ -57,6 +59,18 @@ async function peopleOf(g, w, loc) {
     }
     return { people: out, closed, inside };
 }
+// what stands in each room (the house's things, 0.2.0.7): by plan room
+function thingsOf(g, loc) {
+    const items = g.furnishx?.items ?? [];
+    const out = {};
+    for (const [id, l] of loc) {
+        const room = l === playerHomeId ? 'home:player' : l;
+        const cats = items.filter(x => x.room === room && x.cat).map(x => String(x.cat));
+        if (cats.length)
+            out[id] = [...new Set(cats)];
+    }
+    return out;
+}
 export function house3dHtml() {
     if (!H3.open)
         return '';
@@ -82,6 +96,14 @@ export async function open3d() {
     if (!el)
         return;
     const THREE = await import(/* @vite-ignore */ libUrl());
+    let loader = null;
+    try {
+        const { GLTFLoader } = await import(/* @vite-ignore */ loaderUrl());
+        loader = new GLTFLoader();
+    }
+    catch (e) {
+        console.warn('[Mundi Expanded] 3D: no furniture models, simple shapes instead', e);
+    }
     const { mountHouse } = await import('./house3dview.js');
     const { house, loc } = layout(g, w);
     ctx = { loc };
@@ -92,6 +114,7 @@ export async function open3d() {
     view?.dispose();
     view = mountHouse(el, THREE, house, {
         floor: startFloor, start, time: timeOf(g), mode: H3.mode, people: ppl.people, closed: ppl.closed, inside: ppl.inside,
+        ...(loader ? { loader, assets: assetsUrl() } : {}), things: thingsOf(g, loc),
         onRoom: (r, f) => { H3.room = r?.name ?? ''; H3.floor = f.name; notify(); },
         onPick: (p) => { H3.pick = { id: p.id, name: p.name }; notify(); },
         onDoor: (r) => { const l = loc.get(r.id); if (l && l !== g.player.loc)

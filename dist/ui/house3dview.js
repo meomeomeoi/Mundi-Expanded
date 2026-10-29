@@ -158,7 +158,8 @@ export function mountHouse(el, THREE, house, o = {}) {
             }
             {
                 const n0 = g.children.length;
-                furnish(r, y0, g);
+                if (!o.assets || !o.loader || /garage|гараж|gym|спортзал/i.test(`${r.id} ${r.name}`) || r.kind === 'pool')
+                    furnish(r, y0, g);
                 const fp = [];
                 furn.set(`${f.id}|${r.id}`, fp);
                 for (const c of g.children.slice(n0)) {
@@ -305,7 +306,160 @@ export function mountHouse(el, THREE, house, o = {}) {
             }
         }
     }
-    /* ---------- furniture: simple shapes by the kind of room ---------- */
+    /* ---------- furniture: models (Kenney's Furniture Kit, CC0) ---------- */
+    // Each piece: a model, its real width in metres, and where it goes: against the back / left / right / front wall
+    // of the room (facing in), or in the middle. Models are scaled to that width, drawn with the toon look and ink.
+    const KIT = 2.0;
+    const THING = {
+        tv: [{ m: 'cabinetTelevision', w: 1.5, at: 'back', t: 0.5 }, { m: 'televisionModern', w: 1.3, at: 'back', t: 0.5, y: 0.55 }],
+        couch: [{ m: 'loungeSofa', w: 2.2, at: 'front', t: 0.5 }], armchair: [{ m: 'loungeChair', w: 0.9, at: 'left', t: 0.7 }],
+        bookshelf: [{ m: 'bookcaseOpen', w: 0.9, at: 'right', t: 0.3 }, { m: 'books', w: 0.35, at: 'right', t: 0.3, y: 0.95 }],
+        desk: [{ m: 'desk', w: 1.3, at: 'right', t: 0.75 }, { m: 'chairDesk', w: 0.55, at: 'right', t: 0.75, dz: 0.75 }],
+        pc: [{ m: 'desk', w: 1.3, at: 'right', t: 0.75 }, { m: 'computerScreen', w: 0.55, at: 'right', t: 0.75, y: 0.76 }, { m: 'computerKeyboard', w: 0.4, at: 'right', t: 0.75, y: 0.76, dz: 0.25 }, { m: 'chairDesk', w: 0.55, at: 'right', t: 0.75, dz: 0.75 }],
+        laptop: [{ m: 'desk', w: 1.2, at: 'right', t: 0.75 }, { m: 'laptop', w: 0.35, at: 'right', t: 0.75, y: 0.76 }, { m: 'chairDesk', w: 0.55, at: 'right', t: 0.75, dz: 0.75 }],
+        doublebed: [{ m: 'bedDouble', w: 1.7, at: 'back', t: 0.35 }], stereo: [{ m: 'speaker', w: 0.35, at: 'back', t: 0.85 }], turntable: [{ m: 'radio', w: 0.45, at: 'left', t: 0.3, y: 0.0 }],
+        coffee: [{ m: 'kitchenCoffeeMachine', w: 0.3, at: 'back', t: 0.15, y: 0.92 }], microwave: [{ m: 'kitchenMicrowave', w: 0.5, at: 'back', t: 0.82, y: 0.92 }],
+        stove: [{ m: 'kitchenStove', w: 0.62, at: 'back', t: 0.45 }], table: [{ m: 'table', w: 1.6, at: 'mid' }, { m: 'chair', w: 0.45, at: 'mid', dz: -0.65, ry: Math.PI }, { m: 'chair', w: 0.45, at: 'mid', dz: 0.65 }],
+        bathtub: [{ m: 'bathtub', w: 1.7, at: 'back', t: 0.3 }], washer: [{ m: 'washer', w: 0.62, at: 'back', t: 0.25 }], boardgames: [{ m: 'tableCoffeeSquare', w: 0.8, at: 'mid' }],
+        vanity: [{ m: 'sideTableDrawers', w: 0.9, at: 'left', t: 0.6 }], aquarium: [{ m: 'cabinetTelevisionDoors', w: 1.2, at: 'left', t: 0.4 }],
+    };
+    function piecesFor(r) {
+        const t = `${r.id} ${r.kind === 'outdoor' || r.kind === 'pool' ? '' : r.name}`.toLowerCase();
+        const things = o.things?.[r.id] ?? [];
+        const base = [];
+        if (r.kind === 'bed')
+            base.push({ m: things.includes('doublebed') ? 'bedDouble' : 'bedSingle', w: things.includes('doublebed') ? 1.7 : 1.05, at: 'back', t: 0.25 }, { m: 'cabinetBedDrawerTable', w: 0.5, at: 'back', t: things.includes('doublebed') ? 0.62 : 0.45 }, { m: 'lampRoundTable', w: 0.25, at: 'back', t: things.includes('doublebed') ? 0.62 : 0.45, y: 0.5 }, { m: 'rugRounded', w: 1.6, at: 'mid', dz: 0.3 }, { m: 'bookcaseClosedWide', w: 1.2, at: 'front', t: 0.8 }, { m: 'pottedPlant', w: 0.45, at: 'left', t: 0.9 });
+        else if (r.kind === 'bath')
+            base.push({ m: 'toilet', w: 0.45, at: 'front', t: 0.8 }, { m: 'bathroomSink', w: 0.6, at: 'left', t: 0.6 }, { m: 'bathroomMirror', w: 0.55, at: 'left', t: 0.6, y: 1.25 }, ...(r.w > 1.8 && r.d > 1.8 ? [{ m: 'bathtub', w: 1.6, at: 'back', t: 0.35 }] : [{ m: 'showerRound', w: 0.9, at: 'back', t: 0.25 }]));
+        else if (/kitchen|кухн/.test(t)) {
+            const n = Math.max(3, Math.min(7, Math.floor((r.w - 1.4) / 0.86)));
+            for (let k = 0; k < n; k++) {
+                const tt = (k + 0.5) / n * (n * 0.86 / Math.max(0.1, r.w - 0.6));
+                const mm = k === 1 ? 'kitchenSink' : k === n - 2 && !things.includes('stove') ? 'kitchenStove' : 'kitchenCabinetDrawer';
+                base.push({ m: mm, w: 0.62, at: 'back', t: tt }, { m: 'kitchenCabinetUpper', w: 0.62, at: 'back', t: tt, y: 1.45 });
+            }
+            base.push({ m: 'kitchenFridgeLarge', w: 0.9, at: 'right', t: 0.15 }, { m: 'kitchenBar', w: 1.8, at: 'mid', dz: 0.4 }, { m: 'stoolBar', w: 0.4, at: 'mid', dz: 1.1 }, { m: 'stoolBar', w: 0.4, at: 'mid', dz: 1.1, t: -0.5 });
+        }
+        else if (/dining|столов/.test(t))
+            base.push({ m: 'tableCloth', w: 1.9, at: 'mid' }, ...[-0.6, 0, 0.6].flatMap(k => [{ m: 'chairCushion', w: 0.48, at: 'mid', dz: -0.75, t: k, ry: Math.PI }, { m: 'chairCushion', w: 0.48, at: 'mid', dz: 0.75, t: k }]), { m: 'pottedPlant', w: 0.5, at: 'back', t: 0.08 });
+        else if (/living|гостин|lounge/.test(t))
+            base.push({ m: 'rugRectangle', w: 2.8, at: 'mid' }, { m: 'tableCoffee', w: 1.1, at: 'mid' }, { m: 'lampSquareFloor', w: 0.4, at: 'front', t: 0.92 }, { m: 'pottedPlant', w: 0.55, at: 'back', t: 0.92 }, ...(things.includes('couch') ? [] : [{ m: 'loungeSofa', w: 2.2, at: 'front', t: 0.5 }]), ...(things.includes('tv') ? [] : [{ m: 'cabinetTelevision', w: 1.5, at: 'back', t: 0.5 }, { m: 'televisionModern', w: 1.3, at: 'back', t: 0.5, y: 0.55 }]));
+        else if (r.kind === 'open' && /entrance|прихож|hall/.test(t))
+            base.push({ m: 'coatRackStanding', w: 0.5, at: 'front', t: 0.12 }, { m: 'rugDoormat', w: 1.0, at: 'front', t: 0.5 }, { m: 'sideTable', w: 0.8, at: 'right', t: 0.7 }, { m: 'pottedPlant', w: 0.5, at: 'left', t: 0.9 });
+        else if (/laundry|прачеч/.test(t))
+            base.push({ m: 'washer', w: 0.62, at: 'back', t: 0.25 }, { m: 'dryer', w: 0.62, at: 'back', t: 0.6 }, { m: 'trashcan', w: 0.35, at: 'front', t: 0.8 });
+        else if (/storage|кладов|attic|чердак/.test(t))
+            base.push({ m: 'bookcaseClosedWide', w: 1.6, at: 'back', t: 0.4 }, { m: 'cardboardBoxClosed', w: 0.55, at: 'front', t: 0.2 }, { m: 'cardboardBoxOpen', w: 0.55, at: 'front', t: 0.4 }, { m: 'cardboardBoxClosed', w: 0.5, at: 'left', t: 0.7 });
+        else if (r.kind === 'outdoor')
+            base.push({ m: 'benchCushion', w: 1.6, at: 'back', t: 0.3 }, { m: 'pottedPlant', w: 0.6, at: 'back', t: 0.6 });
+        const extra = things.flatMap(c => THING[c] ?? []);
+        return [...base, ...extra];
+    }
+    const models = new Map();
+    const loadModel = (name) => { if (!models.has(name))
+        models.set(name, new Promise((res) => o.loader.load(`${o.assets}${name}.glb`, (gl) => res(gl.scene), undefined, () => res(null)))); return models.get(name); };
+    function toon(obj) {
+        obj.traverse((c) => { if (!c.isMesh)
+            return; const col = c.material?.color ? c.material.color.getHex() : 0xdddddd; c.material = mat(col); const e = new THREE.LineSegments(new THREE.EdgesGeometry(c.geometry, 35), inkMat); c.add(e); });
+    }
+    async function furnishWithModels() {
+        const B = new THREE.Box3();
+        const sz = new THREE.Vector3();
+        const ctr = new THREE.Vector3();
+        // every model at once (in parallel), then the rooms
+        const names = new Set();
+        for (const f of house.floors)
+            for (const r of f.rooms)
+                for (const pc of piecesFor(r))
+                    names.add(pc.m);
+        await Promise.all([...names].map(loadModel));
+        for (const f of house.floors) {
+            const G0 = groups.get(f.id);
+            const y0 = Y(f);
+            for (const r of f.rooms) {
+                const list = piecesFor(r);
+                if (!list.length)
+                    continue;
+                const fp = furn.get(`${f.id}|${r.id}`) ?? [];
+                furn.set(`${f.id}|${r.id}`, fp);
+                const doorsHere = f.doors.filter(d => d.a === r.id || d.b === r.id);
+                for (const pc of list) {
+                    const src = await loadModel(pc.m);
+                    if (!src)
+                        continue;
+                    const obj = src.clone(true);
+                    toon(obj);
+                    B.setFromObject(obj);
+                    B.getSize(sz);
+                    B.getCenter(ctr);
+                    const k = pc.s ?? KIT;
+                    obj.scale.setScalar(k); // the kit is made to one scale: one factor for all (a door about 2 m)
+                    const w = sz.x * k, d = sz.z * k;
+                    // centre the model on its footprint, its bottom on the floor
+                    const holder = new THREE.Group();
+                    obj.position.set(-ctr.x * k, -B.min.y * k, -ctr.z * k);
+                    holder.add(obj);
+                    const m = 0.06, tt = pc.t ?? 0.5;
+                    let x = r.x + r.w / 2, z = r.z + r.d / 2, ry = 0;
+                    if (pc.at === 'back') {
+                        x = r.x + 0.3 + (r.w - 0.6) * tt;
+                        z = r.z + T_WALL / 2 + m + d / 2;
+                        ry = 0;
+                    }
+                    if (pc.at === 'front') {
+                        x = r.x + 0.3 + (r.w - 0.6) * tt;
+                        z = r.z + r.d - T_WALL / 2 - m - d / 2;
+                        ry = Math.PI;
+                    }
+                    if (pc.at === 'left') {
+                        z = r.z + 0.3 + (r.d - 0.6) * tt;
+                        x = r.x + T_WALL / 2 + m + d / 2;
+                        ry = Math.PI / 2;
+                    }
+                    if (pc.at === 'right') {
+                        z = r.z + 0.3 + (r.d - 0.6) * tt;
+                        x = r.x + r.w - T_WALL / 2 - m - d / 2;
+                        ry = -Math.PI / 2;
+                    }
+                    if (pc.at === 'mid') {
+                        x += (pc.t ?? 0) * Math.min(1.4, r.w * 0.3);
+                        z += pc.dz ?? 0;
+                    }
+                    else if (pc.dz) {
+                        const dir = pc.at === 'back' ? [0, 1] : pc.at === 'front' ? [0, -1] : pc.at === 'left' ? [1, 0] : [-1, 0];
+                        x += dir[0] * pc.dz;
+                        z += dir[1] * pc.dz;
+                    }
+                    // not in a doorway: slide along the wall to a free place, or leave it out
+                    const blocks = (px, pz) => doorsHere.some(dd => Math.abs(dd.x - px) < dd.w / 2 + 0.25 + (pc.at === 'left' || pc.at === 'right' ? d : w) / 2 && Math.abs(dd.z - pz) < dd.w / 2 + 0.25 + (pc.at === 'left' || pc.at === 'right' ? w : d) / 2);
+                    if (pc.at !== 'mid' && blocks(x, z)) {
+                        let ok = false;
+                        for (const t2 of [0.15, 0.85, 0.3, 0.7, 0.05, 0.95]) {
+                            const nx = pc.at === 'back' || pc.at === 'front' ? r.x + 0.3 + (r.w - 0.6) * t2 : x, nz = pc.at === 'left' || pc.at === 'right' ? r.z + 0.3 + (r.d - 0.6) * t2 : z;
+                            if (!blocks(nx, nz)) {
+                                x = nx;
+                                z = nz;
+                                ok = true;
+                                break;
+                            }
+                        }
+                        if (!ok)
+                            continue;
+                    }
+                    holder.rotation.y = ry + (pc.ry ?? 0);
+                    holder.position.set(x, y0 + (pc.y ?? 0), z);
+                    G0.g.add(holder);
+                    const fw = Math.abs(Math.sin(holder.rotation.y)) > 0.5 ? d : w, fd = Math.abs(Math.sin(holder.rotation.y)) > 0.5 ? w : d;
+                    if (!pc.y && !/^rug/.test(pc.m)) {
+                        shadowAt(G0.g, x, y0, z, fw * 1.3 + 0.15, fd * 1.3 + 0.15);
+                        fp.push([x - fw / 2, z - fd / 2, x + fw / 2, z + fd / 2]);
+                    }
+                }
+            }
+        }
+        placePeople();
+    }
+    /* ---------- furniture: simple shapes by the kind of room (without the models) ---------- */
     const furn = new Map(); // room → footprints (x0, z0, x1, z1)
     function furnish(r, y, g) {
         const t = `${r.id} ${r.kind === 'outdoor' || r.kind === 'pool' ? '' : r.name}`.toLowerCase();
@@ -821,6 +975,8 @@ export function mountHouse(el, THREE, house, o = {}) {
     ro.observe(el);
     for (const f of house.floors)
         build(f);
+    if (o.assets && o.loader)
+        void furnishWithModels();
     placePeople();
     placeDoors();
     applyTime();

@@ -81,6 +81,7 @@ npm i -g typescript
 ## Credits
 
 - Sounds by [Kenney](https://kenney.nl) (CC0).
+- The house in 3D: furniture from Kenney's [Furniture Kit](https://kenney.nl/assets/furniture-kit) (CC0), drawn with [three.js](https://threejs.org) (MIT).
 - Seraphina is SillyTavern's default character; her picture is bundled for the tour.
 
 ## License
