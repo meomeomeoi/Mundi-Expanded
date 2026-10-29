@@ -46,4 +46,10 @@ test('listening at a door: caught more often the nosier, and each time again', (
     assert.ok(LI.caughtChance([50], 2) > LI.caughtChance([50], 0)); assert.ok(LI.caughtChance([100], 9) <= 0.6);
 });
 
+test('nights from the reader', () => {
+    const find = (q) => ({ kathie: 'k', leah: 'l', gleb: '__you' })[q.trim().toLowerCase()] ?? null;
+    assert.deepEqual(L.parseNights('NIGHT | Kathie & Leah | Leah\'s room | secret\nNIGHT | Gleb & Kathie | your room\nNIGHT | Kathie', find),
+        [{ who: ['k', 'l'], where: "Leah's room", secret: true }, { who: ['__you', 'k'], where: 'your room', secret: false }]);
+});
+
 console.log(`love: ${n} tests passed`);

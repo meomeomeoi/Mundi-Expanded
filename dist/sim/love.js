@@ -75,3 +75,16 @@ export function flirtMood(o) {
 }
 /** Who knows about a's feelings for b (the holder learn() writes into). */
 export const loveKnow = (g, a, b) => { const x = loveOf(g); return ((x.know ??= {})[lk(a, b)] ??= {}); };
+/** "NIGHT | A & B | where | secret": two spent the night together in today's scenes. */
+export function parseNights(raw, find) {
+    const out = [];
+    for (const line of String(raw ?? '').split('\n')) {
+        const p = line.trim().replace(/^[-*•]\s*/, '').split('|').map(x => x.trim());
+        if ((p[0] ?? '').toUpperCase() !== 'NIGHT' || p.length < 2)
+            continue;
+        const who = p[1].split(/\s*(?:&|\+|,)\s*|\s+(?:and|и)\s+/i).map(find).filter(Boolean);
+        if (who.length >= 2 && new Set(who).size === who.length)
+            out.push({ who: who.slice(0, 3), where: p[2] ?? '', secret: /secret|тайн/i.test(p[3] ?? p[2] ?? '') });
+    }
+    return out.slice(0, 2);
+}

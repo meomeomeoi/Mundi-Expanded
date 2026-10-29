@@ -4,7 +4,7 @@
 import { houseRulesHtml } from './profileui.js';
 import { eraSettingsHtml } from './phoneskin.js';
 import { chatSettingsHtml } from './chatui.js';
-import { saveGame, notify, esc, game, toast } from '../core/store.js';
+import { saveGame, notify, esc, game, toast, nowAbs } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { thumb, personaThumb, personaName } from '../st/bridge.js';
 import { icon } from './icons.js';
@@ -20,6 +20,7 @@ import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
 import * as L from '../sim/love.js';
 import { WALLS, wallsOf } from '../sim/listen.js';
+import * as NI from '../sim/nights.js';
 import { gossipOf } from '../sim/gossiprun.js';
 const roomLimit = (g) => Number(g.furnishx?.limit ?? 15);
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
@@ -179,6 +180,22 @@ function feelRows(g, a, b) {
     };
     return row(a, b) + row(b, a);
 }
+// [expanded] 0.2.0.9: with your partner: moving in, a date at home tonight
+const DV = { room: '' };
+function partnerRow(g, c) {
+    const w = getWorld(g.world);
+    if (!w || !L.flirtOn(G(g)) || !partnersOf(g).includes(c))
+        return '';
+    const lives = g.cast[c]?.homeWith === '__you';
+    const rooms = NI.dateRooms(g, w);
+    if (!rooms.some(r => r.id === DV.room))
+        DV.room = rooms.find(r => /living|lounge|гостин/i.test(`${r.id} ${r.name}`))?.id ?? rooms[0]?.id ?? '';
+    const d = NI.nightsOf(g).date;
+    const today = d && d.day === g.day && d.with === c;
+    return `<div class="mu-bd-row mu-bd-partner">${lives ? `<button class="mu-ghost" data-act="bd-moveout" data-who="${esc(c)}">${icon('home')}<span>Back to their own room</span></button>` : `<button class="mu-ghost" data-act="bd-movein" data-who="${esc(c)}">${icon('home')}<span>Ask them to move into your room</span></button>`}</div>
+        ${today ? `<small class="mu-muted">${icon('heart')} A date tonight, ${String(Math.floor(d.from / 60)).padStart(2, '0')}:00–${String(Math.floor(d.to / 60)).padStart(2, '0')}:00, the ${esc((rooms.find(r => r.id === d.room)?.name ?? '').toLowerCase())}.${d.stay.length ? ` Not leaving: ${esc(d.stay.map(a => nm(g, a)).join(', '))}.` : ' The house leaves it to you.'}</small>`
+        : `<div class="mu-bd-row"><select data-input="bd-dateroom">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === DV.room ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select><button class="mu-ghost" data-act="bd-date" data-who="${esc(c)}">${icon('heart')}<span>A date here tonight</span></button></div>`}`;
+}
 function mineRow(g, c) {
     if (!L.flirtOn(G(g)))
         return '';
@@ -194,7 +211,7 @@ function pairPanel(g, a, b) {
     if (a === YOU || b === YOU) { // the player and a character: closeness is upstream's, shown as it is
         const c = a === YOU ? b : a;
         return `<section class="mu-bd-panel">${title(`${esc(nm(g, YOU))} (you) & ${esc(nm(g, c))}`)}
-            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}
+            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}${partnerRow(g, c)}
             <small class="mu-muted">${esc(youLine(g, c))}: it grows with what you do together (see People).</small>
             ${facts(g, factsOfPair(G(g), YOU, c), false, 'Nothing written yet.')}
             ${addForm(g, [YOU, c])}</section>`;
@@ -265,6 +282,8 @@ export function bondsSettingsHtml() {
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-flirt" ${L.flirtOn(G(g)) ? 'checked' : ''}><span>Flirting and romance<small>${L.flirtOn(G(g)) ? 'Feelings between them grow and fade, crushes, confessions, couples, how flirting lands, nights together.' : 'Off: no feelings between them, no new couples, no nights together (yours with your partners stay upstream\'s).'}</small></span></label>
+        ${L.flirtOn(G(g)) ? `<b>Partners staying the night</b><div class="mu-bd-seg">${NI.STAYS.map(([id, label]) => `<button class="${(NI.nightsOf(g).stay ?? 'sometimes') === id ? 'is-on' : ''}" data-act="bd-stay" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">Couples sleep in one room now and then (yours with you too); a secret one slips out early, and someone up early may see.</small>` : ''}
         <b>The walls</b>
         <div class="mu-bd-seg">${WALLS.map(([id, label]) => `<button class="${wallsOf(g) === id ? 'is-on' : ''}" data-act="bd-walls" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">What is heard through them: a fight, a night together, someone listening at a door (yours too: rarely, a nosy one).</small>
@@ -341,6 +360,44 @@ Object.assign(ACT, {
 });
 // [expanded] 0.2.0.8/0.2.0.9: the settings' segment buttons (actions, not inputs)
 Object.assign(ACT, {
+    'bd-stay': (el) => { const g = game(); if (!g)
+        return; NI.nightsOf(g).stay = el.dataset.v || 'sometimes'; saveGame(); notify(); },
+    'bd-movein': (el) => { const g = game(); if (!g)
+        return; const why = NI.askMoveIn(g, el.dataset.who); toast(why || `${nm(g, el.dataset.who)} is moving into your room.${g.furnishx?.items?.some((x) => x.room === 'home:player' && x.cat === 'doublebed') ? '' : ' A double bed would help (the shop).'}`, why ? 'info' : 'success', { ms: 8000 }); refreshPrompt(); notify(); },
+    'bd-moveout': (el) => { const g = game(); if (!g)
+        return; NI.moveOut(g, el.dataset.who); toast(`${nm(g, el.dataset.who)} is back in their own room.`, 'info'); refreshPrompt(); notify(); },
+    'bd-date': async (el) => {
+        const g = game();
+        const w = g && getWorld(g.world);
+        if (!g || !w || !DV.room)
+            return;
+        const c = el.dataset.who;
+        const d = NI.planDate(g, w, c, DV.room);
+        if (typeof d === 'string') {
+            toast(d, 'info');
+            return;
+        }
+        const room = (w.places.find(p => p.id === d.room)?.name ?? 'the room').toLowerCase();
+        toast(`You asked the house for the ${room} tonight, with ${nm(g, c)}.${d.stay.length ? ` ${d.stay.map(a => nm(g, a)).join(', ')} won't make it easy.` : ''}`, 'success', { ms: 8000 });
+        // said in the house chat (the others answer as decided)
+        try {
+            const C = await import('../sim/chats.js');
+            const { write, flushChat } = await import('../sim/chatrun.js');
+            const ch = C.chatById(g, C.HOUSE);
+            if (ch) {
+                flushChat(ch.id);
+                C.post(ch, C.ME, `Could I have the ${room} tonight from ${String(Math.floor(d.from / 60)).padStart(2, '0')}:00? 🙏`, nowAbs(g));
+                const ans = [...d.away, ...d.stay].filter(a => a !== c).slice(0, 3);
+                void write(g, w, ch, ans, `${personaName()} asked the house for the ${room} tonight (a date${(bondsOf(G(g)).hide ?? {})[c] ? ', with someone they do not name' : ` with ${nm(g, c)}`}). Already decided: ${ans.map(a => `${nm(g, a)} — ${d.away.includes(a) ? 'fine, will keep away' : 'will not leave (teases, or has plans there)'}`).join('; ')}. Short replies; light teasing is fine.`, [], true);
+            }
+        }
+        catch (e) {
+            console.warn('[Mundi Expanded] date', e);
+        }
+        saveGame();
+        refreshPrompt();
+        notify();
+    },
     'bd-walls': (el) => { const g = game(); if (!g)
         return; bondsOf(G(g)).walls = el.dataset.v || 'normal'; saveGame(); notify(); },
     'bd-shifts': (el) => { const g = game(); if (!g)
@@ -357,6 +414,7 @@ Object.assign(ACT, {
         return; gossipOf(g).max = Number(el.dataset.v) || 6; saveGame(); notify(); },
 });
 Object.assign(INPUT, {
+    'bd-dateroom': (el) => { DV.room = String(el.value); notify(); },
     'bd-draft': (el) => { BV.draft = el.value; },
     'bd-addtext': (el) => { BV.addText = el.value; },
     'bd-money': (el) => { const g = game(); if (!g)

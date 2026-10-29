@@ -15,7 +15,9 @@ import { wallsK } from './listen.js';
 const Hh = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
 import { react, talksOf, closeTalk, loversOf } from './consequences.js';
 import { nightLoveText, applyLove, mutualFor } from './lovenight.js';
-import { flirtOn, loveOf, loveKnow } from './love.js';
+import { flirtOn, loveOf, loveKnow, parseNights } from './love.js';
+import { nightTogether } from './nights.js';
+import { ownRoom } from './lifeday.js';
 import { addBond } from './social.js';
 import { LOVE } from './secrets.js';
 import { bondsOf, YOU, factK, parseFound, parseTalked, parseShift, parseSmall, shiftOk, setStatus, statusOf, valueOf, type TieLike, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM, type Change, type GLike } from './bonds.js';
@@ -112,6 +114,11 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     // a bigger change, if the rules find it believable
     // [expanded] 0.2.0.9: feelings first (sparks, confessions), then a bigger change: dating needs two crushes
     { const n = applyLove(g, raw, findName, (a) => [...(around[a] ?? [])], day); if (n.length) console.info('[Mundi Expanded] feelings tonight:', n); }
+    // nights together in today's scenes (neighbours may have heard)
+    if (flirtOn(gl as any)) for (const nt of parseNights(raw, findName)) {
+        const room = w.places.find(p => p.name.toLowerCase() === nt.where.toLowerCase())?.id ?? (nt.who.includes(YOU) ? 'home:player' : g.cast[nt.who[0]] ? ownRoom(g.cast[nt.who[0]]) : 'home:player');
+        nightTogether(g, w, nt.who, room, nt.secret || nt.who.some(a => a !== YOU && !!b.hide?.[a]));
+    }
     const sh = shiftDue ? parseShift(raw, findName) : null;
     if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: flirtOn(gl as any) ? b.romance ?? 'story' : 'off', lovers: (a) => loversOf(g, a), taken: (a) => ['taken', 'married'].includes(profileOf(g as any, a)?.status ?? ''),
         spark: mutualFor(g, sh.a, sh.b) })) {

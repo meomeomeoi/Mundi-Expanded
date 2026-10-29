@@ -43,6 +43,8 @@ export function loveLines(g: Save, present: string[]): string[] {
         if (!here && !knowers.length) continue;
         out.push(`{{user}} ${m.lvl === 'love' ? 'is in love with' : 'likes'} ${N(g, b)}${here ? '' : ' (not here)'}${m.secret ? ', and keeps it to themself' : ''}.${here && m.secret ? ` ${N(g, b)} does not know unless {{user}} shows it.` : ''}${knowers.length && m.secret ? ` ${list(knowers.map(c => N(g, c)))} ${knowers.length > 1 ? 'have' : 'has'} noticed.` : ''}`);
     }
+    // a crush on you, unspoken: alone with you, they may say it
+    if (present.length === 1) { const a = present[0]; if (g.cast[a] && romValue(g, a) >= 60 && !partnersOf(g).includes(a) && !x.said?.[L.lk(a, YOU)]) out.push(`${N(g, a)} has a crush on {{user}} and has never said it. Alone like this, if the moment feels right, ${N(g, a)} might, or might lose their nerve.`); }
     // how flirting from you would land
     const moods = present.filter(a => g.cast[a]).map(a => {
         const partner = loversOf(g, a).find(p => p !== YOU && present.includes(p));
@@ -65,6 +67,7 @@ export function nightLoveText(g: Save, user: string): string[] {
     const x = L.loveOf(G(g) as any);
     const crush = Object.entries(x.v).filter(([k, v]) => v >= 60 && !x.said?.[k]).map(([k]) => k.split('>')).filter(([a, b]) => g.cast[a] && (g.cast[b] || b === YOU));
     return ['', `Feelings (romantic, not friendship), for the scenes and for life without ${user}: SPARK | A > B | +1 to +3 or -1 to -3 | what happened (A's feelings for B grew: flirting, a look held too long, blushing, a kiss; they cooled: negative). A <> B when it went both ways. ${user} can be B (a character's feelings for ${user}); when ${user} flirted with someone, write ${user} > Name. Most days: none.`,
+        `If two people (${user} may be one) clearly spent the night together or were intimate in today's scenes: NIGHT | A & B | where | secret (if they hide it).`,
         ...(crush.length ? [`Unspoken crushes: ${crush.map(([a, b]) => `${N(g, a)} > ${N(g, b)}`).join('; ')}. If one was confessed in today's scenes, or (rarely, without ${user}) one is confessed tonight: CONFESS | A > B.`] : [])];
 }
 /** Applies the night's sparks and confessions. `seen(a)`: who else was in the room when `a` spoke today. Notes. */
