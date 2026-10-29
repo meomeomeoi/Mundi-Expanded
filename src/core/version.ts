@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-12.1';
+export const VERSION = '0.2.1-12.2';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,10 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-12.2', fork: true, title: 'Traits that add up', items: [
+        ['star', 'Two traits on the same skill (Strong and Athletic) now add up a little: the higher one, +1 for each other one, up to level 5.'],
+        ['user', 'Interests make skills grow faster instead: +20% experience in the skills they are about (Cooking, Music, Books, Technology, Sports, Art; two on one skill, +40%). The tooltips and Me show it.'],
+    ] },
     { v: '0.2.1-12.1', fork: true, title: 'What the traits do', items: [
         ['star', 'Picking your persona\'s traits for a Home: a dot marks the ones that change the rules, and hovering one shows what it does (a skill it starts you at, more time in the cleaning games for Handy).'],
         ['user', 'Your traits give you your starting skills right away (no need to open Me first); Me still lets you adjust them.'],

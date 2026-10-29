@@ -8,8 +8,13 @@ t('levels and experience', () => {
     const sessions = Math.ceil(O.xpAt(10) / O.xpFor(1)); assert.ok(sessions >= 30, `a master takes many perfect sessions (${sessions})`);
 });
 t('traits seed skills', () => {
-    const s = O.seedFromTraits({ proficiency: ['Good cook', 'Musical'], interests: ['Technology'] });
-    assert.equal(s.cooking, 4); assert.equal(s.music, 4); assert.equal(s.coding, 2);
+    const s = O.seedFromTraits({ proficiency: ['Good cook', 'Musical'], interests: ['Technology', 'Cooking'] });
+    assert.equal(s.cooking, 4); assert.equal(s.music, 4); assert.equal(s.coding, undefined, 'interests do not set levels');
+    assert.equal(O.seedFromTraits({ proficiency: ['Strong', 'Athletic'] }).fitness, 5, 'two on one skill: the higher +1');
+    assert.equal(O.seedFromTraits({ proficiency: ['Tech-savvy', 'Smart', 'Good with numbers'] }).coding, 5, 'up to 5');
+    assert.equal(O.seedFromTraits({ proficiency: ['Strong'] }).fitness, 3);
+    assert.equal(O.xpBoost({ interests: ['Cooking'] }, 'cooking'), 1.2); assert.equal(O.xpBoost({ interests: ['Books', 'Art'] }, 'writing'), 1.4); assert.equal(O.xpBoost({ interests: ['Nature'] }, 'cooking'), 1);
+    assert.match(O.traitEffects('Strong').lines[0], /\+1 with Athletic/); assert.ok(O.traitEffects('Cooking').lines[0].includes('+20% experience')); assert.ok(!O.traitEffects('Games').game);
     assert.match(O.traitsLine({ proficiency: ['Strong'], personality: ['Shy'], interests: ['Games'] }), /strong; shy; into games/);
 });
 t('ideas get better with skill, brilliant ones stay rare', () => {

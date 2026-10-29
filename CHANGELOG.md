@@ -15,6 +15,15 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 12.2 (0.2.1-12.2) · 2026-10-29
+
+- **Traits that add up**: two traits on the same skill no longer count only the higher one: the higher, +1 for each
+  other one, up to level 5 (Strong 3 and Athletic 4: fitness 5). The tooltip says which traits stack.
+- **Interests make skills grow faster** instead of setting a starting level: +20% experience in the skills they are
+  about (Cooking: cooking; Music: the guitar; Books: writing and studying; Technology: programming; Sports: fitness;
+  Art: writing), +40% at most for two on one skill. Shown in the tooltips and in Me (Skills). Saves keep the levels
+  they already have.
+
 ## Mundi Expanded 12.1 (0.2.1-12.1) · 2026-10-29
 
 - **What the traits do**: when you pick your persona's traits for a Home, a dot marks the ones that change the rules,

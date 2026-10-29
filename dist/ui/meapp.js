@@ -31,7 +31,8 @@ function skillsHtml(g) {
     return `<section><h4>Skills</h4>${O.SKILL_LIST.map(s => {
         const xp = R.xpOf(g, s);
         const l = O.levelOf(xp);
-        return `<div class="mu-me-skill"><span>${O.SKILLS[s].icon} ${O.SKILLS[s].name}</span>${bar(O.toNext(xp))}<b>${l}</b><small class="mu-muted">${O.LEVEL_WORDS[l]}</small></div>`;
+        const boost = O.xpBoost(g.player.traits, s);
+        return `<div class="mu-me-skill"><span>${O.SKILLS[s].icon} ${O.SKILLS[s].name}</span>${bar(O.toNext(xp))}<b>${l}</b><small class="mu-muted">${O.LEVEL_WORDS[l]}${boost > 1 ? ` · +${Math.round((boost - 1) * 100)}% (interests)` : ''}</small></div>`;
     }).join('')}
         <small class="mu-muted">They grow with what you do: a mini-game played well gives more than just doing it. The scene is told how good you are. Pace: Settings.</small></section>`;
 }

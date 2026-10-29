@@ -46,7 +46,7 @@ export const levelOf = (g, s) => O.levelOf(xpOf(g, s));
 export function practise(g, s, score) {
     const x = ownOf(g);
     const before = O.levelOf(x.skills[s] ?? 0);
-    x.skills[s] = (x.skills[s] ?? 0) + O.xpFor(score, ocfg(g).pace);
+    x.skills[s] = (x.skills[s] ?? 0) + Math.round(O.xpFor(score, ocfg(g).pace) * O.xpBoost(g.player.traits, s)); // interests: faster
     const after = O.levelOf(x.skills[s]);
     return after > before ? `${O.SKILLS[s].name}: level ${after} (${O.LEVEL_WORDS[after]}).` : '';
 }

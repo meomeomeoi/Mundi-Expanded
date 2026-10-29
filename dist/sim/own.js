@@ -23,27 +23,49 @@ export function xpFor(score, pace = 'normal') {
     return Math.round(base * PACE[pace]);
 }
 export const LEVEL_WORDS = ['', 'a beginner', 'a beginner', 'getting there', 'decent', 'good', 'good', 'very good', 'very good', 'excellent', 'a master'];
-/** Starting levels from the traits picked when the persona was made (Mundi's Proficiency and Interests). */
+/** Starting levels from the traits picked when the persona was made (Mundi's Proficiency, and a little Personality).
+ *  Two traits on the same skill do not add up: the higher one, +1 for each other one, up to 5. */
 const TRAIT_SKILL = {
     'good cook': [['cooking', 4]], musical: [['music', 4]], 'tech-savvy': [['coding', 4]], smart: [['study', 3], ['coding', 2]], creative: [['writing', 3], ['music', 2]],
     athletic: [['fitness', 4]], strong: [['fitness', 3]], 'good with numbers': [['work', 3], ['coding', 2]],
-    cooking: [['cooking', 2]], music: [['music', 2]], books: [['writing', 2], ['study', 2]], technology: [['coding', 2]], sports: [['fitness', 2]], art: [['writing', 2]],
     ambitious: [['work', 2]], curious: [['study', 2]],
 };
+export const STACK_CAP = 5;
+/** Interests: +20% experience in the skills they are about (two on one skill: +40% at most). */
+const INTEREST_SKILL = { cooking: ['cooking'], music: ['music'], books: ['writing', 'study'], technology: ['coding'], sports: ['fitness'], art: ['writing'] };
+export const INTEREST_BOOST = 0.2, BOOST_CAP = 0.4;
 export function seedFromTraits(traits) {
-    const out = {};
-    for (const t of Object.values(traits ?? {}).flat())
+    const by = {};
+    for (const t of [...(traits?.proficiency ?? []), ...(traits?.personality ?? [])])
         for (const [s, l] of TRAIT_SKILL[String(t).toLowerCase()] ?? [])
-            out[s] = Math.max(out[s] ?? 1, l);
+            (by[s] ??= []).push(l);
+    const out = {};
+    for (const [s, ls] of Object.entries(by)) {
+        const top = Math.max(...ls);
+        out[s] = ls.length > 1 ? Math.max(top, Math.min(STACK_CAP, top + ls.length - 1)) : top;
+    }
     return out;
+}
+/** How much faster a skill grows with the persona's interests (1 = as usual). */
+export function xpBoost(traits, s) {
+    const n = (traits?.interests ?? []).filter(t => (INTEREST_SKILL[String(t).toLowerCase()] ?? []).includes(s)).length;
+    return 1 + Math.min(BOOST_CAP, n * INTEREST_BOOST);
 }
 /** Traits that do something in the rules besides skills (Handy: more time in the cleaning game). */
 export const HANDY_SECONDS = 6;
 const TRAIT_EXTRA = { handy: [`Cleaning mini-games: +${HANDY_SECONDS} seconds`] };
+const titleCase = (k) => k.charAt(0).toUpperCase() + k.slice(1);
 /** What a trait does in a Home, for its tooltip; `game`: whether it changes anything in the rules (the dot). */
 export function traitEffects(option) {
     const k = option.toLowerCase();
-    const lines = [...(TRAIT_SKILL[k] ?? []).map(([s, l]) => `${SKILLS[s].name}: starts at level ${l} (of 10)`), ...(TRAIT_EXTRA[k] ?? [])];
+    const lines = [];
+    for (const [s, l] of TRAIT_SKILL[k] ?? []) {
+        const others = Object.entries(TRAIT_SKILL).filter(([o, v]) => o !== k && v.some(([x]) => x === s)).map(([o]) => titleCase(o));
+        lines.push(`${SKILLS[s].name}: starts at level ${l} (of 10)${others.length ? `; +1 with ${others.join(' or ')} (up to ${STACK_CAP})` : ''}`);
+    }
+    for (const s of INTEREST_SKILL[k] ?? [])
+        lines.push(`${SKILLS[s].name}: +${Math.round(INTEREST_BOOST * 100)}% experience`);
+    lines.push(...(TRAIT_EXTRA[k] ?? []));
     return { lines: [...lines, 'The scene is told about it'], game: lines.length > 0 };
 }
 /** What the traits mean for the scene, in words ("good cook, musical; outgoing, sarcastic; into games and music"). */
