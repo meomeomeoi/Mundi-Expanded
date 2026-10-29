@@ -573,8 +573,12 @@ async function nightBonds(g, w, day, range) {
             toast(note, 'info', { ms: 8000 });
         }
     }
-    catch (e) {
-        toast(`Relationships could not be updated tonight (${String(e?.message ?? e)}).`, 'warn');
+    catch (e) { // [expanded] 0.2.0.9: with "Try again" (the night's lines are kept: range)
+        const { failNotice } = await import('./retry.js');
+        failNotice('bonds', `Relationships could not be updated tonight (${String(e?.message ?? e).slice(0, 120)}).`, async () => { const note = changesNote(await bondsNight(g, w, day, range), !!g.bonds?.truth); refreshPrompt(); if (note)
+            toast(note, 'info', { ms: 8000 });
+        else
+            toast('Relationships: read again, nothing changed.', 'info'); });
     }
     try {
         const notes = await stockNight(g, w, day, range);

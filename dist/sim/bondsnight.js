@@ -16,9 +16,11 @@ const Hh = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h = Math.imul(h, 16777619);
 } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
 import { react, talksOf, closeTalk, loversOf } from './consequences.js';
+import { nightLoveText, applyLove, mutualFor } from './lovenight.js';
+import { flirtOn, loveOf, loveKnow } from './love.js';
 import { addBond } from './social.js';
 import { LOVE } from './secrets.js';
-import { bondsOf, YOU, factK, parseFound, parseTalked, parseShift, parseSmall, shiftOk, setStatus, statusOf, valueOf, factsOfPair, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
+import { bondsOf, YOU, factK, parseFound, parseTalked, parseShift, parseSmall, shiftOk, setStatus, statusOf, valueOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
 const G = (g) => g;
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 // The daily drift back toward where each pair started (no AI; runs as the day turns, also while you sleep).
@@ -110,6 +112,19 @@ export async function bondsNight(g, w, day, range) {
     // recent things not everyone knows (fights, secrets of the week), for who found out and who promised
     for (const f of b.facts.filter(x => x.kind === 'episode' && day - x.day <= 7 && factK(x).pub !== 'public').slice(-5))
         secrets.push({ text: `${f.who.map(nm).join(' & ')}: ${f.text}`, known: [...f.who, ...Object.keys(f.know ?? {}).filter(x => f.know[x].lvl === 'knows')].map(nm), k: factK(f), store: f, parts: f.who });
+    {
+        const lx = loveOf(gl);
+        for (const [k, v] of Object.entries(lx.v)) {
+            const [a, c] = k.split('>');
+            if (v < 40 || lx.said?.[k] || !g.cast[a] || !(g.cast[c] || c === YOU))
+                continue;
+            const h = loveKnow(gl, a, c);
+            secrets.push({ text: `${nm(a)} has a crush on ${nm(c)}`, known: [nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know[x].lvl === 'knows').map(nm)], k: { parts: [a], pub: 'private', know: h.know, day: 0 }, store: h, parts: [a] });
+        }
+        for (const [c, m] of Object.entries(lx.mine ?? {}))
+            if (m.secret && g.cast[c])
+                secrets.push({ text: `${me} ${m.lvl === 'love' ? 'is in love with' : 'likes'} ${nm(c)}`, known: [me, ...Object.keys(m.know ?? {}).filter(x => m.know[x].lvl === 'knows').map(nm)], k: { parts: [YOU], pub: 'private', know: m.know, day: m.day }, store: m, parts: [YOU] });
+    }
     for (const [a, h] of Object.entries(b.hide ?? {}))
         if (g.cast[a])
             secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know[x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true, parts: [YOU, a] });
@@ -119,7 +134,7 @@ export async function bondsNight(g, w, day, range) {
     const shiftDue = b.life !== 'off' && day - (b.shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
     const smallDue = b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
     const prompt = nightPrompt(gl, { day, user: me, premise: String(g.cfg?.start?.text || w.scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })),
-        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: b.romance ?? 'story' } : {}), small: smallDue });
+        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: nightLoveText(g, me) });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM); // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw))
@@ -151,9 +166,15 @@ export async function bondsNight(g, w, day, range) {
     for (const i of parseTalked(raw, talks.length))
         closeTalk(g, talks[i].id);
     // a bigger change, if the rules find it believable
+    // [expanded] 0.2.0.9: feelings first (sparks, confessions), then a bigger change: dating needs two crushes
+    {
+        const n = applyLove(g, raw, findName, (a) => [...(around[a] ?? [])], day);
+        if (n.length)
+            console.info('[Mundi Expanded] feelings tonight:', n);
+    }
     const sh = shiftDue ? parseShift(raw, findName) : null;
-    if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: b.romance ?? 'story', lovers: (a) => loversOf(g, a), taken: (a) => ['taken', 'married'].includes(profileOf(g, a)?.status ?? ''),
-        spark: factsOfPair(gl, sh.a, sh.b).some(f => g.day - f.day <= 30 && /flirt|kiss|blush|crush|date|romantic|spark|held hands|флирт|поцел|покрасн|свидан/i.test(f.text)) })) {
+    if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: flirtOn(gl) ? b.romance ?? 'story' : 'off', lovers: (a) => loversOf(g, a), taken: (a) => ['taken', 'married'].includes(profileOf(g, a)?.status ?? ''),
+        spark: mutualFor(g, sh.a, sh.b) })) {
         const v = valueOf(gl, sh.a, sh.b);
         const type = sh.kind === 'friends' ? (v >= 70 ? 'bestfriend' : 'friend') : sh.kind === 'enemies' ? (v > -60 ? 'rival' : 'enemy') : sh.kind;
         setStatus(gl, sh.a, sh.b, type);

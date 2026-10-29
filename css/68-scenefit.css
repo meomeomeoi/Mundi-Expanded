@@ -21,3 +21,6 @@
 /* [expanded] 0.2.0.8: a bedroom with its door closed: dimmed, and only "someone is inside" */
 #mundi-root .mu-room.is-shut > i, #mundi-root .mu-plan-room.is-shut > i { filter: brightness(.42) saturate(.55); }
 #mundi-root .faces.is-shut i { width: auto !important; height: auto !important; min-width: 0 !important; padding: 2px 8px !important; border-radius: 10px !important; font-size: 10.5px !important; font-style: italic; font-weight: 600; white-space: nowrap; background: rgba(10, 12, 18, .72) !important; color: #e8e8ee !important; }
+/* [expanded] 0.2.0.9: a failed mechanics call, with "Try again" (stays until closed) */
+#mundi-root .mu-toast.mu-retry { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#mundi-root .mu-retry-btn { padding: 3px 10px; font-size: 12px; border-radius: 8px; }

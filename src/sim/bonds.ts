@@ -329,6 +329,7 @@ export interface NightInput {
     /** unfinished business (the reader says who talked it out) */ talks?: string[];
     /** tonight a bigger change may happen, if there is a reason (romance: off / from the story / may grow) */ shift?: 'off' | 'story' | 'grow';
     /** tonight someone may do a small thing and keep quiet about it */ small?: boolean;
+    /** [expanded] 0.2.0.9: extra lines (feelings) */ extra?: string[];
 }
 export const NIGHT_SYSTEM = 'You keep the records of an interactive fiction (a role-play story between consenting adults): how the people sharing a house get along with each other. The story may include dark or mature events; you do not judge or soften them, you only note plainly what changed between the characters. You are honest and sparing: most days little or nothing changes between them. You never invent what happened in a conversation.';
 /** A reply with neither part's heading is not an answer (a refusal, or something else entirely). */
@@ -368,7 +369,8 @@ export function nightPrompt(g: GLike, n: NightInput): string {
         'PART 2 — life in the house without ' + n.user + '.',
         n.life === 'off' ? 'Turned off: write NONE.' : `${off} It must fit who they are and how they get along now, and not repeat what happened lately.`,
         ...(n.talks?.length ? ['', `Unfinished business: ${n.talks.map((t, i) => `${i + 1}. ${t}`).join(' ')}`, 'If today\'s scenes had them really talk it out (or it happened without ' + n.user + ' tonight), add: TALKED | the number.'] : []),
-        ...(n.shift ? ['', `Tonight, only if there is a real reason in how they get along and what happened lately, ONE bigger change may happen between two of them: SHIFT | Name & Name | friends, enemies${n.shift !== 'off' ? ', dating' : ''} or ex | why, in a few words | secret (optional: they keep it to themselves). ${n.shift === 'story' ? 'Dating only if there was already flirting or a clear spark between them in what happened lately. ' : ''}${n.shift !== 'off' ? 'Dating must fit who they are (orientation, partners outside the house). ' : ''}Most nights: no SHIFT line.`] : []),
+        ...(n.shift ? ['', `Tonight, only if there is a real reason in how they get along and what happened lately, ONE bigger change may happen between two of them: SHIFT | Name & Name | friends, enemies${n.shift !== 'off' ? ', dating' : ''} or ex | why, in a few words | secret (optional: they keep it to themselves). ${n.shift === 'story' ? 'Dating only if both already have feelings for each other. ' : ''}${n.shift !== 'off' ? 'Dating must fit who they are (orientation, partners outside the house). ' : ''}Most nights: no SHIFT line.`] : []),
+        ...(n.extra ?? []),
         ...(n.small ? ['', 'Maybe (not often) someone did a small thing and kept quiet about it (borrowed something without asking, broke something, ate someone\'s food, lost their job, owes money): SMALL | Name | what they did | whose it was (optional).'] : []),
         '',
         'One moment per line, exactly like this (the sentence says what happened, short, in the past tense):',

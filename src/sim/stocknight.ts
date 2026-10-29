@@ -13,6 +13,7 @@ import * as S from './stock.js';
 import * as M from './money.js';
 import { money } from './needs.js';
 import { applyGifts, giftLines } from './gifts.js';
+import { refused } from '../ui/retry.js';
 import { placeReadLines, applyPlaceRead } from './furnishread.js';
 
 const G = (g: Save) => g as unknown as S.GLike;
@@ -53,7 +54,11 @@ async function readLines(g: Save, text: string, fallback: boolean): Promise<S.Ch
     const you = personaName();
     const extra = [...M.MONEY_READ, ...(M.moneyOn(g as any) ? M.MONEY_READ_PAY : []), M.ATTACH_NOTE, ...placeReadLines(g, you)];   // [expanded] 0.2.0.7: the rooms' things
     const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 1500, S.READ_SYSTEM, fallback);
-    if (!raw) return [];
+    // [expanded] 0.2.0.9: no answer or a refusal: a notice with "Try again" (NONE is an answer)
+    if (!raw || (refused(raw) && !/\bNONE\b/.test(raw))) {
+        void import('../ui/retry.js').then(m => m.failNotice('things', `The story could not be read for things, gifts and money${raw ? ' (the mechanics model refused)' : ''}.`, async () => { const c = await readLines(g, text, fallback); saveGame(); refresh(); say(c); }));
+        return [];
+    }
     const changes = S.applyRead(G(g), S.parseRead(G(g), raw, you), you);
     const mops = M.parseMoney(g as any, raw, you, s => S.personOf(G(g), s, you));
     const more = [...M.applyMoney(g as any, mops, you), ...applyGifts(g, mops, you), ...applyPlaceRead(g, raw, mops, you, s => S.personOf(G(g), s, you))];

@@ -476,7 +476,10 @@ async function sleep() {
 // [expanded] The relationships between characters at night (one AI call, Home only); never stops the night.
 async function nightBonds(g: Save, w: WorldDef, day: number, range: { start: number; end: number }) {
     try { const note = changesNote(await bondsNight(g, w, day, range), !!(g as any).bonds?.truth); /* [expanded] 0.2.0.8: only what you know */ if (note) { refreshPrompt(); toast(note, 'info', { ms: 8000 }); } }
-    catch (e: any) { toast(`Relationships could not be updated tonight (${String(e?.message ?? e)}).`, 'warn'); }
+    catch (e: any) {   // [expanded] 0.2.0.9: with "Try again" (the night's lines are kept: range)
+        const { failNotice } = await import('./retry.js');
+        failNotice('bonds', `Relationships could not be updated tonight (${String(e?.message ?? e).slice(0, 120)}).`, async () => { const note = changesNote(await bondsNight(g, w, day, range), !!(g as any).bonds?.truth); refreshPrompt(); if (note) toast(note, 'info', { ms: 8000 }); else toast('Relationships: read again, nothing changed.', 'info'); });
+    }
     try { const notes = await stockNight(g, w, day, range); refreshPrompt(); if (notes.length) toast(`The house overnight: ${notes.join(' · ')}.`, 'info', { ms: 9000 }); }
     catch (e: any) { toast(`The house's things could not be updated tonight (${String(e?.message ?? e)}).`, 'warn'); }
 }

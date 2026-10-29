@@ -63,6 +63,8 @@ function profileBody(g: Save, w: WorldDef, r: Resident): string {
             <small class="mu-muted">Their favourite things come up often, not always: the rest of the time it is something ordinary.</small></div>
         <label class="mu-field slider"><span>Keeps a secret · ${P.discreetOf(p)}% <small class="mu-muted">(${P.discreetOf(p) < 30 ? 'tells everyone' : P.discreetOf(p) > 70 ? 'a vault' : 'depends on who asks'})</small></span><input type="range" min="0" max="100" step="5" value="${P.discreetOf(p)}" data-input="lp-discreet" data-who="${a}"></label>
         <label class="mu-field slider"><span>Notices and pries · ${P.nosyOf(p)}% <small class="mu-muted">(${P.nosyOf(p) < 30 ? 'oblivious' : P.nosyOf(p) > 70 ? 'misses nothing' : 'notices what is in front of them'})</small></span><input type="range" min="0" max="100" step="5" value="${P.nosyOf(p)}" data-input="lp-nosy" data-who="${a}"></label>
+        <div class="mu-row2"><label class="mu-field"><span>Gender</span><select data-input="lp-gender" data-who="${a}">${P.GENDERS.map(([v, l]) => `<option value="${v}" ${(p.gender ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label class="mu-field"><span>Affection in front of others</span><select data-input="lp-pda" data-who="${a}">${P.PDAS.map(([v, l]) => `<option value="${v}" ${(p.pda ?? 'normal') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
         <div class="mu-row2"><label class="mu-field"><span>Orientation</span><select data-input="lp-orient" data-who="${a}">${P.ORIENTS.map(([v, l]) => `<option value="${v}" ${(p.orient ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
             <label class="mu-field"><span>Relationship status</span><select data-input="lp-status" data-who="${a}">${P.STATUSES.map(([v, l]) => `<option value="${v}" ${(p.status ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
         <small class="mu-muted">Who keeps a secret and who notices things decides how news travels in the house. Orientation and status keep their love lives believable (a relationship inside the house is in Relationships).</small>
@@ -154,6 +156,8 @@ Object.assign(INPUT, {
     'lp-actwhere': async (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.where = el.value; hand(x.p); await refresh(); } },
     'lp-discreet': (el, e) => { const x = prof(el); if (!x) return; x.p.discreet = num(el); saveGame(); if (e.type === 'change') notify(); },
     'lp-nosy': (el, e) => { const x = prof(el); if (!x) return; x.p.nosy = num(el); saveGame(); if (e.type === 'change') notify(); },
+    'lp-gender': (el) => { const x = prof(el); if (!x) return; const v = el.value as any; if (v) x.p.gender = v; else delete x.p.gender; saveGame(); notify(); },
+    'lp-pda': (el) => { const x = prof(el); if (!x) return; x.p.pda = el.value as any; saveGame(); notify(); },
     'lp-orient': (el) => { const x = prof(el); if (!x) return; const v = el.value as P.Orient; if (v) x.p.orient = v; else delete x.p.orient; saveGame(); notify(); },
     'lp-status': (el) => { const x = prof(el); if (!x) return; const v = el.value as P.RelStatus; if (v) x.p.status = v; else delete x.p.status; saveGame(); notify(); },
     'lp-ooc': (el) => { const x = prof(el); if (!x) return; x.p.ooc = el.value.slice(0, 400); saveGame(); },

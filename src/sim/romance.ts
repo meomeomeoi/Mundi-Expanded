@@ -167,9 +167,11 @@ export function applyVerdict(g: Save, people: { avatar: string; name: string }[]
 
 // For the AI: where {{user}} stands with the people in this scene (friendship and romance, in words).
 export function romanceLine(g: Save, present: { avatar: string; name: string }[]) {
+    // [expanded] 0.2.0.9: romance is their feelings for {{user}}, one way (a crush can be unrequited, and unspoken)
+    const feel: Record<string, string> = { interest: 'interested in {{user}}', crush: 'a crush on {{user}} (unspoken unless they said it; not necessarily returned)', dating: 'dating {{user}}', engaged: 'engaged to {{user}}', married: 'married to {{user}}' };
     const parts = present.map(r => {
         const f = friendTier(bondOf(g, r.avatar)).name.toLowerCase(), rt = romanceTier(g, r.avatar);
-        return `${r.name}: ${f}${rt.id !== 'none' && sysOn(g, 'romance') ? `, ${rt.name.toLowerCase()}` : ''}`;
+        return `${r.name}: ${f}${rt.id !== 'none' && sysOn(g, 'romance') ? `; ${feel[rt.id] ?? rt.name.toLowerCase()}` : ''}`;
     });
     if (!parts.length) return '';
     const mine = partnersOf(g).map(a => g.cast[a]?.name ?? a);
@@ -178,5 +180,5 @@ export function romanceLine(g: Save, present: { avatar: string; name: string }[]
         : mine.length > 1 ? ` {{user}} is seeing ${mine.join(' and ')} at the same time; each one expects to be the only one.` : '';
     const jl = (g as any).jealous ?? {};
     const hurt = polyOn(g) ? [] : present.filter(r => jl[r.avatar] && g.day - jl[r.avatar].day < 7).map(r => `${r.name} is still hurt that {{user}} is also with ${g.cast[jl[r.avatar].of]?.name ?? 'someone else'}`);
-    return `How {{user}} stands with them: ${parts.join('; ')}.${love}${hurt.length ? ` ${hurt.join('; ')}.` : ''}`;
+    return `How {{user}} stands with them (friendship, and their own feelings for {{user}}): ${parts.join(' | ')}.${love}${hurt.length ? ` ${hurt.join('; ')}.` : ''}`;
 }

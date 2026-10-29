@@ -60,3 +60,7 @@
 #mundi-root .mu-bd-tag.is-secret { color: #c792ea; border-color: color-mix(in srgb, #c792ea 45%, transparent); }
 #mundi-root .mu-bd-tag.is-sus { color: #f39c12; border-color: color-mix(in srgb, #f39c12 45%, transparent); }
 #mundi-root .mu-bd-tag.is-unknown { color: var(--muted); border-style: dashed; }
+/* [expanded] 0.2.0.9: feelings */
+#mundi-root .mu-bd-feel { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+#mundi-root .mu-bd-feel svg { width: 12px; height: 12px; color: #e7489a; }
+#mundi-root .mu-bd-feel b { color: #e7489a; }

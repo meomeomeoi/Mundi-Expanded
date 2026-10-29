@@ -18,6 +18,7 @@ import { bondsOf, syncTies, pairOf, pairKey, pairsIn, setValue, toneOf, wordOf, 
 import { knowOf, tieK, howText } from '../sim/knows.js'; // [expanded] 0.2.0.8
 import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
+import * as L from '../sim/love.js';
 import { gossipOf } from '../sim/gossiprun.js';
 const roomLimit = (g) => Number(g.furnishx?.limit ?? 15);
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
@@ -163,20 +164,43 @@ function secretRow(g, a, b) {
     const who = Object.entries(know ?? {}).filter(([x]) => x !== YOU && g.cast[x]).map(([x, k]) => `${nm(g, x)}${k.lvl === 'suspects' ? ' (suspects)' : ''}`);
     return `<label class="mu-check"><input type="checkbox" data-input="bd-secret" data-a="${esc(a)}" data-b="${esc(b)}" ${on ? 'checked' : ''}><span>${mine ? 'Keep it a secret' : 'A secret between them'}<small>${on ? (who.length && (seesAll(g) || mine) ? `Knows: ${esc(who.join(', '))}.` : 'Nobody else knows (that you know of).') : 'Off: the whole house knows.'}</small></span></label>`;
 }
+// [expanded] 0.2.0.9: feelings, one way each (shown when you know them, or with the truth on)
+function feelRows(g, a, b) {
+    if (!L.flirtOn(G(g)))
+        return '';
+    const row = (x, y) => {
+        const v = L.feelings(G(g), x, y);
+        if (v < 15)
+            return '';
+        const said = L.loveOf(G(g)).said?.[L.lk(x, y)];
+        const known = seesAll(g) || !!said || !!L.loveKnow(G(g), x, y).know?.[YOU];
+        return known ? `<small class="mu-bd-feel">${icon('heart')} <span data-notr>${esc(nm(g, x))}</span> → <span data-notr>${esc(nm(g, y))}</span>: <b>${L.loveWord(v)}</b>${said ? '' : ' · unspoken'}${seesAll(g) && !said && !L.loveKnow(G(g), x, y).know?.[YOU] ? ' · <em>you do not know this</em>' : ''}</small>` : '';
+    };
+    return row(a, b) + row(b, a);
+}
+function mineRow(g, c) {
+    if (!L.flirtOn(G(g)))
+        return '';
+    const m = L.loveOf(G(g)).mine?.[c];
+    const who = Object.entries(m?.know ?? {}).filter(([x, k]) => g.cast[x] && k.lvl === 'knows').map(([x]) => nm(g, x));
+    return `<label class="mu-field"><span>Your feelings for ${esc(nm(g, c))}</span><select data-input="bd-mine" data-who="${esc(c)}">
+        <option value="" ${!m ? 'selected' : ''}>Nothing to tell (the game does not need to know)</option><option value="like" ${m?.lvl === 'like' ? 'selected' : ''}>I like them</option><option value="love" ${m?.lvl === 'love' ? 'selected' : ''}>I am in love with them</option></select></label>
+        ${m ? `<label class="mu-check"><input type="checkbox" data-input="bd-minesecret" data-who="${esc(c)}" ${m.secret ? 'checked' : ''}><span>Keep it to myself<small>${m.secret ? `The house may notice, and talk.${who.length ? ` Noticed: ${esc(who.join(', '))}.` : ''}` : 'Everyone can see it.'}</small></span></label>` : ''}`;
+}
 /* ---------- panels ---------- */
 const title = (text) => `<div class="mu-bd-title"><b data-notr>${text}</b><button class="mu-ibtn mu-ghost" data-act="bd-sel" data-k="" aria-label="Close">${icon('x')}</button></div>`;
 function pairPanel(g, a, b) {
     if (a === YOU || b === YOU) { // the player and a character: closeness is upstream's, shown as it is
         const c = a === YOU ? b : a;
         return `<section class="mu-bd-panel">${title(`${esc(nm(g, YOU))} (you) & ${esc(nm(g, c))}`)}
-            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}
+            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}
             <small class="mu-muted">${esc(youLine(g, c))}: it grows with what you do together (see People).</small>
             ${facts(g, factsOfPair(G(g), YOU, c), false, 'Nothing written yet.')}
             ${addForm(g, [YOU, c])}</section>`;
     }
     const p = pairOf(G(g), a, b);
     return `<section class="mu-bd-panel">${title(`${esc(nm(g, a))} & ${esc(nm(g, b))}`)}
-        ${statusRow(g, a, b)}${secretRow(g, a, b)}
+        ${statusRow(g, a, b)}${secretRow(g, a, b)}${feelRows(g, a, b)}
         <div class="mu-bd-val"><span><i class="mu-bd-dot" style="background:${COLOR[toneOf(p.v)]}"></i><b data-bd-word>${wordOf(p.v)}</b> <small data-bd-num>${p.v > 0 ? '+' : ''}${p.v}</small></span>
             ${canEdit(g) ? `<input type="range" min="-100" max="100" step="1" value="${p.v}" data-input="bd-val" data-k="${esc(pairKey(a, b))}" style="--c:${COLOR[toneOf(p.v)]}">` : `<span class="mu-bd-meter"><i style="left:${(p.v + 100) / 2}%;background:${COLOR[toneOf(p.v)]}"></i></span>`}</div>
         ${(() => { const t = p.t ?? p.v; return p.t !== undefined && Math.abs(p.t - p.v) >= 10 ? `<small class="mu-muted">Trust: <b>${t >= 45 ? 'full' : t >= 15 ? 'some' : t > -15 ? 'little' : 'none'}</b> (${t > 0 ? '+' : ''}${t}), apart from how they get along.</small>` : ''; })()}
@@ -239,6 +263,7 @@ export function bondsSettingsHtml() {
         <b>Life without you</b>
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
+        <label class="mu-check"><input type="checkbox" data-input="bd-flirt" ${L.flirtOn(G(g)) ? 'checked' : ''}><span>Flirting and romance<small>${L.flirtOn(G(g)) ? 'Feelings between them grow and fade, crushes, confessions, couples, how flirting lands, nights together.' : 'Off: no feelings between them, no new couples, no nights together (yours with your partners stay upstream\'s).'}</small></span></label>
         <b>How the house talks</b>
         <div class="mu-bd-seg">${MOODS.map(([id, label]) => `<button class="${gossipOf(g).mood === id ? 'is-on' : ''}" data-act="bd-mood" data-v="${id}">${label}</button>`).join('')}</div>
         <div class="mu-bd-seg">${[3, 6, 10].map(n => `<button class="${gossipOf(g).max === n ? 'is-on' : ''}" data-act="bd-gmax" data-v="${n}">${n} at once</button>`).join('')}</div>
@@ -310,11 +335,8 @@ Object.assign(ACT, {
         }
     },
 });
-Object.assign(INPUT, {
-    'bd-draft': (el) => { BV.draft = el.value; },
-    'bd-addtext': (el) => { BV.addText = el.value; },
-    'bd-money': (el) => { const g = game(); if (!g)
-        return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
+// [expanded] 0.2.0.8/0.2.0.9: the settings' segment buttons (actions, not inputs)
+Object.assign(ACT, {
     'bd-shifts': (el) => { const g = game(); if (!g)
         return; bondsOf(G(g)).shifts = el.dataset.v || 'normal'; saveGame(); notify(); },
     'bd-romance': (el) => { const g = game(); if (!g)
@@ -327,6 +349,38 @@ Object.assign(INPUT, {
         return; gossipOf(g).mood = el.dataset.v || 'usual'; saveGame(); notify(); },
     'bd-gmax': (el) => { const g = game(); if (!g)
         return; gossipOf(g).max = Number(el.dataset.v) || 6; saveGame(); notify(); },
+});
+Object.assign(INPUT, {
+    'bd-draft': (el) => { BV.draft = el.value; },
+    'bd-addtext': (el) => { BV.addText = el.value; },
+    'bd-money': (el) => { const g = game(); if (!g)
+        return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
+    'bd-mine': (el) => {
+        const g = game();
+        if (!g)
+            return;
+        const c = el.dataset.who;
+        const x = L.loveOf(G(g));
+        const v = el.value;
+        if (!v) {
+            if (x.mine)
+                delete x.mine[c];
+        }
+        else {
+            (x.mine ??= {})[c] = { ...(x.mine[c] ?? { secret: true, day: g.day }), lvl: v };
+        }
+        saveGame();
+        refreshPrompt();
+        notify();
+    },
+    'bd-minesecret': (el) => { const g = game(); if (!g)
+        return; const m = L.loveOf(G(g)).mine?.[el.dataset.who]; if (m) {
+        m.secret = !!el.checked;
+        if (!m.secret)
+            delete m.know;
+    } saveGame(); refreshPrompt(); notify(); },
+    'bd-flirt': (el) => { const g = game(); if (!g)
+        return; L.loveOf(G(g)).on = !!el.checked; saveGame(); refreshPrompt(); notify(); },
     'bd-truth': (el) => { const g = game(); if (!g)
         return; bondsOf(G(g)).truth = !!el.checked; saveGame(); notify(); },
     'bd-secret': (el) => {

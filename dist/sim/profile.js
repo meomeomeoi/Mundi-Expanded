@@ -13,6 +13,15 @@ import { looseJson } from './jsonfix.js';
 import { guessAfford, isAfford } from './furnish.js'; // [expanded] 0.2.0.7
 export const ORIENTS = [['', 'As in the card'], ['straight', 'Straight'], ['gay', 'Gay'], ['lesbian', 'Lesbian'], ['bi', 'Bisexual'], ['pan', 'Pansexual'], ['ace', 'Asexual'], ['unsure', 'Not sure yet']];
 export const STATUSES = [['', 'As in the card'], ['single', 'Single'], ['taken', 'Seeing someone outside the house'], ['married', 'Married (to someone outside the house)']];
+export const GENDERS = [['', 'Not set'], ['f', 'Woman'], ['m', 'Man'], ['nb', 'Non-binary']];
+export const PDAS = [['shy', 'Shy about it'], ['normal', 'Ordinary'], ['open', 'Does not care who sees']];
+/** A gender from the card's pronouns (she / he / they), '' when unclear. */
+export function genderOf(text) {
+    const t = ` ${String(text ?? '').toLowerCase()} `;
+    const n = (re) => (t.match(re) ?? []).length;
+    const f = n(/\b(she|her|hers|herself|woman|girl)\b|она\b|девушк|женщин/g), m = n(/\b(he|him|his|himself|man|guy|boy)\b|он\b|парень|мужчин/g), x = n(/\b(non-?binary|enby)\b|небинарн/g);
+    return x ? 'nb' : f > m * 2 && f >= 2 ? 'f' : m > f * 2 && m >= 2 ? 'm' : '';
+}
 export const discreetOf = (p) => p?.discreet ?? 50;
 export const nosyOf = (p) => p?.nosy ?? 50;
 export const lifexOf = (g) => {
@@ -50,6 +59,7 @@ export function cleanProfile(x, rooms = [], src = 'hand') {
         rooms: (Array.isArray(x?.rooms) ? x.rooms : []).map(String).filter((r) => known.has(r)).slice(0, 4),
         acts, ooc: String(x?.ooc ?? '').trim().slice(0, 400), src: x?.src ?? src, ...(x?.ov ? { ov: x.ov } : {}),
         ...(x?.discreet !== undefined ? { discreet: clamp(x.discreet, 0, 100, 50) } : {}), ...(x?.nosy !== undefined ? { nosy: clamp(x.nosy, 0, 100, 50) } : {}),
+        ...(['f', 'm', 'nb'].includes(x?.gender) ? { gender: x.gender } : {}), ...(['shy', 'normal', 'open'].includes(x?.pda) ? { pda: x.pda } : {}),
         ...(ORIENTS.some(o => o[0] && o[0] === x?.orient) ? { orient: x.orient } : {}), ...(STATUSES.some(o => o[0] && o[0] === x?.status) ? { status: x.status } : {}),
     };
 }
@@ -91,6 +101,9 @@ export function guessProfile(text, rooms) {
         }
     p.acts.push({ text: 'scrolling on the phone', where: 'room' }, { text: 'listening to music', where: 'room' });
     p.rooms = [...new Set(p.rooms)];
+    const gd = genderOf(text);
+    if (gd)
+        p.gender = gd; // [expanded] 0.2.0.9
     return cleanProfile(p, rooms, 'rules');
 }
 /* ---------- asking a model ---------- */
@@ -105,6 +118,7 @@ Write ${name}'s habits at home as JSON:
 {"bed": hour 0-23 they go to sleep (after midnight is fine, e.g. 2), "wake": hour they get up, "weekend": how many hours later at the weekend (0-3),
  "social": 0-100 (0 = keeps to their room, 100 = always where the others are), "rooms": [up to 3 room ids they like],
  "discreet": 0-100 (how well they keep a secret: 100 = a vault, 0 = tells everyone), "nosy": 0-100 (how much they notice and pry into others' business),
+ "gender": "f" | "m" | "nb" | "" (from the card), "pda": "shy" | "normal" | "open" (affection in front of others),
  "orient": "straight" | "gay" | "lesbian" | "bi" | "pan" | "ace" | "" ("" unless the card says or clearly implies it), "status": "single" | "taken" (a partner outside the house) | "married" (to someone outside the house) | "" ("" unless the card says),
  "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id, "needs": only when it needs a thing, one of watch (a TV), game (a console or a computer), game2 (playing with someone), work (a computer or a desk), music (an instrument), read (books), exercise, craft, bath}]}
 Rules for "acts": at most two may be about their main hobby or trait; the rest must be ordinary, varied things anyone does (on the phone, a nap, tidying up, a call with family, a snack, doing nothing in particular). Do not make every habit about one interest. Use the card for the times: a night owl goes to bed late, an early riser early. JSON only.`;

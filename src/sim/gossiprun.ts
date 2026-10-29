@@ -15,6 +15,7 @@ import { bondsOf, factK, valueOf, trustOf, tieWord, YOU, type GLike, type TieLik
 import { learn, knows, tieK, type Know, type Knowable } from './knows.js';
 import { spread, juiciness, garble, type News, type Mood } from './gossip.js';
 import { LOVE } from './secrets.js';
+import { loveOf, loveKnow } from './love.js';
 import { react, caughtTalking } from './consequences.js';
 import type { Small } from './bonds.js';
 
@@ -36,6 +37,9 @@ export function newsOf(g: Save): Item[] {
         out.push({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0, juicy: juiciness({ love: LOVE.has(t.type), secret: true, delta: 2 }), text: tieWord(t, (a) => nm(g, a)), k: tieK(t), store: t, love: LOVE.has(t.type) });
     }
     for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true });
+    // [expanded] 0.2.0.9: crushes nobody said out loud, and your feelings you keep to yourself
+    { const lx = loveOf(G(g) as any); for (const [k, v] of Object.entries(lx.v)) { const [a, c] = k.split('>'); if (v < 40 || lx.said?.[k] || !g.cast[a] || !(g.cast[c] || c === YOU)) continue; const h = loveKnow(G(g) as any, a, c); out.push({ id: `l:${k}`, parts: [a, c], pub: 'private', know: h.know, day: lx.fed?.[k] ?? 0, juicy: 0.7, text: `${nm(g, a)} has a crush on ${nm(g, c)}`, k: { parts: [a], pub: 'private', know: h.know, day: 0 }, store: h }); }
+      for (const [c, m] of Object.entries(lx.mine ?? {})) if (m.secret && g.cast[c]) out.push({ id: `m:${c}`, parts: [YOU, c], pub: 'private', know: m.know, day: m.day, juicy: 0.7, text: `${nm(g, YOU)} ${m.lvl === 'love' ? 'is in love with' : 'likes'} ${nm(g, c)}`, k: { parts: [YOU], pub: 'private', know: m.know, day: m.day }, store: m }); }
     // [expanded] small secrets: told once, then they stop
     for (const x of b.small ?? []) if (g.cast[x.who]) out.push({ id: x.id, parts: [x.who], pub: 'private', know: x.know, day: x.day, juicy: juiciness({ small: true }), small: true, text: `${nm(g, x.who)} ${x.text}`, k: { parts: [x.who], pub: 'private', know: x.know, day: x.day }, store: x, smallOf: x });
     return out;

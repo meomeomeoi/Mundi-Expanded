@@ -1604,6 +1604,10 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-bd-tag.is-secret { color: #c792ea; border-color: color-mix(in srgb, #c792ea 45%, transparent); }
 #mundi-root .mu-bd-tag.is-sus { color: #f39c12; border-color: color-mix(in srgb, #f39c12 45%, transparent); }
 #mundi-root .mu-bd-tag.is-unknown { color: var(--muted); border-style: dashed; }
+/* [expanded] 0.2.0.9: feelings */
+#mundi-root .mu-bd-feel { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+#mundi-root .mu-bd-feel svg { width: 12px; height: 12px; color: #e7489a; }
+#mundi-root .mu-bd-feel b { color: #e7489a; }
 /* [expanded] The Storage app (Mundi Expanded) */
 #mundi-root .mu-st { gap: 10px; }
 #mundi-root .mu-st-tabs button small { opacity: .7; font-weight: 600; margin-left: 2px; }
@@ -2009,6 +2013,9 @@ body.mundi-open #toast-container { display: none !important; }
 /* [expanded] 0.2.0.8: a bedroom with its door closed: dimmed, and only "someone is inside" */
 #mundi-root .mu-room.is-shut > i, #mundi-root .mu-plan-room.is-shut > i { filter: brightness(.42) saturate(.55); }
 #mundi-root .faces.is-shut i { width: auto !important; height: auto !important; min-width: 0 !important; padding: 2px 8px !important; border-radius: 10px !important; font-size: 10.5px !important; font-style: italic; font-weight: 600; white-space: nowrap; background: rgba(10, 12, 18, .72) !important; color: #e8e8ee !important; }
+/* [expanded] 0.2.0.9: a failed mechanics call, with "Try again" (stays until closed) */
+#mundi-root .mu-toast.mu-retry { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#mundi-root .mu-retry-btn { padding: 3px 10px; font-size: 12px; border-radius: 8px; }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }

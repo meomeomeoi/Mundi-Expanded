@@ -1,5 +1,6 @@
 // The living world: approval (what people think of how you behave), lore that switches on with the state of
 // the world, people's own lives moving on over the weeks, and rumors that travel between people.
+import { isScenario } from '../core/world.js';
 import { personaName } from '../st/bridge.js';
 import { nowAbs } from '../core/store.js';
 import { systemOn } from '../core/world.js';
@@ -110,7 +111,7 @@ function lifeGoesOn(g, w) {
     }
     else {
         const single = people.filter(x => x !== r && !L(g).pairs.some(p => p.includes(x.avatar)) && !L(g).pairs.some(p => p.includes(r.avatar)) && !g.social?.partner?.includes(x.avatar));
-        if (single.length && !g.social?.partner?.includes(r.avatar) && systemOn(w, 'romance')) {
+        if (single.length && !g.social?.partner?.includes(r.avatar) && systemOn(w, 'romance') && !isScenario(w)) { // [expanded] 0.2.0.9: in a Home, couples grow out of feelings (love.ts)
             const o = single[Math.floor(rnd(g, 'pair') * single.length)];
             L(g).pairs.push([r.avatar, o.avatar]);
             note(g, '{0} and {1} started dating.', [r.name, o.name], [r.avatar, o.avatar], r.leisure[0] ?? g.player.loc, 'life');

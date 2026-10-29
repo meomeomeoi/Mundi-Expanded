@@ -15,6 +15,7 @@ import { bondsOf, factK, valueOf, trustOf, tieWord, YOU } from './bonds.js';
 import { learn, knows, tieK } from './knows.js';
 import { spread, juiciness, garble } from './gossip.js';
 import { LOVE } from './secrets.js';
+import { loveOf, loveKnow } from './love.js';
 import { react, caughtTalking } from './consequences.js';
 const G = (g) => g;
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
@@ -40,6 +41,20 @@ export function newsOf(g) {
     for (const [a, h] of Object.entries(b.hide ?? {}))
         if (g.cast[a])
             out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true });
+    // [expanded] 0.2.0.9: crushes nobody said out loud, and your feelings you keep to yourself
+    {
+        const lx = loveOf(G(g));
+        for (const [k, v] of Object.entries(lx.v)) {
+            const [a, c] = k.split('>');
+            if (v < 40 || lx.said?.[k] || !g.cast[a] || !(g.cast[c] || c === YOU))
+                continue;
+            const h = loveKnow(G(g), a, c);
+            out.push({ id: `l:${k}`, parts: [a, c], pub: 'private', know: h.know, day: lx.fed?.[k] ?? 0, juicy: 0.7, text: `${nm(g, a)} has a crush on ${nm(g, c)}`, k: { parts: [a], pub: 'private', know: h.know, day: 0 }, store: h });
+        }
+        for (const [c, m] of Object.entries(lx.mine ?? {}))
+            if (m.secret && g.cast[c])
+                out.push({ id: `m:${c}`, parts: [YOU, c], pub: 'private', know: m.know, day: m.day, juicy: 0.7, text: `${nm(g, YOU)} ${m.lvl === 'love' ? 'is in love with' : 'likes'} ${nm(g, c)}`, k: { parts: [YOU], pub: 'private', know: m.know, day: m.day }, store: m });
+    }
     // [expanded] small secrets: told once, then they stop
     for (const x of b.small ?? [])
         if (g.cast[x.who])

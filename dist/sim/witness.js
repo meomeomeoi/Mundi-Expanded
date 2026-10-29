@@ -15,6 +15,7 @@ import { knowOf, knows, howText } from './knows.js';
 import { sawTogether } from './secretsrun.js';
 import { tellLines, hearNews } from './gossiprun.js';
 import { consequenceLines } from './consequences.js';
+import { loveLines } from './lovenight.js';
 const G = (g) => g;
 const hm = (m) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const list = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
@@ -124,6 +125,6 @@ export function youLines(g, present) {
 export function knowsBlock(g, w, present) {
     if (!isScenario(w))
         return [];
-    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...tellLines(g, present), ...consequenceLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
+    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...loveLines(g, present), ...tellLines(g, present), ...consequenceLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
     return lines.length ? ['Who knows what (people act on what they know; what they do not know, they do not bring up):', ...lines] : [];
 }
