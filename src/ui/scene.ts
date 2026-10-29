@@ -104,6 +104,15 @@ export function formatText(t: string) {
 
 /* ---------- sprites ---------- */
 
+// [expanded] A new face is shown once its picture is loaded; until then, the one before (a sprite whose new picture
+// was still loading had no width for a moment, and the others slid sideways)
+const LOADED = new Set<string>(); const LOADING = new Set<string>(); const SHOWN = new Map<string, string>();
+function steady(who: string, src: string): string {
+    if (!src || src.startsWith('data:')) return src;
+    if (LOADED.has(src)) { SHOWN.set(who, src); return src; }
+    if (!LOADING.has(src)) { LOADING.add(src); const im = new Image(); const done = () => { LOADED.add(src); LOADING.delete(src); notify(); }; im.onload = done; im.onerror = done; im.src = src; }
+    return SHOWN.get(who) ?? src;
+}
 function spriteFor(avatar: string, label: string | null): string {
     const list = state.sprites[avatar];
     if (list === undefined) {
@@ -236,7 +245,7 @@ export function sceneHtml() {
     // [expanded] 0.2.0.10: who spoke last steps forward a little (the others ease back)
     const speaking = here.length > 1 ? (() => { const l = chat(); for (let i = l.length - 1; i >= 0 && i > l.length - 6; i--) { const a = speakerOf(l[i]); if (a) return a; if (l[i].is_user) return ''; } return ''; })() : '';
     const sprites = here.map((r, k) => {
-        const src = spriteFor(r.avatar, ex[r.avatar] ?? null);
+        const src = steady(r.avatar, spriteFor(r.avatar, ex[r.avatar] ?? null));
         return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}${doingOf(r) /* [expanded] 0.2.0.11 */}</figcaption>${reactionOf(r.avatar) /* [expanded] */}${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
@@ -316,7 +325,7 @@ export function chatHtml() {
     const ex = expressions();
     const sv = stageVars(cast, a => !!spriteFor(a, ex[a] ?? null));
     const sprites = cast.map((a, k) => {
-        const src = spriteFor(a, ex[a] ?? null);
+        const src = steady(a, spriteFor(a, ex[a] ?? null));
         return `<figure class="mu-sprite ${RAD.who === a ? 'is-menu' : ''}" style="--i:${k};${sv.get(a)}" ${src ? `data-act="spr-menu" data-who="${esc(a)}"` : ''}>${radialHtml(a, null)}${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable" data-act="portrait" data-src="${esc(avatarUrl(a))}" data-name="${esc(charOf(a)?.name ?? '')}"><img src="${esc(avatarUrl(a))}" alt="" draggable="false"></span>`}</figure>`;
     }).join('');
     // the chat's own background (just chosen, or locked to this chat), else what SillyTavern shows now

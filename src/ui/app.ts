@@ -95,6 +95,7 @@ export function applyUi() {
     applyColors(r);
     r.dataset.dialogpos = (u.layout || 'vn') === 'vn' ? u.dialogPos || 'center' : 'center';   // on the left (bottom): only in Visual novel
     r.dataset.spritefit = u.spriteFit || 'over';   // [expanded]
+    r.dataset.breathe = (u as any).breathe === false ? 'off' : 'on';   // [expanded] 0.2.1-12
     r.style.setProperty('--mu-sprite-size', String((u.spriteSize ?? 100) / 100));
     r.style.setProperty('--mu-sprite-w', String((u.spriteW ?? 100) / 100));
     r.style.setProperty('--mu-sprite-y', `${u.spriteY ?? 0}vh`);

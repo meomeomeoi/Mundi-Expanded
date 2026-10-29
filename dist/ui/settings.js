@@ -49,6 +49,7 @@ function tabInterface() {
             </div>
             ${(UI().layout ?? 'vn') === 'vn' ? `<div class="mu-field"><span>Dialogue box</span><div class="mu-chips">${[['center', 'Centered'], ['left', 'Left']].map(([id, label]) => `<button class="mu-chip ${(UI().dialogPos || 'center') === id ? 'is-on' : ''}" data-act="set-dialogpos" data-v="${esc(id)}">${label}</button>`).join('')}</div></div>` : ''}
             <div class="mu-field"><span>Characters</span><div class="mu-chips">${[['over', 'Over the box'], ['above', 'Above the box (whole)']].map(([id, label]) => `<button class="mu-chip ${(UI().spriteFit || 'over') === id ? 'is-on' : ''}" data-act="set-spritefit" data-v="${id}">${label}</button>`).join('')}</div><small class="mu-muted">${UI().spriteFit === 'above' ? 'Whole figures, standing on the dialogue box (smaller). H or the eye on the box hides it for a full look.' : 'Big, the dialogue box in front of them. H or the eye on the box hides it for a full look.'}</small></div>
+            <label class="mu-check"><input type="checkbox" data-act="set-breathe" ${UI().breathe === false ? '' : 'checked'}><span>Characters breathe<small>A slow, slight breath on the sprites (Mundi Expanded).</small></span></label>
             ${slider('Character size', 'spriteSize', 50, 160, '%')}${slider('Character width', 'spriteW', 60, 140, '%')}${slider('Character height (move up or down)', 'spriteY', -30, 30, 'vh')}
             ${check('Show the character card when there are no expression sprites', 'cardMode')}
             ${youSettingsHtml() /* [expanded] */}
@@ -129,6 +130,7 @@ Object.assign(ACT, {
     'set-accent': (el) => { UI().accent = el.dataset.v; UI().accentLocked = true; saveSettings(); applyLook(); notify(); },
     'set-skincolors': () => { UI().accentLocked = false; UI().secondary = undefined; saveSettings(); applyLook(); notify(); },
     'set-skin': (el) => { setSkin(el.dataset.style, el.dataset.v); saveSettings(); notify(); },
+    'set-breathe': () => { UI().breathe = UI().breathe === false; saveSettings(); applyLook(); notify(); }, // [expanded] 0.2.1-12
     'set-spritefit': (el) => { UI().spriteFit = el.dataset.v === 'above' ? 'above' : 'over'; saveSettings(); applyLook(); notify(); }, // [expanded]
     'set-dialogpos': (el) => { UI().dialogPos = el.dataset.v; saveSettings(); applyLook(); notify(); },
     'set-layout': (el) => { UI().layout = el.dataset.v; saveSettings(); applyLook(); notify(); },
