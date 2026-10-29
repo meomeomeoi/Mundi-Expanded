@@ -17,7 +17,8 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 
 ## Mundi Expanded 14.1 (0.2.1-14.1) · 2026-10-30
 
-- **Who notices your phone**: each time you take the phone out (after 15 game minutes without it), everyone here who
+- **Who notices your phone**: replaces 0.2.0.10's line, which told every scene "someone may notice, and mind" each
+  time (the AI read it as everyone noticing). Now each time you take the phone out (after 15 game minutes without it), everyone here who
   is awake rolls: 12% for the oblivious, about 37% at an ordinary "Notices and pries" of 50, about 62% for someone who
   misses nothing; a third as often for someone who noticed in the last three hours. For 20 minutes the scene is told
   who noticed (they may remark on it, or let it go) and who did not (no reaction). Whoever you text while they sit

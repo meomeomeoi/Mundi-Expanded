@@ -8,6 +8,8 @@ import { presentAt } from './people.js';
 import { slotAt } from './lifeday.js';
 import { profileOf, nosyOf } from './profile.js';
 import { presentNotes } from './lifehooks.js';
+let again = () => false;   // the phone's own count (ui/peek.ts), loaded with the interface
+void import('../ui/peek.js').then(m => { again = m.lookingAgain; }).catch(() => { /* tests */ });
 
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
 export const SESSION = 15;   // game minutes without the phone: the next time is a new "taking it out"
@@ -42,7 +44,7 @@ presentNotes.push((g, w, present) => {
     const ids = new Set(present.map(r => r.avatar)); const nm = (a: string) => g.cast[a]?.name ?? a;
     const saw = x.saw.filter(a => ids.has(a)), missed = x.missed.filter(a => ids.has(a)), texted = (x.texted ?? []).filter(a => ids.has(a));
     if (!saw.length && !missed.length) return [];
-    const out = [`{{user}} has been on the phone just now.`];
+    const out = [`{{user}} has been on the phone just now${again() ? ', again and again' : ''}.`];
     if (texted.length) out.push(`${texted.map(nm).join(' and ')} got {{user}}'s text while sitting right here.`);
     const others = saw.filter(a => !texted.includes(a));
     if (others.length) out.push(`${others.map(nm).join(' and ')} noticed (they may remark on it, or let it go).`);

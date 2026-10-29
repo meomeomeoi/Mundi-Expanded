@@ -11,7 +11,7 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 export const CHANGELOG = [
     // [expanded] this fork's releases
     { v: '0.2.1-14.1', fork: true, title: 'Not everyone looks', items: [
-            ['phone', 'Taking the phone out: each person here rolls to notice (more often the nosier they are, a third as often if they noticed lately); the scene is told who noticed and who did not. Someone you text while they sit right here always knows.'],
+            ['phone', 'Taking the phone out: instead of "someone may notice" told to everyone every time (0.2.0.10), each person here rolls to notice (more often the nosier they are, a third as often if they noticed lately); the scene is told who noticed and who did not. Someone you text while they sit right here always knows.'],
             ['users', 'Fixed: the Relationships graph slid under the list when a person was open (every phone skin).'],
             ['gear', 'Fixed: the "Keeps a secret", "Notices and pries" and "How social" sliders did not update their number when let go.'],
         ] },

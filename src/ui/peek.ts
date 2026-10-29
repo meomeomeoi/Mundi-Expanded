@@ -3,7 +3,6 @@
 // it. And when you look at your phone in the middle of a scene, the people there notice.
 import { game, notify } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
-import { presentNotes } from '../sim/lifehooks.js';
 import { presentAt } from '../sim/people.js';
 
 export interface Peek { title: string; text: string; pic?: string; app?: string; who?: string; at: number }
@@ -25,8 +24,7 @@ export function phoneOpened() {
     const g = game(); const w = g && getWorld(g.world); if (!g || !w || !isScenario(w)) return;
     if (presentAt(g, w, g.player.loc).length) { LOOK.n = Date.now() - LOOK.at < 5 * 60_000 ? LOOK.n + 1 : 1; LOOK.at = Date.now(); }
 }
-presentNotes.push((g, w, present) => {
-    if (!present.length || Date.now() - LOOK.at > 3 * 60_000) return [];
-    void w; void g;
-    return [`{{user}} has just been looking at their phone while the others were there${LOOK.n > 2 ? ', again and again' : ''}: someone may notice, and mind.`];
-});
+// 0.2.1-14.1: what the scene is told now comes from sim/phoneseen.ts (each person rolls to notice). This line said
+// "someone may notice" to everyone, every time, and the AI took it as "everyone notices".
+/** Looked at the phone again and again (more than twice in five minutes): for phoneseen's line. */
+export const lookingAgain = () => LOOK.n > 2 && Date.now() - LOOK.at < 5 * 60_000;

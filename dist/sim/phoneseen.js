@@ -8,6 +8,8 @@ import { presentAt } from './people.js';
 import { slotAt } from './lifeday.js';
 import { profileOf, nosyOf } from './profile.js';
 import { presentNotes } from './lifehooks.js';
+let again = () => false; // the phone's own count (ui/peek.ts), loaded with the interface
+void import('../ui/peek.js').then(m => { again = m.lookingAgain; }).catch(() => { });
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
@@ -66,7 +68,7 @@ presentNotes.push((g, w, present) => {
     const saw = x.saw.filter(a => ids.has(a)), missed = x.missed.filter(a => ids.has(a)), texted = (x.texted ?? []).filter(a => ids.has(a));
     if (!saw.length && !missed.length)
         return [];
-    const out = [`{{user}} has been on the phone just now.`];
+    const out = [`{{user}} has been on the phone just now${again() ? ', again and again' : ''}.`];
     if (texted.length)
         out.push(`${texted.map(nm).join(' and ')} got {{user}}'s text while sitting right here.`);
     const others = saw.filter(a => !texted.includes(a));
