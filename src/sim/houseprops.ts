@@ -122,7 +122,7 @@ function tell(g: Save, c: C.Chat, msgs: C.Msg[]) {
     if (!msgs.length) return;
     saveGame(); notify();
     setTimeout(() => import('../ui/phone.js').then(({ P: ph }) => {
-        if (!(ph.open && ph.app === 'gchat' && ph.who === c.id)) toast(`${c.name} · ${nameOf(g, msgs[0].by)}: ${msgs[0].text.slice(0, 70)}`, 'info');
+        if (!(ph.open && ph.app === 'gchat' && ph.who === c.id)) { if (ph.open) toast(`${c.name} · ${nameOf(g, msgs[0].by)}: ${msgs[0].text.slice(0, 70)}`, 'info'); else void import('../ui/peek.js').then(m => m.pushPeek({ title: `${nameOf(g, msgs[0].by)} · ${c.name}`, text: msgs[0].text, app: 'gchat', who: c.id })); }   // [expanded] 0.2.0.10: the phone buzzes
     }).catch(() => { /* no phone */ }), typeMs(msgs[0].text, true));
 }
 

@@ -56,3 +56,12 @@
 #mundi-root .mu-sprite.is-hop { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes mu-hop { 0% { translate: 0 0; } 35% { translate: 0 -2.2%; } 100% { translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { #mundi-root .mu-sprites .mu-sprite > img, #mundi-root .mu-sprite.is-hop { animation: none; } }
+/* [expanded] 0.2.0.10: the phone buzzes up with a new message */
+#mundi-root .mh-peek.is-buzz { transform: translateY(-96px) rotate(-3deg); animation: mu-buzz .5s ease-in-out 2; }
+@keyframes mu-buzz { 0%, 100% { translate: 0 0; } 20% { translate: -3px 0; } 40% { translate: 3px 0; } 60% { translate: -2px 0; } 80% { translate: 2px 0; } }
+#mundi-root .mh-peek-msgs { grid-column: 1 / -1; display: grid; gap: 6px; }
+#mundi-root .mh-peek-msg { display: flex; gap: 6px; align-items: flex-start; padding: 6px 7px; border-radius: 10px; background: rgba(255, 255, 255, .92); color: #15171c; text-align: left; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); animation: mu-beat-in .3s ease-out; }
+#mundi-root .mh-peek-msg img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex: none; }
+#mundi-root .mh-peek-msg b { display: block; font-size: 10px; line-height: 1.2; }
+#mundi-root .mh-peek-msg small { display: block; font-size: 10px; line-height: 1.25; color: #3a3f48; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+#mundi-root .mh-peek > em { font-size: 13px; min-width: 22px; height: 22px; }

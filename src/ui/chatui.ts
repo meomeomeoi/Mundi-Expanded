@@ -70,7 +70,7 @@ async function send(id: string) {
         if (pr && say) { const line = answerProp(g, w, pr.id, say === 'yes'); if (line) setTimeout(() => toast(line, 'info', { ms: 7000 }), 2500); }
         const got = await sendToChat(g, w, id, text);
         // [expanded] told when the first answer shows (they appear one by one), unless you are looking at the chat then
-        if (got.length) setTimeout(async () => { const { P } = await import('./phone.js'); if (!(P.open && P.app === 'gchat' && P.who === id)) toast(`${C.chatById(g as any, id)?.name}: ${nameOf(g, got[0].by)}: ${got[0].text.slice(0, 60)}`, 'info'); }, typeMs(got[0].text, true));
+        if (got.length) setTimeout(async () => { const { P } = await import('./phone.js'); if (!(P.open && P.app === 'gchat' && P.who === id)) { if (P.open) toast(`${C.chatById(g as any, id)?.name}: ${nameOf(g, got[0].by)}: ${got[0].text.slice(0, 60)}`, 'info'); else void import('./peek.js').then(m => m.pushPeek({ title: `${nameOf(g, got[0].by)} · ${C.chatById(g as any, id)?.name ?? ''}`, text: got[0].text, app: 'gchat', who: id })); } }, typeMs(got[0].text, true));
     } catch (e: any) { toast(String(e?.message ?? e), 'error'); }
     GC.busy = false; saveGame(); notify();
 }

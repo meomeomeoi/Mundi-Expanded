@@ -614,7 +614,12 @@ export const phoneUnread = () => { const g = game(); return g ? Object.values(so
 Object.assign(ACT, {
     phone: () => { if (P.open)
         return closePhone(); P.open = true; if (P.app === 'thread' && !P.who)
-        P.app = 'home'; notify(); },
+        P.app = 'home'; void import('./peek.js').then(m => m.phoneOpened()); notify(); },
+    // [expanded] 0.2.0.10: the message the phone buzzed with, opened
+    'pk-open': async () => { const { PEEK } = await import('./peek.js'); const m = PEEK.list.at(-1); PEEK.list = []; P.open = true; if (m?.app) {
+        P.app = m.app;
+        P.who = m.who ?? '';
+    } void import('./peek.js').then(x => x.phoneOpened()); notify(); },
     'ph-close': () => closePhone(),
     'ph-help': () => openHelp(),
     'bk-bg': (el, e) => { if (e.target === el) {
@@ -739,7 +744,10 @@ Object.assign(ACT, {
                 toast('No answer (is the AI connected?).', 'warn');
             else if (!(P.open && P.app === 'thread' && P.who === who)) {
                 social(g).unread[who] = (social(g).unread[who] ?? 0) + 1;
-                toast(lex(getWorld(g.world), 'newMessage', g.cast[who]?.name ?? ''), 'info');
+                if (P.open)
+                    toast(lex(getWorld(g.world), 'newMessage', g.cast[who]?.name ?? ''), 'info');
+                else
+                    void import('./peek.js').then(m => m.pushPeek({ title: g.cast[who]?.name ?? '', text: String(reply), pic: thumb(who), app: 'thread', who }));
             }
         }
         catch (e) {

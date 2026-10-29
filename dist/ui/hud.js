@@ -1,3 +1,4 @@
+import { PEEK, peeking } from './peek.js'; // [expanded] 0.2.0.10
 import { lookPanelHtml } from './chatlook.js';
 import { lex, appRef } from '../core/lexicon.js';
 import { fmtClock, is12h } from '../core/fmt.js';
@@ -214,9 +215,12 @@ function phoneButton(w) {
     const n = phoneUnread();
     if (deviceLook(w) === 'book')
         return `<button class="mh-bookbtn mh-glass" data-act="phone" title="${esc(w.features.device ?? 'Journal')}">${icon('book')}${n ? `<em>${n}</em>` : ''}</button>`;
-    return `<button class="mh-peek" data-act="phone" title="${esc(w.features.device ?? 'Phone')}"><span class="mh-peek-notch"></span><span class="mh-peek-ic">${icon('phone')}</span><span class="mh-peek-screen">
-        <i style="--c:#7fd3ff">${icon('chat')}</i><i style="--c:#ff9ac1">${icon('heart')}</i><i style="--c:#b6a6ff">${icon('users')}</i>
-        <i style="--c:#9be7c4">${icon('wallet')}</i><i style="--c:#ffc58a">${icon('calendar')}</i><i style="--c:#ffd36e">${icon('briefcase')}</i></span>${n ? `<em>${n}</em>` : ''}</button>`;
+    // [expanded] 0.2.0.10: a new message makes the phone buzz up with it on its screen
+    const pk = peeking() ? PEEK.list : [];
+    return `<button class="mh-peek ${pk.length ? 'is-buzz' : ''}" data-act="${pk.length && pk.at(-1).app ? 'pk-open' : 'phone'}" title="${esc(w.features.device ?? 'Phone')}"><span class="mh-peek-notch"></span><span class="mh-peek-ic">${icon('phone')}</span><span class="mh-peek-screen">
+        ${pk.length ? `<span class="mh-peek-msgs">${pk.map(m => `<span class="mh-peek-msg">${m.pic ? `<img src="${esc(m.pic)}" alt="">` : ''}<span><b data-notr>${esc(m.title)}</b><small data-notr>${esc(m.text.slice(0, 90))}</small></span></span>`).join('')}</span>`
+        : `<i style="--c:#7fd3ff">${icon('chat')}</i><i style="--c:#ff9ac1">${icon('heart')}</i><i style="--c:#b6a6ff">${icon('users')}</i>
+        <i style="--c:#9be7c4">${icon('wallet')}</i><i style="--c:#ffc58a">${icon('calendar')}</i><i style="--c:#ffd36e">${icon('briefcase')}</i>`}</span>${n ? `<em>${n > 99 ? '99+' : n}</em>` : ''}</button>`;
 }
 export function hudHtml() {
     const g = game();
