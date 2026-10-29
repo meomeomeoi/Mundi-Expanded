@@ -106,7 +106,7 @@ async function send(id) {
 }
 Object.assign(ACT, {
     'gc-open': async (el) => { const { P } = await import('./phone.js'); P.app = 'gchat'; P.who = el.dataset.id ?? C.HOUSE; GC.draft = ''; notify(); },
-    'gc-send': (el) => send(el.dataset.id ?? C.HOUSE),
+    'gc-send': (el) => { void import('../sim/phoneseen.js').then(m => m.usePhone(game())); /* [expanded] */ /* [expanded] */ return send(el.dataset.id ?? C.HOUSE); },
     // the buttons: your answer, said in the chat too
     'gc-call': async (el) => {
         const g = game();

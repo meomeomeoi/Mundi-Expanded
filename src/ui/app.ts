@@ -243,7 +243,7 @@ function attach(r: HTMLElement) {
     };
     r.addEventListener('input', onInput);
     r.addEventListener('focusout', (e) => { if ((e.target as HTMLElement).dataset?.focus === 'composer') setTimeout(closeMention, 150); });
-    r.addEventListener('change', (e) => { if ((e.target as HTMLElement).matches('select, input[type=checkbox], input[type=file]')) onInput(e); });
+    r.addEventListener('change', (e) => { if ((e.target as HTMLElement).matches('select, input[type=checkbox], input[type=file], input[type=range]' /* [expanded] a slider let go: its "change" too */)) onInput(e); });
     r.addEventListener('keydown', (e) => {
         const t = e.target as HTMLElement;
         if (t.dataset?.focus === 'composer' && onComposerKey(t as HTMLTextAreaElement, e as KeyboardEvent)) { e.preventDefault(); e.stopPropagation(); return; }

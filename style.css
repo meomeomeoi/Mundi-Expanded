@@ -2248,8 +2248,8 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-meapp .mu-me-skill small { grid-column: 1 / -1; margin-top: -4px; }
 /* [expanded] fix: the phone's settings were wider than a small screen (the keypad phone): segment buttons with long
    words (Every few days, 14 days (Mundi)) could not shrink, and pushed the whole page sideways */
-#mundi-root .mu-ph-body { overflow-x: hidden; }
-#mundi-root .mu-ph-body > *, #mundi-root .mu-ph-body section > * { min-width: 0; }
+#mundi-root .mu-ph-body { overflow-x: clip; }   /* clip, not hidden: hidden made it a scroll box of its own (12.5) */
+#mundi-root .mu-ph-body > :not(svg), #mundi-root .mu-ph-body section > :not(svg) { min-width: 0; }   /* 12.5: not a picture: an svg with no minimum width is sized as if 0 wide, and 0 tall (the graph sat under the list) */
 #mundi-root .mu-bd-seg { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); }
 #mundi-root .mu-bd-seg button { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.15; }
 
@@ -2261,6 +2261,8 @@ body.mundi-open #toast-container { display: none !important; }
 /* 0.2.1-12.3: Go out: who would not come now (and why) */
 #mundi-root .mu-out-people .mu-chip.is-no { opacity: .5; filter: grayscale(.7); cursor: not-allowed; }
 #mundi-root .mu-out-people .mu-chip.is-no small { display: block; font-size: 10px; opacity: .85; line-height: 1.1; }
+/* 12.5: the relationship graph keeps its height in a scrolling phone body (a grid row sized it 0 with a long list under it) */
+#mundi-root .mu-bd-graph { aspect-ratio: 300 / 290; min-height: min-content; flex: none; }
 /* [expanded] 0.2.1-13: the log in scenes, and Previously */
 #mundi-root .mu-dlg-prev { position: absolute; top: 8px; right: 44px; z-index: 2; width: 30px; height: 30px; padding: 0; opacity: .5; }
 #mundi-root .mu-dlg-prev:hover, #mundi-root .mu-dlg-prev:focus-visible { opacity: 1; }

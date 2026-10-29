@@ -15,6 +15,19 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14.1 (0.2.1-14.1) · 2026-10-30
+
+- **Who notices your phone**: each time you take the phone out (after 15 game minutes without it), everyone here who
+  is awake rolls: 12% for the oblivious, about 37% at an ordinary "Notices and pries" of 50, about 62% for someone who
+  misses nothing; a third as often for someone who noticed in the last three hours. For 20 minutes the scene is told
+  who noticed (they may remark on it, or let it go) and who did not (no reaction). Whoever you text while they sit
+  right here gets it and knows.
+- **Fixed**: the Relationships graph slid under the person's list (all phone skins). 12.3's keypad fix made the phone's
+  body a scroll box of its own (overflow-x: hidden); now it clips instead (overflow-x: clip), and the graph keeps its
+  proportions.
+- **Fixed**: the profile sliders (how social, keeps a secret, notices and pries) saved the value but kept the old
+  number on screen: a slider let go now redraws (its "change" event was never passed on).
+
 ## Mundi Expanded 14 (0.2.1-14) · 2026-10-30 · Memory
 
 - **Landmarks**: a new night pass (one AI call, after the relationships) weighs today's moments between you and each

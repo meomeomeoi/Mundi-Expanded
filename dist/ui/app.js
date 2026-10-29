@@ -300,7 +300,7 @@ function attach(r) {
     r.addEventListener('input', onInput);
     r.addEventListener('focusout', (e) => { if (e.target.dataset?.focus === 'composer')
         setTimeout(closeMention, 150); });
-    r.addEventListener('change', (e) => { if (e.target.matches('select, input[type=checkbox], input[type=file]'))
+    r.addEventListener('change', (e) => { if (e.target.matches('select, input[type=checkbox], input[type=file], input[type=range]' /* [expanded] a slider let go: its "change" too */))
         onInput(e); });
     r.addEventListener('keydown', (e) => {
         const t = e.target;

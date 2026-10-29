@@ -619,10 +619,10 @@ function lettersFromNotice(g, post) {
 export const phoneUnread = () => { const g = game(); return g ? Object.values(social(g).unread).reduce((a, b) => a + b, 0) : 0; };
 Object.assign(ACT, {
     phone: () => { if (P.open)
-        return closePhone(); P.open = true; if (P.app === 'thread' && !P.who)
+        return closePhone(); P.open = true; void import('../sim/phoneseen.js').then(m => m.usePhone(game())); /* [expanded] who notices */ /* [expanded] who notices */ if (P.app === 'thread' && !P.who)
         P.app = 'home'; void import('./peek.js').then(m => m.phoneOpened()); notify(); },
     // [expanded] 0.2.0.10: the message the phone buzzed with, opened
-    'pk-open': async () => { const { PEEK } = await import('./peek.js'); const m = PEEK.list.at(-1); PEEK.list = []; P.open = true; if (m?.app) {
+    'pk-open': async () => { void import('../sim/phoneseen.js').then(m => m.usePhone(game())); /* [expanded] */ /* [expanded] */ const { PEEK } = await import('./peek.js'); const m = PEEK.list.at(-1); PEEK.list = []; P.open = true; if (m?.app) {
         P.app = m.app;
         P.who = m.who ?? '';
     } void import('./peek.js').then(x => x.phoneOpened()); notify(); },
@@ -734,6 +734,7 @@ Object.assign(ACT, {
     'ph-thread': (el) => { P.who = el.dataset.who; P.app = 'thread'; P.draft = ''; notify(); },
     'ph-person': (el) => { P.who = el.dataset.who; P.app = 'person'; notify(); },
     'ph-send': async () => {
+        void import('../sim/phoneseen.js').then(m => m.usePhone(game(), P.app === 'thread' ? P.who : '')); // [expanded] texting someone right here: they notice
         const g = game();
         const w = g && getWorld(g.world);
         const text = P.draft.trim();
