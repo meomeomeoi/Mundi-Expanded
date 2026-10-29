@@ -15,6 +15,31 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 0.2.0.10 · 2026-10-29
+
+Live in the scene: quick decisions, a phone that buzzes, calls and knocks you answer in time, and things to do
+together on screen. Typing stays the way to answer; the new pieces only come up where a quick reaction is natural.
+
+- **Quick reactions.** The expressions call (once per turn, nothing extra) also says whether the last line is a light
+  "beat": a tease, a small question, something sudden, a touch, being put on the spot. Then two or three short ways to
+  react appear by the message box, written for your persona's card (a quiet persona is never offered a rude one).
+  A tap puts it in the box to finish in your own words. Never on serious or emotional moments; at most every fifth
+  message by default ("normal": every third; off). Settings → the reactions, when expressions are not SillyTavern's.
+- **Moments that cannot wait.** Rarely, a beat comes with a timer (8–11 s; a touch is quicker). If it runs out, the
+  story gets "*you hesitate a moment too long*". The timer can be turned off.
+- **Knocks** are anonymous until you ask "Who is it?"; whoever knocks gives up after about 14 seconds.
+- **Calls** ring in the scene from people who are not here (rarely, in the day, once a day at most): answer and they
+  are in the scene as a voice only, decline, or miss it (a missed call). How often: Chat settings.
+- **The phone buzzes.** While the phone is closed, new messages and group chat lines pop up over its button with an
+  unread count (99+); a tap opens the chat. Whoever is here notices when you keep looking at the phone.
+- **Together** (the ✦ by the message box): watch a film (a TV in the room; one call makes up a film in the genre and
+  era as eight moments with each viewer's reaction, shown as subtitles on a screen and bubbles over their heads; you
+  react with emoji; it ends with a line in the story and brings them a little closer); play a match (a console or a
+  PC; five rounds of hitting the zone, harder each round, against someone who is better at it if they are a gamer, with
+  their trash talk); rock-paper-scissors (best of three) and a coin, with an optional "for what".
+- **Sprites live a little**: a slow breath, a small hop when someone new appears, the speaker a little larger and in
+  front, the others dimmed; a caller shows as on the phone.
+
 ## Mundi Expanded 0.2.0.9 · 2026-10-29
 
 Behind closed doors: listening, and flirting and closeness. Mundi tracks the state around it; the scenes themselves

@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.9';
+export const VERSION = '0.2.0.10';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,13 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.10', fork: true, title: 'Live in the scene', items: [
+        ['sparkles', 'Quick reactions, now and then: when a character teases you, asks something small or does something sudden, two or three ways to react appear by the message box, in your persona\'s voice (a quiet one is never offered a rude one). Tap to put it in the box and add your own words. Never on serious moments; rarely by default (Settings).'],
+        ['bolt', 'Some moments cannot wait: a short timer, and if you hesitate, the story says so. Knocks are anonymous until you ask "Who is it?", and give up after a while. Calls ring in the scene: answer (voice only), decline or miss them.'],
+        ['phone', 'The phone buzzes: messages pop up over the phone button while it is closed, with an unread count; whoever is here notices when you keep looking at it.'],
+        ['star', 'Do something together (the ✦ by the message box): watch a film on the TV with everyone\'s reactions popping up over their heads; play a match on the console, five rounds of timing against their trash talk; rock-paper-scissors or a coin to settle who does the dishes. It all goes into the story.'],
+        ['happy', 'Sprites live a little: a slow breath, a small hop when someone new comes in, the one speaking in front and the others dimmed.'],
+    ] },
     { v: '0.2.0.9', fork: true, title: 'Behind closed doors', items: [
         ['heart', 'Feelings between them, one way: Kathie may have a crush on Leah that Leah knows nothing about. Crushes grow from flirting (as their orientation allows), are confessed or not, and two of them make a couple. Your romance line now says it is their feelings for you; you can mark your own (and keep them to yourself).'],
         ['speaker', 'Listen at a closed door: mostly muffled sounds and scraps of words. You may be caught. Someone may listen at yours, rarely. The walls are thin, ordinary or thick (Settings).'],

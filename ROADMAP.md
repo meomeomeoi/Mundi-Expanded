@@ -208,6 +208,17 @@ To finish:
   ControlNet in ComfyUI: room pictures that match each other and the furniture, and door hotspots taken from 3D.
 - **Your own house**: the same from any floor plan made in the World creator; an editor for doors and stairs.
 
+## 11. Live in the scene (0.2.0.10, done)
+
+On-screen immersion in the 2D scene. Done: quick reactions on light beats only (rare, written for the persona's card,
+never replacing typing), timers on the few moments that cannot wait, knocks and calls answered in time, the phone
+buzzing with an unread count (and others noticing), a film and a match together with live reactions,
+rock-paper-scissors and a coin, breathing and hopping sprites, the speaker in front. Decided: a quick reaction only
+starts your line, it does not answer for you; the timers stay rare.
+
+Later, for sprites drawn as one picture per emotion: blinking and talking mouths need layered sprites (eyes and mouth
+apart), so they wait for a sprite tool that cuts them.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
