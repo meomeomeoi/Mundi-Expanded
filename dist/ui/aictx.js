@@ -8,6 +8,10 @@ import { ctx } from '../st/bridge.js';
 import { blocksOf, promptCfg, sceneBlocks, sceneText, estTokens, refreshPrompt, DEFAULT_RULES } from '../sim/prompt.js';
 import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
+// [expanded] 0.2.1-14.2: upstream's scale stopped at 2000, too little for a long game in a Home (long memory, who
+// knows what, the house). Up to 8000; more to the right is more, and "no limit" is the far right (0 in the save).
+const BUDGETS = [500, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 0];
+const budgetIndex = (b) => (b <= 0 ? BUDGETS.length - 1 : BUDGETS.reduce((best, v, i) => (v > 0 && Math.abs(v - b) < Math.abs(BUDGETS[best] - b) ? i : best), 0));
 const A = { text: '', count: -1, preview: false, edit: '' };
 function count(text) {
     if (text === A.text)
@@ -38,8 +42,8 @@ export function tabAiContext() {
     const max = stContext();
     const unlocked = max > 262144;
     const share = max && !unlocked ? Math.round((n / max) * 100) : 0;
-    const steps = [0, 200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000];
-    const bi = Math.max(0, steps.indexOf(pc.budget));
+    const steps = BUDGETS; // [expanded] 0.2.1-14.2: up to 8000, "no limit" at the right end
+    const bi = budgetIndex(pc.budget);
     return `${aiCallsHtml()}<section class="mu-wc-sec mu-aic">
             <h4>What Mundi sends to the AI</h4>
             <p class="mu-muted">Sent with every reply, on top of your preset, the character cards and the chat. Only what is about this place and the people here.</p>
@@ -105,8 +109,7 @@ Object.assign(INPUT, {
     'aic-rules': (el) => { promptCfg().rules = el.value; saveSettings(); refreshPrompt(); },
     'aic-extra': (el) => { promptCfg().extra = el.value; saveSettings(); refreshPrompt(); },
     'aic-budget': (el) => {
-        const steps = [0, 200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000];
-        promptCfg().budget = steps[Number(el.value)] ?? 0;
+        promptCfg().budget = BUDGETS[Number(el.value)] ?? 0; // [expanded]
         saveSettings();
         refreshPrompt();
         notify();

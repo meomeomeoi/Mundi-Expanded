@@ -10,7 +10,6 @@ import { bgAsk } from './regulator.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
 import { placeOf } from './places.js';
-import { presentNotes } from './lifehooks.js';
 import { bondsOf, addFact, personalityOf, YOU } from './bonds.js';
 import * as M from './memory.js';
 const G = (g) => g;
@@ -269,4 +268,4 @@ export function memLines(g, present) {
     }
     return out.length ? ['Long memory (what lasts):', ...out] : [];
 }
-presentNotes.push((g, w, present) => (isScenario(w) ? memLines(g, present.map(r => r.avatar)) : []));
+// (sent as its own block of the scene prompt, "Long memory": prompt.ts)

@@ -58,6 +58,7 @@ import { stockPromptLines } from './stocknight.js'; // [expanded]
 import { moneyPromptLines } from './moneynight.js'; // [expanded]
 import { activityLines } from './activityrun.js'; // [expanded]
 import { lifeLines, houseLines, oocLines, phoneLines } from './lifeday.js'; // [expanded]
+import { memLines } from './memrun.js'; // [expanded] 0.2.1-14.2
 import { roomPromptLines } from './furnishrun.js'; // [expanded]
 import './letters.js';
 import './journey.js';
@@ -68,6 +69,7 @@ export const BLOCKS = [
     { id: 'room', name: 'This room\'s things', desc: 'In a Home: what stands in the room you are in, and whose it is (Mundi Expanded).', cut: 7 }, // [expanded]
     { id: 'house', name: 'The house now', desc: 'In a Home: the era, and where everyone else in the house is right now (Mundi Expanded). Dropped last.', cut: 10 }, // [expanded]
     { id: 'world', name: 'The mood around', desc: 'How busy it is here, the public mood and tension of the region, and its prices.', cut: 4 },
+    { id: 'longmem', name: 'Long memory', desc: 'In a Home: who the people here have become, the stories so far, landmarks and what they know about each other (Mundi Expanded; This Home → Memory).', cut: 9 }, // [expanded] 0.2.1-14.2
     { id: 'memories', name: 'Memories', desc: 'What the people here remember about you, and what happened earlier in this place.', cut: 9 },
     { id: 'plans', name: 'Plans', desc: 'Plans you made with the people here.', cut: 8 },
     { id: 'focus', name: 'Scene focus', desc: 'Why you are here: a date, a meet-up, someone who came along.', cut: 8 },
@@ -153,6 +155,7 @@ export function sceneBlocks() {
         world: [worldLine(g, w), festivalLine(g, w), realmLine(g, w), skiesLine(g, w), ...legendLines(g, w)],
         diary: diaryLines(g),
         memories: [...memoryLines(g, w, met, personaName()), ...placeMemoryLines(g, w, present)],
+        longmem: isScenario(w) ? memLines(g, present.map(r => r.avatar)) : [], // [expanded] 0.2.1-14.2: its own block (was inside "What they are doing")
         plans: [...planLines(g, present, w), ...activityLines(g, present)], // [expanded] activities, group plans
         focus: [eventLine(g, w), combatLine(g, w), prisonLine(g, w), ...towerLines(g, w), ...contractLines(g, w), ...institutionLines(g, w), focusLine(g, w, present), ...whyHereLines(g, w, present), ...questLines(g)],
         feelings: [feelingLine(g, met)],

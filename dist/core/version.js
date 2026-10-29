@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-14.1';
+export const VERSION = '0.2.1-14.2';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,10 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-14.2', fork: true, title: 'Room for memory', items: [
+            ['gear', 'The token budget (This Home → AI context) goes up to 8000, and "no limit" is now at the right end of the slider. A month into a Home, the long memory alone can be 2000–3000 tokens with everyone at home.'],
+            ['book', 'Long memory is its own block ("Long memory"): you see its size, can switch it off, and it is dropped late when over the budget (it was inside "What they are doing").'],
+        ] },
     { v: '0.2.1-14.1', fork: true, title: 'Not everyone looks', items: [
             ['phone', 'Taking the phone out: instead of "someone may notice" told to everyone every time (0.2.0.10), each person here rolls to notice (more often the nosier they are, a third as often if they noticed lately); the scene is told who noticed and who did not. Someone you text while they sit right here always knows.'],
             ['users', 'Fixed: the Relationships graph slid under the list when a person was open (every phone skin).'],

@@ -15,6 +15,14 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14.2 (0.2.1-14.2) · 2026-10-30
+
+- **Token budget**: upstream's slider stopped at 2000 tokens; now 500 to 8000, with "no limit" at the far right
+  (more to the right is more). A saved budget not on the new scale is shown at the nearest step.
+- **"Long memory" is a block of its own** in AI context (it was inside "What they are doing"): its size is shown,
+  it can be turned off, and it is among the last to go over the budget. Measured: six people at home a month in,
+  with three steps each, a story with you and their own, and five facts about you: about 2800 tokens.
+
 ## Mundi Expanded 14.1 (0.2.1-14.1) · 2026-10-30
 
 - **Who notices your phone**: replaces 0.2.0.10's line, which told every scene "someone may notice, and mind" each
