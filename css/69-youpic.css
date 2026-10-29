@@ -54,3 +54,9 @@
 #mundi-root .mu-yp-grid span { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #mundi-root .mu-yp-tools { flex-wrap: wrap; gap: 6px; }
 #mundi-root .mu-yp-tools label.mu-file { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* [expanded] 0.2.1-12.3: the phone pushes the dialog left, onto your portrait: the portrait steps up above it */
+#mundi-root .mu-yp { transition: bottom .3s ease, height .3s ease; }
+@media (min-width: 1440px) {
+    #mundi-root[data-dialogpos="center"]:not(.dlg-hidden):has(.mu-phone:not(.is-closing)) .mu-yp { bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); }
+}

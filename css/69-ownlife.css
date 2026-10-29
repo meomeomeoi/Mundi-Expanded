@@ -83,3 +83,18 @@
 #mundi-root .mu-meapp .mu-me-skill { grid-template-columns: minmax(96px, 40%) minmax(0, 1fr) 22px; }
 #mundi-root .mu-meapp .mu-me-skill input[type=range] { width: 100%; min-width: 0; }
 #mundi-root .mu-meapp .mu-me-skill small { grid-column: 1 / -1; margin-top: -4px; }
+/* [expanded] fix: the phone's settings were wider than a small screen (the keypad phone): segment buttons with long
+   words (Every few days, 14 days (Mundi)) could not shrink, and pushed the whole page sideways */
+#mundi-root .mu-ph-body { overflow-x: hidden; }
+#mundi-root .mu-ph-body > *, #mundi-root .mu-ph-body section > * { min-width: 0; }
+#mundi-root .mu-bd-seg { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); }
+#mundi-root .mu-bd-seg button { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.15; }
+
+/* 0.2.1-12.3: the battery runs down */
+#mundi-root .mu-ph-batt b { transition: width .4s; }
+#mundi-root .mu-phone:not(.is-skin-keypad) .mu-ph-batt.is-mid b { background: #ff9f0a; }
+#mundi-root .mu-phone:not(.is-skin-keypad) .mu-ph-batt.is-low b { background: #ff3b30; }
+
+/* 0.2.1-12.3: Go out: who would not come now (and why) */
+#mundi-root .mu-out-people .mu-chip.is-no { opacity: .5; filter: grayscale(.7); cursor: not-allowed; }
+#mundi-root .mu-out-people .mu-chip.is-no small { display: block; font-size: 10px; opacity: .85; line-height: 1.1; }

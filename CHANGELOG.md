@@ -15,6 +15,25 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 12.3 (0.2.1-12.3) · 2026-10-29
+
+- **Get-togethers at home**: saying yes to a housemate's movie night (games, cooking together, or a plan of theirs at
+  home) makes a get-together in that room, not a one-to-one meet-up. The panel names the host and everyone in the
+  room; nobody joins your party or follows you; it ends when you leave the room, when its time is up, or with
+  "Call it a night" (everyone wraps up; any of them may answer).
+- **Go out asks first**: someone asleep, someone you have not met or barely know, or, after 23:00, anyone but your
+  partner and the people close to you (50+) will not come along. Their chip is greyed with the reason.
+- **Phone battery**: full in the morning, about 5% an hour while you are awake (some 20% left at 23:00), charges while
+  you sleep, never under 5%. Orange at 30%, red at 15%.
+- **Listening at a door**: the prompt now has who is inside (from their cards) and how they get along; more room for
+  the answer (thinking models used it all up), and a cut-off answer ends at its last whole sentence.
+- **Crossword themes** are picked from 50 built-in ones, never one of your last 15.
+- **A stopped goodbye** (Stop pressed on "it is time to say goodbye") ends the meet-up anyway; before, the person
+  stayed "saying goodbye" and showed up in every room until you did something else.
+- **Scene**: a sprite whose figure stands off-centre in its picture is trimmed on the wider side, so it stands in the
+  middle of its place (Chrome). Your portrait moves up above the dialog while the phone is open (wide screens, centred
+  dialog). The keypad phone's settings no longer overflow sideways.
+
 ## Mundi Expanded 12.2 (0.2.1-12.2) · 2026-10-29
 
 - **Traits that add up**: two traits on the same skill no longer count only the higher one: the higher, +1 for each

@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-12.2';
+export const VERSION = '0.2.1-12.3';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,15 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-12.3', fork: true, title: 'Movie nights for everyone', items: [
+        ['users', 'An invitation to a movie night (or games, or cooking) at home is a get-together in that room, not a date: the panel shows the host and everyone there, nobody follows you around, and leaving the room or "Call it a night" ends it.'],
+        ['map', 'Go out: someone asleep, a stranger, or (after 23:00) someone not close to you will not come along; the picker says why.'],
+        ['phone', 'The phone battery runs down through the day (about a fifth left by 23:00) and charges while you sleep; never below 5%.'],
+        ['eye', 'Listening at a door: the model knows who is inside and how they get along, has room to answer, and a cut-off answer ends at a whole sentence.'],
+        ['star', 'Crossword themes come from a list of 50 and do not repeat for a while.'],
+        ['skip', 'Stopping the goodbye at the end of a meet-up ends it all the same (they no longer stay "saying goodbye" in every room).'],
+        ['image', 'A sprite whose figure is off to one side of its picture is trimmed so the figure stands in the middle of its place. Your portrait steps up above the dialog when the phone is open. The keypad phone\'s settings fit again.'],
+    ] },
     { v: '0.2.1-12.2', fork: true, title: 'Traits that add up', items: [
         ['star', 'Two traits on the same skill (Strong and Athletic) now add up a little: the higher one, +1 for each other one, up to level 5.'],
         ['user', 'Interests make skills grow faster instead: +20% experience in the skills they are about (Cooking, Music, Books, Technology, Sports, Art; two on one skill, +40%). The tooltips and Me show it.'],

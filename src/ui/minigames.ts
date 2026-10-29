@@ -237,11 +237,14 @@ function endClean() {
 const CROSS_FALLBACK = { theme: 'around the house', words: [['KETTLE', 'It whistles when the water is ready'], ['PILLOW', 'Soft, under your head at night'], ['FRIDGE', 'Cold box full of leftovers'], ['LADDER', 'Climb it to change a bulb'], ['CANDLE', 'Wax light for a power cut'], ['SOFA', 'Where the movie night happens']] };
 async function startCross(g: Save) {
     const partner = GV.partner ? nm(g, GV.partner) : '';
-    const j = await ask(`A small crossword for ${personaName()}${partner ? ` and ${partner}` : ''}, in English${era(g) !== 'now' ? `, set in the ${era(g)}` : ''}. Pick a light theme. Six answers, single common words, 4 to 9 letters, A–Z only; a short clever clue for each.${partner ? ` Also, for ${partner} (who is: ${String((await import('../sim/lifeday.js')).cardText(GV.partner)).replace(/\s+/g, ' ').slice(0, 200)}): how willing they are to help (0-100) and which answers they would know (indexes 0-5).` : ''}
-JSON only: {"theme": "...", "words": [{"answer": "...", "clue": "..."}]${partner ? ', "partner": {"willing": 70, "knows": [0, 3]}' : ''}}`, 700);
+    // the theme comes from a fixed list (models love to pick the same one), never one of the last few
+    const ox = R.ownOf(g) as any; const theme = O.pickTheme(ox.crossRecent ?? [], Math.random());
+    ox.crossRecent = O.rememberTheme(ox.crossRecent ?? [], theme); saveGame();
+    const j = await ask(`A small crossword for ${personaName()}${partner ? ` and ${partner}` : ''}, in English${era(g) !== 'now' ? `, set in the ${era(g)}` : ''}. The theme: ${theme}. Six answers on that theme, single common words, 4 to 9 letters, A–Z only; a short clever clue for each.${partner ? ` Also, for ${partner} (who is: ${String((await import('../sim/lifeday.js')).cardText(GV.partner)).replace(/\s+/g, ' ').slice(0, 200)}): how willing they are to help (0-100) and which answers they would know (indexes 0-5).` : ''}
+JSON only: {"words": [{"answer": "...", "clue": "..."}]${partner ? ', "partner": {"willing": 70, "knows": [0, 3]}' : ''}}`, 700);
     const list = (Array.isArray(j?.words) ? j.words : []).map((x: any) => [String(x?.answer ?? '').toUpperCase().replace(/[^A-Z]/g, ''), String(x?.clue ?? '').slice(0, 100)]).filter(([a, c]: string[]) => a.length >= 3 && a.length <= 10 && c);
     const words = list.length >= 4 ? list.slice(0, 6) : CROSS_FALLBACK.words;
-    GV.d = { theme: list.length >= 4 ? String(j.theme ?? '').slice(0, 40) : CROSS_FALLBACK.theme, words: words.map(([a, c]: string[]) => ({ a, c, got: false, shown: 1, typed: '' })), hints: 0, ends: Date.now() + 180000,
+    GV.d = { theme: list.length >= 4 ? theme : CROSS_FALLBACK.theme, words: words.map(([a, c]: string[]) => ({ a, c, got: false, shown: 1, typed: '' })), hints: 0, ends: Date.now() + 180000,
         willing: Math.max(0, Math.min(100, Number(j?.partner?.willing ?? 50))), knows: (Array.isArray(j?.partner?.knows) ? j.partner.knows : []).map(Number), lastMove: Date.now() };
     GV.phase = 'play'; notify();
     const idle = () => { if (GV.game !== 'crossword') return;

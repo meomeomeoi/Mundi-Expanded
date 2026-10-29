@@ -60,3 +60,12 @@ export function looseJson(text) {
     }
     return null;
 }
+// [expanded] 0.2.1-12.3
+/** A reply cut off by the token limit ends at its last whole sentence. */
+export function wholeSentences(t) {
+    const s = t.trim();
+    if (/[.!?…"”'*)]$/.test(s))
+        return s;
+    const m = s.match(/^[\s\S]*[.!?…]["”']?(?=\s|$)/);
+    return m && m[0].length >= s.length * 0.4 ? m[0].trim() : s;
+}

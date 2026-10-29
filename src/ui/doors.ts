@@ -73,8 +73,8 @@ async function listenAt(loc: string): Promise<boolean> {
     const L = await import('../sim/listen.js'); const { bgAsk } = await import('../sim/regulator.js'); const { refused, failNotice } = await import('./retry.js');
     LS.busy = true; notify();
     let raw = '';
-    try { raw = await bgAsk(L.listenPrompt(g, w, loc), 400, L.LISTEN_SYSTEM); } finally { LS.busy = false; }
-    const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
+    try { raw = await bgAsk(L.listenPrompt(g, w, loc), 1200, L.LISTEN_SYSTEM); /* [expanded] thinking models need room */ } finally { LS.busy = false; }
+    const text = L.wholeSentences(String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim());
     if (!text || refused(text)) { failNotice('listen', 'Nothing came through the door (the mechanics model gave no answer).', () => listenAt(loc)); notify(); return false; }
     const r = L.heard(g, w, loc, text);
     if (DR.loc === loc) DR.note = r.text;

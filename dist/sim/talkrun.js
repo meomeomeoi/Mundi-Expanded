@@ -618,6 +618,7 @@ export async function answerInvite(g, w, id, yes) {
             return `${r.name} cannot after all: ${ok.why}`;
         }
         const a = add(g, i.avatar, i.place, i.from, 'hangout', false, ACTS[i.act].name);
+        a.group = 'room'; // a get-together at home, not a date: whoever is in the room is part of it
         try {
             const { setMeta } = await import('./activities.js');
             setMeta(g, a.id, { act: i.act });

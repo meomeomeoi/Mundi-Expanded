@@ -7,15 +7,17 @@ import { personaName } from '../st/bridge.js';
 import { onHour } from './hooks.js';
 import { presentNotes } from './lifehooks.js';
 import { presentAt, whereNow } from './people.js';
-import { slotAt, ownRoom } from './lifeday.js';
+import { slotAt, ownRoom, cardText } from './lifeday.js';
 import { floorsOn, floorOf } from './plan.js';
 import { bondOf, bump } from './social.js';
 import { profileOf, nosyOf, discreetOf } from './profile.js';
-import { bondsOf, factsOfPair, applyChange, addFact, YOU, type GLike, type TieLike } from './bonds.js';
+import { bondsOf, factsOfPair, applyChange, addFact, bondsLines, personalityOf, YOU, type GLike, type TieLike } from './bonds.js';
 import { learn, tieK, knows } from './knows.js';
 import { MEET_MARK, caughtChance } from './secrets.js';
 import { openTalk } from './consequences.js';
 import * as L from './love.js';
+import { wholeSentences } from './jsonfix.js';
+export { wholeSentences };
 
 const G = (g: Save) => g as unknown as GLike;
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
@@ -41,8 +43,13 @@ export function listenPrompt(g: Save, w: WorldDef, loc: string): string {
     const inside = presentAt(g, w, loc); const now = nowAbs(g);
     const doing = inside.map(r => { const s = slotAt(g, w, r, now); return `${r.name}: ${s?.asleep ? 'asleep' : s && MEET_MARK.test(s.act) ? `in secret with ${s.act.replace(/^quietly with /, '').replace(MEET_MARK, '')}` : s?.act ?? 'in the room'}`; });
     const between = inside.length >= 2 ? factsOfPair(G(g), inside[0].avatar, inside[1].avatar).slice(-3).map(f => f.text) : [];
+    // 0.2.1-12.3: who they are and how they get along, so what comes through the door sounds like them
+    const who = inside.slice(0, 3).map(r => `${r.name}: ${personalityOf(cardText(r.avatar), '', 320).replace(/\s+/g, ' ')}`).filter(x => !/:\s*$/.test(x));
+    const ties = inside.length >= 2 ? bondsLines(G(g), inside.map(r => r.avatar), 700) : [];
     const night = (g as any).nightsx?.now?.loc === loc;
     return [`${personaName()} stands at the closed door of ${inside.length ? `the room where ${list(inside.map(r => r.name))} ${inside.length > 1 ? 'are' : 'is'}` : 'a room'} and listens. It is ${String(Math.floor(g.minutes / 60)).padStart(2, '0')}:${String(g.minutes % 60).padStart(2, '0')}. The walls are ${wallsOf(g)}.`,
+        ...(who.length ? [`Who they are: ${who.join(' | ')}`] : []),
+        ...(ties.length ? [`How they get along: ${ties.join(' ')}`] : []),
         `Inside: ${doing.join('; ') || 'quiet'}.${between.length ? ` Lately between them: ${between.join(' ')}` : ''}${night ? ' They are being intimate (say only that the sounds leave little doubt).' : ''}`,
         `Write 2 or 3 short sentences in the second person ("you hear…"): what ${personaName()} hears. Mostly muffled voices and sounds, at most one or two scraps of words in quotes; ${wallsOf(g) === 'thick' ? 'very little gets through' : wallsOf(g) === 'thin' ? 'more gets through than it should' : 'some of it gets through'}. Nothing graphic. If they are asleep: near silence.`].join('\n');
 }

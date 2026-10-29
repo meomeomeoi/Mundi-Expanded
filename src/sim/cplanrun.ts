@@ -109,7 +109,7 @@ export function joinPlan(g: Save, w: WorldDef, id: string): string {
     joining = p.id;
     try { addAppt(g, host, p.out ? outingId(p.out) : p.place, p.from, 'hangout', false, C.cactOf(p.act)?.name ?? ''); } finally { joining = ''; }
     p.you = 'yes';
-    const a = social(g).appts.at(-1); if (a) a.to = Math.max(a.to, p.to);
+    const a = social(g).appts.at(-1); if (a) { a.to = Math.max(a.to, p.to); if (!p.out) (a as any).group = 'room'; }
     return '';
 }
 export function declinePlan(g: Save, id: string) { const p = cplansOf(g).find(x => x.id === id); if (p) p.you = 'no'; }

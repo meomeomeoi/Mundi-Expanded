@@ -241,6 +241,9 @@ with ideas rolled from your skill, chores with a rota and a mess, the house's ca
 house's evenings, New Year, the golden week), "while you were away". Decided: just doing it is always possible; one
 call a session at most; everything has a setting.
 
+12.3 (fixes from play): a housemate's movie night is a get-together in a room (everyone there, nobody follows you),
+Go out refuses the asleep, strangers and, late at night, the not-close; the phone's battery; listening with context.
+
 Next, discussed:
 - **Work and student life, deeper**: a job with its own days, a boss and promotions (not just a focus game and pay);
   a student's courses, exams on the calendar and grades; both talked about in the house.

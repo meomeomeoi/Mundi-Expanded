@@ -131,8 +131,11 @@ export function joinPlan(g, w, id) {
     }
     p.you = 'yes';
     const a = social(g).appts.at(-1);
-    if (a)
+    if (a) {
         a.to = Math.max(a.to, p.to);
+        if (!p.out)
+            a.group = 'room';
+    }
     return '';
 }
 export function declinePlan(g, id) { const p = cplansOf(g).find(x => x.id === id); if (p)

@@ -165,3 +165,26 @@ export function weekEvents(card: string, r: [number, number, number], taken: boo
 export const AWAY_MIN = 90, DIGEST_GAP = 240, DIGEST_MAX = 3;
 /** A digest when you get home or wake up: only after a real absence, not more often than every few hours. */
 export const digestDue = (awayFrom: number, now: number, lastDigest: number, morning: boolean) => (morning || now - awayFrom >= AWAY_MIN) && now - lastDigest >= (morning ? 60 : DIGEST_GAP);
+
+/* ---------- crossword themes (0.2.1-12.3): picked here, not by the model, so they do not repeat ---------- */
+
+export const CROSS_THEMES = [
+    'in the kitchen', 'weather', 'the seaside', 'trees and forests', 'birds', 'dogs and cats', 'farm animals', 'insects',
+    'fruit', 'vegetables', 'breakfast', 'desserts', 'spices and herbs', 'drinks', 'cheese and bread', 'the garden',
+    'flowers', 'mountains', 'rivers and lakes', 'outer space', 'the night sky', 'trains and stations', 'cars and roads',
+    'boats and ships', 'flying', 'a city street', 'the post office', 'a library', 'school days', 'the office',
+    'music and instruments', 'dancing', 'movies', 'board games', 'card games', 'sports', 'the gym', 'swimming',
+    'camping', 'winter', 'summer holidays', 'autumn', 'a birthday party', 'clothes', 'shoes and hats', 'colours',
+    'tools in the shed', 'a fairy tale', 'pirates', 'detectives',
+];
+export const CROSS_RECENT = 15;
+/** A theme you have not had lately; `roll` is 0–1. */
+export function pickTheme(recent: string[], roll: number): string {
+    const fresh = CROSS_THEMES.filter(t => !recent.includes(t));
+    const pool = fresh.length ? fresh : CROSS_THEMES;
+    return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))];
+}
+export const rememberTheme = (recent: string[], t: string) => [...recent.filter(x => x !== t), t].slice(-CROSS_RECENT);
+
+/** Too late to go out with just anyone (after 23:00, before 6). */
+export const lateHour = (minutes: number) => { const h = Math.floor(minutes / 60); return h >= 23 || h < 6; };

@@ -8,12 +8,13 @@ import { letGo } from '../sim/plans.js';
 import { romOf } from '../sim/romance.js';
 import { romanceBlocked, isMinor } from '../sim/family.js';
 import { playerHomeId } from '../sim/places.js';
+import { presentAt } from '../sim/people.js';
 import { note } from '../sim/facts.js';
 import { syncScene } from '../sim/game.js';
 import { icon } from './icons.js';
 import { ACT } from './reg.js';
 
-export interface GameEvent { id: string; avatar: string; kind: string; ending?: boolean; from?: number; title?: string; moodAt?: number }
+export interface GameEvent { id: string; avatar: string; kind: string; ending?: boolean; from?: number; title?: string; moodAt?: number; /** [expanded] a get-together in a room */ group?: boolean; room?: string }
 export interface Stay { avatar: string; where: string; day: number }
 export const eventOf = (g: Save): GameEvent | null => ((social(g) as any).event ?? null);
 export const stayOf = (g: Save): Stay | null => ((social(g) as any).stay ?? null);
@@ -49,6 +50,7 @@ export function eventPanelHtml(g: Save, w: WorldDef): string {
     const e = eventOf(g);
     if (!e || state.view !== 'scene') return '';
     const r = g.cast[e.avatar];
+    if (e.group && r) return groupPanel(g, w, e, r);   // [expanded]
     if (!r || !isWith(g, e.avatar)) return '';
     const title = e.kind === 'date' ? `${icon('heart')} Date with` : e.kind === 'party' ? '🎉 Party with' : `${icon('users')} Hanging out with`;
     void w;
@@ -64,6 +66,11 @@ Object.assign(ACT, {
         const g = game(); const e = g && eventOf(g); const r = g && e && g.cast[e.avatar];
         if (!g || !e || !r || state.generating) return;
         e.ending = true; e.from = chat().length; saveGame();
+        if (e.group) {   // [expanded] the get-together winds down; nobody has to walk anyone home
+            setPrompt('mundi_ask', `[The ${e.title ? `"${e.title}"` : 'get-together'} is over: everyone wraps it up. ${r.name}, who invited {{user}}, says in their own way what they thought of the evening; the others can add a word. Then people start heading off.]`, 0);
+            if (!sendCanned('*it is time to call it a night*')) { finishEvent(g); }
+            notify(); return;
+        }
         setPrompt('mundi_ask', `[The ${e.kind === 'date' ? 'date' : 'meet-up'}${e.title ? ` ("${e.title}")` : ''} is over. ${r.name} says goodbye to {{user}} and says, in their own way, what they thought of it. Then ${r.name} leaves.]`, 0);
         if (!sendCanned('*it is time to say goodbye*')) { finishEvent(g); }
         notify();
@@ -89,30 +96,45 @@ Object.assign(ACT, {
     },
 });
 
+// [expanded] A get-together in a room (a movie night at home): everyone in the room is part of it, and nobody
+// follows you around. It is over when you leave the room, when its time is up, or when you end it.
+function groupPanel(g: Save, w: WorldDef, e: GameEvent, r: any): string {
+    if (g.player.loc !== e.room) return '';
+    const others = presentAt(g, w, e.room!).filter(x => x.avatar !== e.avatar).map(x => x.met ? x.name : 'someone');
+    const who = `<span data-notr>${esc(r.name)}</span> (host)${others.length ? `, <span data-notr>${esc(others.join(', '))}</span>` : ''}`;
+    return `<aside class="mh-event mh-glass"><b>${icon('users')} ${esc(e.title || 'Get-together')}</b><small class="mh-event-name">with ${who}</small>
+        ${e.ending ? '<small class="mu-muted">Wrapping up…</small>' : `<div class="mh-event-btns"><button data-act="ev-end">${icon('x')}<span>Call it a night</span></button></div>`}</aside>`;
+}
+
 // The goodbye was said (a reply came): they leave.
 async function finishEvent(g: Save) {
     const e = eventOf(g); if (!e) return;
     const r = g.cast[e.avatar];
     setPrompt('mundi_ask', '');
     letGo(g, e.avatar);
-    if (r) note(g, e.kind === 'date' ? '{u} and {0} ended their date and said goodbye.' : '{u} and {0} said goodbye after spending time together.', [r.name], [e.avatar]);
+    if (r && e.group) note(g, '{u} spent the evening with {0} and the others ({1}).', [r.name, e.title || 'a get-together'], [e.avatar]);   // [expanded]
+    else if (r) note(g, e.kind === 'date' ? '{u} and {0} ended their date and said goodbye.' : '{u} and {0} said goodbye after spending time together.', [r.name], [e.avatar]);
     const s = stayOf(g); if (s && s.avatar === e.avatar) (social(g) as any).stay = null;
     // the plan is over: they go back to their day
     const a = social(g).appts.find(x => x.id === e.id); if (a) a.to = Math.min(a.to, nowAbs(g));
     clearEvent(g); saveGame(); await syncScene(); notify();
 }
 // Called when a reply finishes (index.ts).
-export function checkEventEnd() {
+export function checkEventEnd(stopped = false) {
     const g = game(); const e = g && eventOf(g);
     if (!g || !e?.ending) return;
+    // [expanded] the goodbye was cut off (Stop pressed): they leave all the same
+    if (stopped) { void finishEvent(g); return; }
     const r = g.cast[e.avatar];
-    const replied = chat().slice(e.from ?? 0).some((m: any) => !m.is_user && !m.is_system && (!r || String(m.name ?? '').trim() === r.name.trim()));
+    const replied = chat().slice(e.from ?? 0).some((m: any) => !m.is_user && !m.is_system && (!r || e.group || String(m.name ?? '').trim() === r.name.trim()));
     if (replied) void finishEvent(g);
 }
 // An event whose person left (time ran out, you went home without them…) is over.
 export function tidyEvent(g: Save) {
     const e = eventOf(g);
-    if (e && !e.ending && !isWith(g, e.avatar)) clearEvent(g);
+    // [expanded] a get-together in a room: over when you leave the room or its time is up
+    const gone = e && (e.group ? g.player.loc !== e.room || nowAbs(g) >= (social(g).appts.find(x => x.id === e.id)?.to ?? 0) : !isWith(g, e.avatar));
+    if (e && !e.ending && gone) clearEvent(g);
     const s = stayOf(g);
     if (s && s.day < g.day - 1) (social(g) as any).stay = null;
 }

@@ -101,12 +101,12 @@ async function listenAt(loc) {
     notify();
     let raw = '';
     try {
-        raw = await bgAsk(L.listenPrompt(g, w, loc), 400, L.LISTEN_SYSTEM);
+        raw = await bgAsk(L.listenPrompt(g, w, loc), 1200, L.LISTEN_SYSTEM); /* [expanded] thinking models need room */
     }
     finally {
         LS.busy = false;
     }
-    const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
+    const text = L.wholeSentences(String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim());
     if (!text || refused(text)) {
         failNotice('listen', 'Nothing came through the door (the mechanics model gave no answer).', () => listenAt(loc));
         notify();

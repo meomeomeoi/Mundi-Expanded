@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import * as O from '../dist/sim/own.js';
+import * as B from '../dist/sim/battery.js';
+import { wholeSentences } from '../dist/sim/jsonfix.js';
 let n = 0; const t = (name, f) => { f(); n++; };
 t('levels and experience', () => {
     assert.equal(O.levelOf(0), 1); assert.equal(O.levelOf(100), 3); assert.equal(O.levelOf(99999), 10);
@@ -45,4 +47,22 @@ t('while you were away', () => {
     assert.ok(!O.digestDue(1000, 1200, 1100, false), 'not again so soon');
     assert.ok(O.digestDue(1000, 1100, 900, true), 'a morning one');
 });
+t('crossword themes do not repeat', () => {
+    assert.equal(O.CROSS_THEMES.length, 50); assert.equal(new Set(O.CROSS_THEMES).size, 50);
+    let recent = [];
+    for (let i = 0; i < 15; i++) { const th = O.pickTheme(recent, (i * 0.37) % 1); assert.ok(!recent.includes(th), th); recent = O.rememberTheme(recent, th); }
+    assert.equal(recent.length, 15);
+});
+t('the battery runs down by day, fills by night, never below 5%', () => {
+    let b = 100; for (let h = 7; h < 23; h++) b = B.nextLevel(b, false);
+    assert.ok(b >= 15 && b <= 25, `at 23:00: ${b}`);
+    for (let h = 0; h < 30; h++) b = B.nextLevel(b, false); assert.equal(b, B.FLOOR);
+    for (let h = 0; h < 4; h++) b = B.nextLevel(b, true); assert.equal(b, 100);
+});
+t('a cut-off reply ends at a whole sentence', () => {
+    assert.equal(wholeSentences('You hear a laugh. Then a voice says "no way". Then some'), 'You hear a laugh. Then a voice says "no way".');
+    assert.equal(wholeSentences('All fine.'), 'All fine.');
+    assert.equal(wholeSentences('Short then a very long tail without any end at all here'), 'Short then a very long tail without any end at all here');
+});
+t('late night for going out', () => { assert.ok(O.lateHour(23 * 60 + 30)); assert.ok(O.lateHour(3 * 60)); assert.ok(!O.lateHour(20 * 60)); });
 console.log(`own: ${n} tests passed`);

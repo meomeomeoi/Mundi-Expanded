@@ -199,13 +199,16 @@ export function planTick(g, w) {
         if (now >= a.from && g.player.loc === a.place) {
             a.state = 'met';
             // the event starts: they join you (and follow you) until it is over, and the HUD shows it
+            const grp = a.group === 'room'; // [expanded] a get-together in a room of the house: it stays in the room
             const cw = s.with.find(x => x.avatar === a.avatar);
-            if (cw)
-                cw.until = Math.max(cw.until, a.to);
-            else
-                s.with.push({ avatar: a.avatar, until: a.to });
+            if (!grp) {
+                if (cw)
+                    cw.until = Math.max(cw.until, a.to);
+                else
+                    s.with.push({ avatar: a.avatar, until: a.to });
+            }
             if (!s.event && !a.come) {
-                s.event = { id: a.id, avatar: a.avatar, kind: a.kind, title: a.title, moodAt: now };
+                s.event = { id: a.id, avatar: a.avatar, kind: a.kind, title: a.title, moodAt: now, ...(grp ? { group: true, room: a.place } : {}) };
                 addStatus(g, w, 'mood', a.kind === 'date' || a.kind === 'party' ? 15 : 10);
             }
             bump(g, a.avatar, a.kind === 'date' ? 8 : 5);

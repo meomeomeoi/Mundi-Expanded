@@ -50,6 +50,8 @@ import { ACT, INPUT } from './reg.js';
 import { bondsApp, bondsSettingsHtml } from './bondsui.js'; // [expanded]
 import { stockApp } from './stockui.js'; // [expanded]
 import { moneyApp } from './moneyui.js'; // [expanded]
+import { battery } from '../sim/battery.js'; // [expanded] 0.2.1-12.3
+const battHtml = (g) => { const b = battery(g); return `<span class="mu-ph-batt ${b <= 15 ? 'is-low' : b <= 30 ? 'is-mid' : ''}" title="Battery ${b}%"><small>${b}%</small><i><b style="width:${b}%"></b></i></span>`; };
 // Closing slides the phone away first (the dialogue box glides back at the same time), then it is gone.
 let closeTimer = 0;
 export function closePhone() {
@@ -551,7 +553,7 @@ export function phoneHtml() {
     // taken for it, which rebuilt the phone and replayed its slide-in)
     return `<div class="mu-phone ${P.closing ? 'is-closing' : ''} ${skinClass() /* [expanded] */}" data-keep="phone" role="dialog" aria-label="Phone"><div class="mu-ph-status">
             <span class="mu-ph-left"><b>${hm(g.minutes)}</b>${unread ? `<i class="mu-ph-notif" title="${unread}">${icon('chat')}</i>` : ''}</span>
-            <span class="mu-ph-right">${SIGNAL}${icon('wifi')}<span class="mu-ph-batt"><small>100%</small><i><b></b></i></span></span></div>
+            <span class="mu-ph-right">${SIGNAL}${icon('wifi')}${battHtml(g) /* [expanded] */}</span></div>
         <div class="mu-ph-screen ${wallpaper() ? 'has-bg' : ''}" data-keep="ph-screen" style="${wallpaper() ? `--ph-bg:${esc(cssUrl(wallpaper()))}` : ''}">${body}</div>
         ${skinChrome() /* [expanded] keypad, PDA buttons */}<button class="mu-ph-close" data-act="ph-close" aria-label="${esc(T('closeDevice'))}"></button></div>`;
 }

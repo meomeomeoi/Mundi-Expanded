@@ -107,10 +107,28 @@ export function formatText(t: string) {
 // [expanded] A new face is shown once its picture is loaded; until then, the one before (a sprite whose new picture
 // was still loading had no width for a moment, and the others slid sideways)
 const LOADED = new Set<string>(); const LOADING = new Set<string>(); const SHOWN = new Map<string, string>();
+// [expanded] 0.2.1-12.3: a picture whose figure is off to one side (more empty space on the left than on the right)
+// is trimmed on the wider side, so the figure stands in the middle of its place (Chrome; elsewhere nothing changes)
+const CROP = new Map<string, string>();
+function measure(src: string, im: HTMLImageElement) {
+    try {
+        const W = 96, H = Math.max(1, Math.round(W * im.naturalHeight / Math.max(1, im.naturalWidth)));
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const x = c.getContext('2d', { willReadFrequently: true }); if (!x) return;
+        x.drawImage(im, 0, 0, W, H); const d = x.getImageData(0, 0, W, H).data;
+        let lo = W, hi = -1;
+        for (let col = 0; col < W; col++) for (let row = 0; row < H; row += 2) if (d[(row * W + col) * 4 + 3] > 24) { lo = Math.min(lo, col); hi = Math.max(hi, col); break; }
+        if (hi < lo) return;
+        const L = lo / W, R = (W - 1 - hi) / W, cut = Math.abs(L - R);
+        if (cut < 0.04) return;   // near enough the middle
+        CROP.set(src, `object-view-box:inset(0 ${R > L ? (cut * 100).toFixed(1) : 0}% 0 ${L > R ? (cut * 100).toFixed(1) : 0}%)`);
+    } catch { /* a picture from elsewhere: left as it is */ }
+}
+const cropOf = (src: string) => CROP.get(src) ?? '';
 function steady(who: string, src: string): string {
     if (!src || src.startsWith('data:')) return src;
     if (LOADED.has(src)) { SHOWN.set(who, src); return src; }
-    if (!LOADING.has(src)) { LOADING.add(src); const im = new Image(); const done = () => { LOADED.add(src); LOADING.delete(src); notify(); }; im.onload = done; im.onerror = done; im.src = src; }
+    if (!LOADING.has(src)) { LOADING.add(src); const im = new Image(); const done = () => { LOADED.add(src); LOADING.delete(src); notify(); }; im.onload = () => { measure(src, im); done(); }; im.onerror = done; im.src = src; }
     return SHOWN.get(who) ?? src;
 }
 function spriteFor(avatar: string, label: string | null): string {
@@ -246,7 +264,7 @@ export function sceneHtml() {
     const speaking = here.length > 1 ? (() => { const l = chat(); for (let i = l.length - 1; i >= 0 && i > l.length - 6; i--) { const a = speakerOf(l[i]); if (a) return a; if (l[i].is_user) return ''; } return ''; })() : '';
     const sprites = here.map((r, k) => {
         const src = steady(r.avatar, spriteFor(r.avatar, ex[r.avatar] ?? null));
-        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}${doingOf(r) /* [expanded] 0.2.0.11 */}</figcaption>${reactionOf(r.avatar) /* [expanded] */}${radialHtml(r.avatar, r)}</figure>`;
+        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="" style="${cropOf(src)}">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}${doingOf(r) /* [expanded] 0.2.0.11 */}</figcaption>${reactionOf(r.avatar) /* [expanded] */}${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
         <div class="mu-scene-bg" data-morph-skip data-keep="scene-bg" data-place="${esc(g.player.loc)}" style="${background(g, w)}"></div>
@@ -326,7 +344,7 @@ export function chatHtml() {
     const sv = stageVars(cast, a => !!spriteFor(a, ex[a] ?? null));
     const sprites = cast.map((a, k) => {
         const src = steady(a, spriteFor(a, ex[a] ?? null));
-        return `<figure class="mu-sprite ${RAD.who === a ? 'is-menu' : ''}" style="--i:${k};${sv.get(a)}" ${src ? `data-act="spr-menu" data-who="${esc(a)}"` : ''}>${radialHtml(a, null)}${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable" data-act="portrait" data-src="${esc(avatarUrl(a))}" data-name="${esc(charOf(a)?.name ?? '')}"><img src="${esc(avatarUrl(a))}" alt="" draggable="false"></span>`}</figure>`;
+        return `<figure class="mu-sprite ${RAD.who === a ? 'is-menu' : ''}" style="--i:${k};${sv.get(a)}" ${src ? `data-act="spr-menu" data-who="${esc(a)}"` : ''}>${radialHtml(a, null)}${src ? `<img src="${esc(src)}" alt="" style="${cropOf(src)}">` : `<span class="is-avatar mu-zoomable" data-act="portrait" data-src="${esc(avatarUrl(a))}" data-name="${esc(charOf(a)?.name ?? '')}"><img src="${esc(avatarUrl(a))}" alt="" draggable="false"></span>`}</figure>`;
     }).join('');
     // the chat's own background (just chosen, or locked to this chat), else what SillyTavern shows now
     const bgEl = document.getElementById('bg1');

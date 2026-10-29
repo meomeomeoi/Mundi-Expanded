@@ -180,9 +180,10 @@ export function planTick(g: Save, w: WorldDef): PlanNews[] {
         if (now >= a.from && g.player.loc === a.place) {
             a.state = 'met';
             // the event starts: they join you (and follow you) until it is over, and the HUD shows it
+            const grp = (a as any).group === 'room';   // [expanded] a get-together in a room of the house: it stays in the room
             const cw = s.with.find(x => x.avatar === a.avatar);
-            if (cw) cw.until = Math.max(cw.until, a.to); else s.with.push({ avatar: a.avatar, until: a.to });
-            if (!(s as any).event && !a.come) { (s as any).event = { id: a.id, avatar: a.avatar, kind: a.kind, title: a.title, moodAt: now }; addStatus(g, w, 'mood', a.kind === 'date' || a.kind === 'party' ? 15 : 10); }
+            if (!grp) { if (cw) cw.until = Math.max(cw.until, a.to); else s.with.push({ avatar: a.avatar, until: a.to }); }
+            if (!(s as any).event && !a.come) { (s as any).event = { id: a.id, avatar: a.avatar, kind: a.kind, title: a.title, moodAt: now, ...(grp ? { group: true, room: a.place } : {}) }; addStatus(g, w, 'mood', a.kind === 'date' || a.kind === 'party' ? 15 : 10); }
             bump(g, a.avatar, a.kind === 'date' ? 8 : 5);
             approve(g, a.avatar, 5);
             feel(g, a.avatar, a.kind === 'party' ? 'Had a great time at your party' : a.kind === 'date' ? 'Happy about the date' : 'Glad you kept your word', 1);

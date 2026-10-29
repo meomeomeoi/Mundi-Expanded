@@ -18,6 +18,8 @@ import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 import { backHome } from '../sim/stocknight.js'; // [expanded]
 import { outPlacesHtml } from './outplaces.js'; // [expanded]
+import { alongWhy } from '../sim/along.js'; // [expanded] 0.2.1-12.3
+const whyNot = (a) => { const g = game(); const w = g && getWorld(g.world); const r = g?.cast[a]; return g && w && r ? alongWhy(g, w, r) : ''; };
 // lib: people from your library (not in the house) who come out with you (they go home when you come back)
 export const OD = { move: false, open: false, bgOnly: false, place: '', with: [], lib: [], bg: '', q: '', back: false, miss: false };
 export const bgStyle = (file) => (file ? `background-image:url('${safeUrl(bgHref(file))}');background-size:cover;background-position:center` : '');
@@ -56,7 +58,7 @@ export function outingHtml() {
     return `<div class="mu-dlg-veil" data-act="out-close"></div><div class="mu-panel mu-scpick mu-glassdlg mu-outdlg" role="dialog"><header><h3>${icon('map')} Go out</h3><button class="mu-ibtn mu-ghost" data-act="out-close" aria-label="Close">${icon('x')}</button></header>
         ${outPlacesHtml() /* [expanded] saved and starter places */}
         <label class="mu-field mu-out-place ${OD.miss ? 'is-missing' : ''}"><span>Where are you going?</span><input type="text" maxlength="80" data-input="out-place" data-focus="outplace" placeholder="${styleOf(w) === 'medieval' ? 'the market square, the village tavern, the riverbank…' : 'the beach, a café downtown, the cinema…'}" value="${esc(OD.place)}">${OD.miss ? '<small class="mu-miss-note">Write where you are going first.</small>' : ''}</label>
-        <div class="mu-field"><span>Who comes with you</span><div class="mu-out-people">${people.map(p => `<button class="mu-chip ${OD.with.includes(p.avatar) ? 'is-on' : ''}" data-act="out-with" data-who="${esc(p.avatar)}"><img src="${esc(thumb(p.avatar))}" alt=""><span data-notr>${esc(p.name)}</span></button>`).join('')}${OD.lib.map(a => `<button class="mu-chip is-on mu-out-lib" data-act="out-lib-del" data-who="${esc(a)}" title="Remove"><img src="${esc(thumb(a))}" alt=""><span data-notr>${esc(String(charOf(a)?.name ?? a))}</span>${icon('x')}</button>`).join('')}<button class="mu-chip mu-out-libbtn" data-act="gp-open" data-for="outing">${icon('plus')}<span>From your library</span></button></div></div>
+        <div class="mu-field"><span>Who comes with you</span><div class="mu-out-people">${people.map(p => { const no = whyNot(p.avatar); /* [expanded] */ /* [expanded] */ return `<button class="mu-chip ${OD.with.includes(p.avatar) ? 'is-on' : ''} ${no ? 'is-no' : ''}" data-act="out-with" data-who="${esc(p.avatar)}" ${no ? `aria-disabled="true" data-tip="${esc(no)}"` : ''}><img src="${esc(thumb(p.avatar))}" alt=""><span data-notr>${esc(p.name)}</span>${no ? `<small>${esc(no)}</small>` : ''}</button>`; }).join('')}${OD.lib.map(a => `<button class="mu-chip is-on mu-out-lib" data-act="out-lib-del" data-who="${esc(a)}" title="Remove"><img src="${esc(thumb(a))}" alt=""><span data-notr>${esc(String(charOf(a)?.name ?? a))}</span>${icon('x')}</button>`).join('')}<button class="mu-chip mu-out-libbtn" data-act="gp-open" data-for="outing">${icon('plus')}<span>From your library</span></button></div></div>
         <div class="mu-field"><span>Background</span>${grid}</div>
         <div class="mu-row mu-dlg-btns"><button data-act="out-close">Cancel</button><button class="mu-primary ${OD.place.trim() ? '' : 'is-dim'}" data-act="out-go">${icon('map')}<span>Go</span></button></div></div>`;
 }
@@ -70,7 +72,10 @@ Object.assign(ACT, {
     } Object.assign(OD, { open: true, bgOnly: false, move: true, place: '', with: [], lib: [], q: '', back: false, miss: false, bg: '' }); notify(); setTimeout(() => document.querySelector('[data-input="out-place"]')?.focus(), 40); },
     'out-close': () => { OD.open = false; notify(); },
     'out-lib-del': (el) => { OD.lib = OD.lib.filter(a => a !== el.dataset.who); notify(); },
-    'out-with': (el) => { const a = el.dataset.who; OD.with = OD.with.includes(a) ? OD.with.filter(x => x !== a) : [...OD.with, a]; notify(); },
+    'out-with': (el) => { const a = el.dataset.who; if (el.getAttribute('aria-disabled') === 'true') {
+        toast(whyNot(a) || 'They cannot come now.', 'info');
+        return;
+    } /* [expanded] */ /* [expanded] */ OD.with = OD.with.includes(a) ? OD.with.filter(x => x !== a) : [...OD.with, a]; notify(); },
     'out-bg': (el) => { OD.bg = el.dataset.file ?? ''; notify(); },
     'out-bg-open': () => { const g = game(); Object.assign(OD, { open: true, bgOnly: true, q: '', bg: outingOf(g)?.bg ?? '' }); notify(); },
     'out-bg-save': () => { const g = game(); const o = outingOf(g); if (o) {
@@ -100,7 +105,7 @@ Object.assign(ACT, {
         const moving = OD.move && isOuting(g.player.loc);
         if (moving)
             advance(g, w, 30).forEach(m => toast(m, 'warn')); // getting there takes a little while
-        const people = moving ? (outingOf(g)?.with ?? []) : [...OD.with.filter(a => g.cast[a]), ...lib];
+        const people = moving ? (outingOf(g)?.with ?? []) : [...OD.with.filter(a => g.cast[a] && !whyNot(a) /* [expanded] */), ...lib];
         startOuting(g, w, place, moving ? [] : people, OD.bg || (moving ? '' : OD.bg));
         if (moving) {
             const o = outingOf(g);

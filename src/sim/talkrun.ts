@@ -383,6 +383,7 @@ export async function answerInvite(g: Save, w: WorldDef, id: string, yes: boolea
         const ok = check(g, w, i.avatar, i.place, i.from, i.from + 120, 'hangout', HANGOUT_BOND);
         if (!ok.ok && !/already have plans/i.test(ok.why)) { i.state = 'gone'; saveGame(); return `${r.name} cannot after all: ${ok.why}`; }
         const a = add(g, i.avatar, i.place, i.from, 'hangout', false, ACTS[i.act].name);
+        (a as any).group = 'room';   // a get-together at home, not a date: whoever is in the room is part of it
         try { const { setMeta } = await import('./activities.js'); setMeta(g as any, a.id, { act: i.act }); } catch { /* fine */ }
         i.state = 'yes'; i.appt = a.id; x.init[i.avatar] = 0;
         const s = social(g); (s.threads[i.avatar] ??= []).push({ me: true, text: 'Yes! See you then.', at: nowAbs(g) });
