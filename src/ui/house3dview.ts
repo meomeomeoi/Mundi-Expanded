@@ -182,6 +182,21 @@ export function mountHouse(el: HTMLElement, THREE: any, house: House3, o: Opts3 
     }
 
     /* ---------- people ---------- */
+    const PLINTH = [0x8fa8d8, 0xd89aa8, 0x9ccaa0, 0xd8c08a, 0xb5a0d8, 0x8acfd0];
+    // how much of a full figure is missing below the drawing (0: it reaches the feet), from the bottom row's pixels
+    const cuts = new Map<string, number>();
+    function cutOf(t: any): number {
+        const img = t.image; const key = img?.src ?? ''; if (!img?.width) return 0; if (cuts.has(key)) return cuts.get(key)!;
+        let v = 0;
+        try {
+            const c = document.createElement('canvas'); const w = Math.min(256, img.width), h = Math.round(img.height * w / img.width); c.width = w; c.height = h;
+            const x = c.getContext('2d', { willReadFrequently: true })!; x.drawImage(img, 0, 0, w, h);
+            const row = x.getImageData(0, h - 2, w, 1).data; let solid = 0; for (let i = 3; i < row.length; i += 4) if (row[i] > 128) solid++;
+            const share = solid / w;   // feet touch the bottom with a narrow strip; a cut body, with a wide one
+            v = share > 0.16 ? 0.28 : 0;   // drawn to about the knees (the usual cut of expression sprites)
+        } catch { v = 0; }
+        cuts.set(key, v); return v;
+    }
     // where people stand: free floor in the room (not in the furniture, not by the walls), spread out
     function freeSpots(f: Floor3, r: Room3, n: number): [number, number][] {
         const fp = furn.get(`${f.id}|${r.id}`) ?? []; const cx = r.x + r.w / 2, cz = r.z + r.d / 2; const out: [number, number][] = [];
@@ -209,7 +224,18 @@ export function mountHouse(el: HTMLElement, THREE: any, house: House3, o: Opts3 
                     const [x, z] = spots[i];
                     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: p.asleep ? 0x8890a8 : 0xffffff, transparent: true, alphaTest: 0.08 }));
                     const hgt = p.asleep ? 0.0 : 1.68; sp.center.set(0.5, 0); sp.position.set(x, Y(f) + 0.02, z); sp.userData.person = p;
-                    const apply = (t: any) => { const a = t.image ? t.image.width / t.image.height : 0.45; sp.material.map = t; sp.material.needsUpdate = true; sp.scale.set(hgt ? hgt * a : 0.01, hgt || 0.01, 1); };
+                    // a sprite cut off above the feet (drawn to the knees, the waist): it stands on a plinth, like a
+                    // figure on a display stand, so nobody floats or stands knee-deep in the floor
+                    const apply = (t: any) => {
+                        const a = t.image ? t.image.width / t.image.height : 0.45; sp.material.map = t; sp.material.needsUpdate = true;
+                        const cut = cutOf(t); if (!hgt) { sp.scale.set(0.01, 0.01, 1); return; }
+                        if (!cut) { sp.scale.set(hgt * a, hgt, 1); return; }
+                        const ph = Math.min(0.62, 1.68 * cut), sh = hgt - ph;   // the plinth takes the part that is not drawn
+                        sp.scale.set(sh * a, sh, 1); sp.position.y = Y(f) + ph;
+                        const col = PLINTH[Math.abs([...p.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7)) % PLINTH.length];
+                        const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, ph, 20), mat(col)); pl.position.set(x, Y(f) + ph / 2, z); ink(pl); G0.peopleG.add(pl);
+                        const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.315, 0.315, 0.035, 20), mat(0xf3e6c8)); rim.position.set(x, Y(f) + ph - 0.017, z); G0.peopleG.add(rim);
+                    };
                     if (p.img) {
                         let e = texCache.get(p.img);
                         if (!e) { e = { t: null, ready: false, wait: [] as ((t: any) => void)[] }; texCache.set(p.img, e); e.t = loader.load(p.img, () => { e.ready = true; e.wait.splice(0).forEach((f: any) => f(e.t)); }); e.t.colorSpace = THREE.SRGBColorSpace; }
