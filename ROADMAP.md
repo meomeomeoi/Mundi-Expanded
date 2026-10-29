@@ -219,6 +219,18 @@ starts your line, it does not answer for you; the timers stay rare.
 Later, for sprites drawn as one picture per emotion: blinking and talking mouths need layered sprites (eyes and mouth
 apart), so they wait for a sprite tool that cuts them.
 
+## 12. Their move (0.2.0.11, done)
+
+The house talks and comes to you. Decided: about 80% everyday talk, the drama (secrets, gossip, confessions) rare and
+pointed; chance comes from code (sources, a list of everyday topics, tones, where the conversation is), the words from
+the model; a card asks first (listen, join, walk past; listen, not now); a hidden social battery (Show the truth tells);
+initiative grows apart (coming to you, knocking, texting, invitations with a reminder); threads from the night reader
+(only what was really said, fading in five days); a minute between rooms; fog on the map as an option.
+
+Next, discussed: **Your own life** (0.2.0.12): things to do alone that come back to the others (hobbies that level up
+and are heard through the walls, small built-in games whose content the model writes, chores with a rota and quarrels
+over them, a weekly calendar of the house: game night, birthdays), all with settings for how much.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for

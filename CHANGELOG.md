@@ -15,6 +15,45 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 0.2.0.11 · 2026-10-29
+
+Their move: until now every conversation began with you. Now the house talks without you, and comes to you; most of
+it is ordinary talk, the drama stays rare. Settings → Their move (in the phone's Settings).
+
+- **Walking in.** Coming into a room with two or more people who are free (awake, no headphones, not at work), a
+  conversation may already be going (about 40% in the evening, less in the morning and the day, a little more with more
+  people): two of them, three, or everyone. A card: **Listen** (their lines go into the story, then join in or leave
+  them to it), **Join in**, or **Walk past**. Listening, they may notice you: pull you in ("what do you think?"), or fall
+  silent if it was about you or a secret. Wrapping up when you came in: you catch the last lines and they split up.
+- **What they talk about** is rolled in code, not left to the model (asked for "a random topic", a model always picks
+  the likeliest one): the house's own news they all know (a fight, a new thing, a quarrel not talked out); threads,
+  what was really left open in earlier scenes (a bet, a promise to show an anime: the night reader now notes them, and
+  they fade after five days); an interest of someone there, from an angle (a funny story about it, an argument about
+  it…); or one of about 180 everyday topics, with the era and the tones it suits ("the worst job you ever had", "which
+  of us would win a fight with a goose"). A group never gets the same topic twice in a row. The tone (lazy chatter,
+  joking, an argument, a heart-to-heart, a lecture, gossip, complaining, flirting where it fits) follows how they get
+  along. One short mechanics call writes the lines, only when a conversation is going; the card waits for it.
+  How dramatic: calm, usual or spicy. The topics list can be edited (untick, add your own, with #tone).
+- **Someone comes up to you** with something on their mind (mostly everyday; first what they most want to tell you, if
+  there is something: unfinished business, a thread with you, news). **Listen** lets them start (one reply by the main
+  model), **Not now** puts it off; sent away again and again, they come less.
+- **Initiative.** Apart from you, the wish to see you grows (closeness, feelings, something to tell you). Then they come
+  looking: into the room you are in, a knock on your door (in the day too), a text when you are out of the house.
+- **Invitations** for the evening by text (movie night, game night, cooking together, where the house has the thing
+  for it): yes makes it a plan with the activity; the phone buzzes an hour before, and again if it starts without you;
+  not showing up is standing them up. Every few days by default.
+- **The social battery** (hidden): talking with you tires them (an introvert in about two hours, an extrovert in seven;
+  closer people and partners last longer, someone upset with you less); sitting in silence or with others, less; alone
+  or asleep, they recharge. Tired: shorter answers. Had enough: they wrap it up and go to their room. Show the truth
+  shows where it stands (and whether they want to see you).
+- **People coming in** while you are in a room: the story says so, with what they are doing ("Leah comes in (making
+  tea)"); someone who came looking for you comes up to you instead.
+- **What they are doing** shows under their names in the scene (from their day: reading, headphones on…); the scene is
+  told that headphones mean they do not hear.
+- **Walking to another room** takes a minute (two to another floor). Can be turned off.
+- **Fog on the map** (off by default): the map shows who is in your room; elsewhere, faded, where you last saw everyone,
+  for three hours; closed doors show someone inside only if you saw them go in. The 3D view does not use it yet.
+
 ## Mundi Expanded 0.2.0.10 · 2026-10-29
 
 Live in the scene: quick decisions, a phone that buzzes, calls and knocks you answer in time, and things to do

@@ -1,5 +1,6 @@
 // [expanded] The runtime side of the relationships between characters (see bonds.ts for the rules): the night's
 // AI call, the daily drift, and what is sent with each scene. Only in Home (a scenario world).
+import { threadText } from './talk.js';   // [expanded] 0.2.0.11
 import { saveGame, type Save } from '../core/store.js';
 import { isScenario, type WorldDef } from '../core/world.js';
 import { chat, personaName, charOf } from '../st/bridge.js';
@@ -89,7 +90,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     const shiftDue = b.life !== 'off' && day - ((b as any).shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
     const smallDue = b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })),
-        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl as any) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: nightLoveText(g, me) });
+        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl as any) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: [...nightLoveText(g, me), ...threadText(me)] });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
@@ -111,6 +112,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
         if (f.by === YOU) for (const p of x.parts) if (g.cast[p]) addBond(g, p, -4);
     }
     for (const i of parseTalked(raw, talks.length)) closeTalk(g, talks[i].id);
+    { const { addThreads } = await import('./talkrun.js'); addThreads(g, raw, findName, day); }   // [expanded] 0.2.0.11: what was left open
     // a bigger change, if the rules find it believable
     // [expanded] 0.2.0.9: feelings first (sparks, confessions), then a bigger change: dating needs two crushes
     { const n = applyLove(g, raw, findName, (a) => [...(around[a] ?? [])], day); if (n.length) console.info('[Mundi Expanded] feelings tonight:', n); }

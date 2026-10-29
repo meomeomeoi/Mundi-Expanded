@@ -21,6 +21,7 @@ import { thumb } from '../st/bridge.js';
 import { pins, placeOf, travelMinutes, playerHomeId, isOuting, outingName } from '../sim/places.js';
 import { planOn, floorsOn, planTarget, unplaced, floorOf } from '../sim/plan.js';
 import { presentAt, whereNow, residents, selfOf } from '../sim/people.js';
+import { fogOn, fogFaces } from './talkui.js'; // [expanded] 0.2.0.11
 import { writeDiary, diaryOn, markDayStart, dayStart } from '../sim/diary.js';
 import { bondsNight, changesNote } from '../sim/bondsnight.js'; // [expanded]
 import { stockBlock, stockNight } from '../sim/stocknight.js'; // [expanded]
@@ -187,11 +188,13 @@ function roomsHtml(g, w) {
     const yours = list.filter(p => p.id === playerHomeId), rooms = list.filter(p => !p.home), beds = list.filter(p => p.home && p.id !== playerHomeId);
     const card = (p) => {
         const pic = p.home ? kindPic(p) : pictureAt(w, g.minutes, p.bg, p.bgs);
-        const here = presentAt(g, w, p.id);
+        const fog = fogOn(g) && p.id !== g.player.loc;
+        const here = fog ? [] : presentAt(g, w, p.id);
         const you = p.id === g.player.loc;
-        const closed = here.length > 0 && shut(g, w, p.id); // [expanded] 0.2.0.8
+        const gh = fog ? fogFaces(g, w, p.id, 5, r => thumb(r.avatar)) : null; // [expanded] 0.2.0.11: the fog
+        const closed = (here.length > 0 || !!gh?.ghost) && shut(g, w, p.id); // [expanded] 0.2.0.8
         return `<button class="mu-room ${you ? 'is-you' : ''} ${closed ? 'is-shut' : ''}" data-act="go" data-loc="${esc(p.id)}" title="${you ? 'Back to this room' : 'Go here'}"><i style="${pic ? `background-image:url('${esc(worldFile(w, pic))}')` : ''}">${you ? `<em>${icon('pin')} You</em>` : ''}</i>
-            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${closed ? shutFaces : here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : ''}</button>`;
+            <b data-notr>${esc(p.id === playerHomeId ? 'Your room' : String(p.name).replace(/'s home$/, "'s room"))}</b>${closed ? shutFaces : here.length ? `<span class="faces">${here.slice(0, 5).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 5 ? `<i>+${here.length - 5}</i>` : ''}</span>` : gh?.html ?? ''}</button>`;
     };
     const head = `<div class="mu-rooms-head"><h3 data-notr>${esc(w.name)}</h3>${can3d(w) ? `<button class="mu-h3-btn" data-act="h3-open" title="The house in 3D (prototype)">${icon('home')}<span>3D</span><span class="mu-alpha">alpha</span></button>` : ''}</div>`;
     // floors set in the creator (no picture of the plan): the rooms floor by floor, one block above the other
@@ -211,7 +214,7 @@ function roomsHtml(g, w) {
 }
 // [expanded] Who is on a floor: the people the floor's rooms show (the button counted only people you know, so it showed
 // fewer faces than the rooms below it).
-const presentFloor = (g, w, floorId) => residents(g).filter(r => r.avatar !== selfOf(g) && floorOf(g, w, whereNow(g, w, r)) === floorId && !shut(g, w, whereNow(g, w, r))); // [expanded] 0.2.0.8: not who is behind a closed door
+const presentFloor = (g, w, floorId) => residents(g).filter(r => r.avatar !== selfOf(g) && (fogOn(g) ? whereNow(g, w, r) === g.player.loc && floorOf(g, w, g.player.loc) === floorId : floorOf(g, w, whereNow(g, w, r)) === floorId && !shut(g, w, whereNow(g, w, r)))); // [expanded] 0.2.0.8: not who is behind a closed door
 // A scenario with a floor plan: the floor you are on, each room where it is (click to go there), the floors at the
 // bottom left, and the rooms not on the plan yet with a red "!".
 export const PV = { floor: '', at: '' };
@@ -223,8 +226,16 @@ function planHtml(g, w) {
     }
     const floor = plan.floors.find(f => f.id === PV.floor) ?? plan.floors.find(f => f.id === floorOf(g, w, g.player.loc)) ?? plan.floors[0];
     const kindPic = (loc) => { const k = loc === playerHomeId ? w.homes.kinds[g.player.home.kind] : w.homes.kinds[w.homes.zones.find(z => z.id === g.cast[loc.slice(5)]?.home.zone)?.kind ?? '']; return k ? pictureAt(w, g.minutes, k.image, k.images) : ''; };
-    const faces = (loc) => { const here = presentAt(g, w, loc); if (here.length && shut(g, w, loc))
-        return shutFaces; return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : ''; };
+    const faces = (loc) => {
+        if (fogOn(g) && loc !== g.player.loc) {
+            const gh = fogFaces(g, w, loc, 4, r => thumb(r.avatar));
+            return gh.ghost && shut(g, w, loc) ? shutFaces : gh.html;
+        } // [expanded] 0.2.0.11: the fog
+        const here = presentAt(g, w, loc);
+        if (here.length && shut(g, w, loc))
+            return shutFaces;
+        return here.length ? `<span class="faces">${here.slice(0, 4).map(r => `<img src="${esc(thumb(r.avatar))}" alt="" ${sleepAttr(g, w, r) /* [expanded] */} title="${esc(r.met ? r.name : 'Someone')}">`).join('')}${here.length > 4 ? `<i>+${here.length - 4}</i>` : ''}</span>` : '';
+    };
     const rooms = plan.rooms.filter(r => r.floor === floor.id).map(r => {
         const t = planTarget(g, w, r);
         const box = `left:${r.x}%;top:${r.y}%;width:${r.w}%;height:${r.h}%`;

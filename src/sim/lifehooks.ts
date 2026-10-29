@@ -10,3 +10,7 @@ export const presentNotes: ((g: Save, w: WorldDef, present: Resident[]) => strin
 export const phoneNotes: ((g: Save, w: WorldDef, present: Resident[]) => string[])[] = [];
 /** [expanded] 0.2.0.8: changes to everyone's day plan (secret meetings): a new plan, never the one passed in changed. */
 export const planMods: ((g: Save, w: WorldDef, day: number, plan: Record<string, import('./profile.js').Slot[]>) => Record<string, import('./profile.js').Slot[]>)[] = [];
+/** [expanded] 0.2.0.11: after the scene follows who is here (you moved, someone came or left). */
+export const afterSync: ((g: Save, w: WorldDef, here: Resident[]) => void)[] = [];
+/** [expanded] 0.2.0.11: minutes from room to room in a Home (the first that answers a number wins; none: 0). */
+export const roomMinutes: ((g: Save, w: WorldDef, from: string, to: string) => number | null)[] = [];

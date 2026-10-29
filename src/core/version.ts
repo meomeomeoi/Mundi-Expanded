@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.10';
+export const VERSION = '0.2.0.11';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,13 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.11', fork: true, title: 'Their move', items: [
+        ['chat', 'Walk into a room and a conversation may already be going: two of them, three, or everyone, mostly about nothing in particular (their interests, the worst job they ever had, who would die first in a horror movie), now and then about the house\'s news. Listen, join in or walk past; they may pull you in, or fall silent when it is about you.'],
+        ['users', 'They come to you: someone comes up with something on their mind (listen, or not now), comes looking for you, knocks on your door, texts when you are out, or invites you to a movie night this evening (the phone reminds you, and they notice if you do not show).'],
+        ['moon', 'A hidden social battery: company tires them (introverts sooner, close people later), and when they have had enough, they go to their room. Show the truth says where it stands.'],
+        ['eye', 'What everyone is doing shows under their name (headphones on, making tea). Walking to another room takes a minute. Fog on the map (Settings): only your room, and where you last saw everyone.'],
+        ['list', 'The night reader keeps what was left open (a bet, a promise to show an anime) for them to pick up later. The everyday topics are a list you can edit (Settings → Their move).'],
+    ] },
     { v: '0.2.0.10', fork: true, title: 'Live in the scene', items: [
         ['sparkles', 'Quick reactions, now and then: when a character teases you, asks something small or does something sudden, two or three ways to react appear by the message box, in your persona\'s voice (a quiet one is never offered a rude one). Tap to put it in the box and add your own words. Never on serious moments; rarely by default (Settings).'],
         ['bolt', 'Some moments cannot wait: a short timer, and if you hesitate, the story says so. Knocks are anonymous until you ask "Who is it?", and give up after a while. Calls ring in the scene: answer (voice only), decline or miss them.'],

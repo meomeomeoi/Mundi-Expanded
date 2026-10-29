@@ -2108,6 +2108,28 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-sprite .mu-bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: rgba(255, 255, 255, .95); border-bottom: 0; }
 @keyframes mu-pop { from { opacity: 0; transform: translateX(-50%) scale(.6); } }
 @keyframes mu-rise { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* [expanded] 0.2.0.11: their move (a conversation going on, someone coming up to you, invitations, the fog) */
+#mundi-root .mu-talkcard, #mundi-root .mu-invite { position: absolute; z-index: 59; top: 74px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 12px; width: min(560px, calc(100% - 24px)); border-radius: 20px; background: rgba(18, 20, 28, .86); backdrop-filter: blur(14px); color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, .45); animation: mu-beat-in .3s ease-out; flex-wrap: wrap; }
+#mundi-root .mu-invite { top: auto; bottom: 150px; }
+#mundi-root .mu-talk-faces { display: flex; }
+#mundi-root .mu-talk-faces img, #mundi-root .mu-invite > img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(18, 20, 28, .9); }
+#mundi-root .mu-talk-faces img + img { margin-left: -12px; }
+#mundi-root .mu-talk-text { flex: 1; min-width: 160px; font-size: 14px; line-height: 1.35; }
+#mundi-root .mu-talk-text small { display: block; opacity: .65; }
+#mundi-root .mu-invite > span:not(.mu-talk-btns) { flex: 1; min-width: 160px; display: grid; gap: 2px; }
+#mundi-root .mu-invite small { opacity: .7; font-size: 11px; display: flex; align-items: center; gap: 4px; }
+#mundi-root .mu-invite q { font-size: 13px; opacity: .9; font-style: italic; }
+#mundi-root .mu-talk-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+#mundi-root .mu-talk-btns button { padding: 6px 12px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px; }
+#mundi-root .mu-talk-btns button[aria-busy] { opacity: .55; cursor: progress; }
+#mundi-root .mu-sprite figcaption .mu-doing { display: block; max-width: 160px; margin: 2px auto 0; font-size: 10.5px; font-weight: 400; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#mundi-root .mu-sprite.is-speaking figcaption .mu-doing { display: none; }
+#mundi-root .faces.is-ghost img { opacity: .45; filter: grayscale(1); border-style: dashed; }
+#mundi-root .mu-tk-topics { display: grid; gap: 4px; max-height: 340px; overflow: auto; padding: 6px; border-radius: 10px; background: rgba(0, 0, 0, .12); }
+#mundi-root .mu-tk-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.3; }
+#mundi-root .mu-tk-row.is-mine { justify-content: space-between; padding-left: 4px; border-left: 2px solid var(--mu-accent, #7fd3ff); }
+#mundi-root .mu-tk-add { display: flex; gap: 6px; } #mundi-root .mu-tk-add input { flex: 1; }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }

@@ -33,7 +33,7 @@ export function knockHtml() {
     }
     const left = Math.max(0, KN.ends - Date.now());
     return `<div class="mu-dlg-veil"></div><div class="mu-panel mu-dlg mu-glassdlg mu-door" role="dialog"><div class="mu-door-faces">${KN.asked ? `<img src="${esc(thumb(r.avatar))}" alt="">` : `<span class="mu-door-who">?</span>`}</div>
-        <h3>${icon('home')} A knock at your door</h3>${KN.asked ? `<p>"It's me, <b data-notr>${esc(r.name)}</b>." <span class="mu-muted">(${esc(k.reason.replace(/\{\{user\}\}/g, 'you'))})</span></p>` : '<p>Someone knocks, quietly. It is late.</p>'}
+        <h3>${icon('home')} A knock at your door</h3>${KN.asked ? `<p>"It's me, <b data-notr>${esc(r.name)}</b>." <span class="mu-muted">(${esc(k.reason.replace(/\{\{user\}\}/g, 'you'))})</span></p>` : k.day ? '<p>Someone knocks at your door.</p>' : '<p>Someone knocks, quietly. It is late.</p>'}
         <div class="mu-row mu-dlg-btns">${KN.asked ? '' : `<button data-act="knock-who">${icon('help')}<span>Who is it?</span></button>`}<button data-act="knock-no">${KN.asked ? 'Not now' : 'Stay quiet'}</button><button data-act="knock-door">${icon('chat')}<span>Talk at the door</span></button><button class="mu-primary" data-act="knock-in">${icon('home')}<span>Let them in</span></button></div>
         <i class="mu-beat-bar mu-knock-bar" data-morph-skip style="--t:${left}ms;--p:${(left / KNOCK_MS).toFixed(3)}"></i></div>`;
 }
@@ -68,7 +68,7 @@ function open(door) {
         c.until = Math.max(c.until, until);
     else
         s.with.push({ avatar: k.avatar, until });
-    lx.visit = { avatar: k.avatar, reason: k.reason, until, door };
+    lx.visit = { avatar: k.avatar, reason: k.reason, until, door, ...(k.day ? { day: true } : {}) };
     lx.knock = null;
     KN.key = '';
     clearTimeout(KN.timer);

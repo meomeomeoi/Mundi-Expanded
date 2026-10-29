@@ -131,7 +131,7 @@ export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {
     const lx = P.lifexOf(G(g));
     if (lx.atDoor && lx.atDoor.until > now && present.some(r => r.avatar === lx.atDoor!.avatar)) out.push(`${g.cast[lx.atDoor.avatar]?.name} came to the door of their room to talk with {{user}} in the hallway, without inviting {{user}} in.`);
     if (lx.caught && lx.caught.until > now && present.some(r => r.avatar === lx.caught!.avatar)) { const n = g.cast[lx.caught.avatar]?.name; out.push(`${n} has just come back to their own room and found {{user}} inside, uninvited.${lx.caught.text ? ` How ${n} takes it: ${lx.caught.text}` : ''}`); }
-    if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit!.avatar)) { const n = g.cast[lx.visit.avatar]?.name; out.push(`Late at night ${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`); }
+    if (lx.visit && lx.visit.until > now && present.some(r => r.avatar === lx.visit!.avatar)) { const n = g.cast[lx.visit.avatar]?.name; out.push(`${(lx.visit as any).day ? '' : 'Late at night '}${n} came to {{user}}'s door: ${n} ${lx.visit.reason}.${lx.visit.door ? ` They talk in the doorway (${n} has not been invited in).` : ` {{user}} let ${n} into their room.`}`); }
     for (const r of present) { const t = lx.woke?.[r.avatar]; if (t && t > now && t - now > 60) out.push(`{{user}} has just woken ${r.name} up: ${r.name} was asleep and is still groggy.`); }
     for (const f of presentNotes) out.push(...f(g, w, present));
     return out;

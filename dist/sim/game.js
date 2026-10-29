@@ -458,6 +458,17 @@ export function syncScene() {
                 return l; const h = hasOutfit(a, code); return h === null ? null : h ? [...(l ?? []), code] : (l ?? []); });
         }
         followBackground(g, w);
+        {
+            const { afterSync } = await import('./lifehooks.js');
+            for (const f of afterSync) {
+                try {
+                    f(g, w, here);
+                }
+                catch (e) {
+                    console.warn('[Mundi Expanded] after sync', e);
+                }
+            }
+        } // [expanded] 0.2.0.11
         refreshPrompt();
         saveGame();
     }).catch(e => console.warn('[Mundi] scene sync', e));

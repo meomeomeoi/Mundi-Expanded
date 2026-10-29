@@ -1,6 +1,7 @@
 // [expanded] The Relationships app (Home): the house as a graph (the player in the middle, the characters around,
 // their relationships as lines), and what is known about a pair or a person. By default it only shows; editing is
 // unlocked in the phone's Settings (per save), where the life-without-you setting lives too. Rules in sim/bonds.ts.
+import { talkSettingsHtml, truthRow } from './talkui.js'; // [expanded] 0.2.0.11
 import { houseRulesHtml } from './profileui.js';
 import { eraSettingsHtml } from './phoneskin.js';
 import { chatSettingsHtml } from './chatui.js';
@@ -211,7 +212,7 @@ function pairPanel(g, a, b) {
     if (a === YOU || b === YOU) { // the player and a character: closeness is upstream's, shown as it is
         const c = a === YOU ? b : a;
         return `<section class="mu-bd-panel">${title(`${esc(nm(g, YOU))} (you) & ${esc(nm(g, c))}`)}
-            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}${partnerRow(g, c)}
+            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}${partnerRow(g, c)}${seesAll(g) ? truthRow(g, c) : '' /* 0.2.0.11 */}
             <small class="mu-muted">${esc(youLine(g, c))}: it grows with what you do together (see People).</small>
             ${facts(g, factsOfPair(G(g), YOU, c), false, 'Nothing written yet.')}
             ${addForm(g, [YOU, c])}</section>`;
@@ -301,7 +302,7 @@ export function bondsSettingsHtml() {
         <small class="mu-muted">Who knows something tells the ones they spent the day with, by how juicy it is, how well they keep secrets, how loyal they are to the people it is about and how much they trust the listener. Only the juiciest few go around at once; a promise to keep it nearly stops it. You hear it from the ones close to you.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-money" ${g.house?.on ? 'checked' : ''}><span>Money in this house</span></label>
         <small class="mu-muted">${g.house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small>
-        ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}${chatSettingsHtml(g)}`;
+        ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}${chatSettingsHtml(g)}${talkSettingsHtml(g) /* 0.2.0.11 */}`;
 }
 /* ---------- actions ---------- */
 const done = () => { saveGame(); refreshPrompt(); notify(); };

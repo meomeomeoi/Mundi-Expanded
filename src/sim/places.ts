@@ -1,4 +1,5 @@
 // Places: the world's public places plus homes (the player's and each resident's). Distances and travel time.
+import { roomMinutes } from './lifehooks.js';   // [expanded]
 import { travelFactor } from './life.js';
 import { cfg, type Save } from '../core/store.js';
 import { isScenario, type WorldDef, type Place } from '../core/world.js';
@@ -81,7 +82,7 @@ export function realmOf(w: WorldDef, mapId?: string): string {
 }
 export function travelMinutes(g: Save, w: WorldDef, from: string, to: string): number {
     if (from === to) return 0;
-    if (isScenario(w)) return 0;   // Home: from one room to another takes no time
+    if (isScenario(w)) { for (const f of roomMinutes) { const m = f(g, w, from, to); if (m !== null) return m; } return 0; }   // Home: from one room to another takes no time ([expanded] 0.2.0.11: a minute, if set)
     const a = placeOf(g, w, from), b = placeOf(g, w, to);
     const isRegion = (mapId?: string) => !!mapId && w.maps.some(m => m.parent === mapId) && !w.maps.find(m => m.id === mapId)?.town;
     const local = !!a && !!b && a.map === b.map && !isRegion(a.map);

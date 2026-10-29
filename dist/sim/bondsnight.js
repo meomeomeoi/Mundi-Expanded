@@ -1,5 +1,6 @@
 // [expanded] The runtime side of the relationships between characters (see bonds.ts for the rules): the night's
 // AI call, the daily drift, and what is sent with each scene. Only in Home (a scenario world).
+import { threadText } from './talk.js'; // [expanded] 0.2.0.11
 import { saveGame } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { chat, personaName, charOf } from '../st/bridge.js';
@@ -137,7 +138,7 @@ export async function bondsNight(g, w, day, range) {
     const shiftDue = b.life !== 'off' && day - (b.shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
     const smallDue = b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
     const prompt = nightPrompt(gl, { day, user: me, premise: String(g.cfg?.start?.text || w.scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })),
-        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: nightLoveText(g, me) });
+        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: [...nightLoveText(g, me), ...threadText(me)] });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM); // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw))
@@ -168,6 +169,10 @@ export async function bondsNight(g, w, day, range) {
     }
     for (const i of parseTalked(raw, talks.length))
         closeTalk(g, talks[i].id);
+    {
+        const { addThreads } = await import('./talkrun.js');
+        addThreads(g, raw, findName, day);
+    } // [expanded] 0.2.0.11: what was left open
     // a bigger change, if the rules find it believable
     // [expanded] 0.2.0.9: feelings first (sparks, confessions), then a bigger change: dating needs two crushes
     {

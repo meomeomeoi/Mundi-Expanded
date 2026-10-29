@@ -3,4 +3,5 @@ import { callHtml } from './callui.js';
 import { lifeSetupHtml } from './profileui.js';
 import { doorHtml } from './doors.js';
 import { knockHtml } from './knockui.js';
-export const expandedOverlays = () => `${lifeSetupHtml()}${doorHtml()}${knockHtml()}${callHtml() /* 0.2.0.10 */}`;
+import { talkCardHtml, inviteHtml } from './talkui.js';
+export const expandedOverlays = () => `${lifeSetupHtml()}${doorHtml()}${knockHtml()}${callHtml() /* 0.2.0.10 */}${talkCardHtml()}${inviteHtml() /* 0.2.0.11 */}`;
