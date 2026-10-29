@@ -23,6 +23,9 @@ An early, extra view of the house; the game itself does not depend on it. Marked
   about (Cooking: cooking; Music: the guitar; Books: writing and studying; Technology: programming; Sports: fitness;
   Art: writing), +40% at most for two on one skill. Shown in the tooltips and in Me (Skills). Saves keep the levels
   they already have.
+- **Steadier sprites**: a new face shows once its picture has loaded (no sideways jump), the one speaking steps up a
+  few pixels instead of growing (no blur), and the breath is off by default (Settings → Interface → Scene →
+  Characters breathe).
 
 ## Mundi Expanded 12.1 (0.2.1-12.1) · 2026-10-29
 

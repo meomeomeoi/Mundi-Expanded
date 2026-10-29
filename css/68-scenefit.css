@@ -134,7 +134,7 @@
 
 /* [expanded] 0.2.1-12: the living sprites, steadier. The breath is one smooth layer (no resampling each frame: that made
    it jerky, and sharp and soft by turns); the speaker steps up a few whole pixels instead of growing (scaling a picture
-   blurs it and pushed it sideways); the others ease back in the light, slowly. Settings → Layout turns the breath off. */
+   blurs it and pushed it sideways); the others ease back in the light, slowly. Settings → Interface → Scene turns the breath on (off by default). */
 #mundi-root .mu-sprites .mu-sprite > img { transform-origin: 50% 100%; will-change: scale; backface-visibility: hidden; animation: mu-breathe 5.2s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -1.7s); }
 @keyframes mu-breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.002 1.006; } }   /* scale, not transform: transform holds the width setting */
 #mundi-root[data-breathe="off"] .mu-sprites .mu-sprite > img { animation: none; will-change: auto; }
