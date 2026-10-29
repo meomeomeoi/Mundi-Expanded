@@ -51,6 +51,7 @@ import { standingLine } from './standing.js';
 import { habitLine } from './habits.js';
 import { petLine } from './pets.js';
 import { mentorLine } from './mentors.js';
+import { knowsBlock } from './witness.js';   // [expanded] 0.2.0.8
 import { bondsPromptLines } from './bondsnight.js';   // [expanded]
 import { stockPromptLines } from './stocknight.js';   // [expanded]
 import { moneyPromptLines } from './moneynight.js';   // [expanded]
@@ -78,6 +79,7 @@ export const BLOCKS: Block[] = [
     { id: 'romance', name: 'Friendship and romance', desc: 'Where you stand with each person here.', cut: 7 },
     { id: 'family', name: 'Your children', desc: 'Your children\'s age and how to treat them. Always sent when they are here.' },
     { id: 'ties', name: 'Family and ties', desc: 'Who is whose sister, parent, roommate…', cut: 6 },
+    { id: 'knows', name: 'Who knows what', desc: 'In a Home: how private this moment is, earlier conversations the people here were not at, what the house knows and the secrets (Mundi Expanded).', cut: 6 },   // [expanded] 0.2.0.8
     { id: 'bonds', name: 'Between them', desc: 'How the people here get along with each other, and what is known about it (Mundi Expanded).', cut: 7 },   // [expanded]
     { id: 'money', name: 'Money', desc: 'Your wallet, the house fund, debts between the people here (Mundi Expanded; only with money on).', cut: 2 },   // [expanded]
     { id: 'life', name: 'What they are doing', desc: 'In a Home: what the people here are doing (from their profiles), who is asleep, a plan of their own, at the door, just woken up (Mundi Expanded).', cut: 8 },   // [expanded]
@@ -159,6 +161,7 @@ export function sceneBlocks(): Built[] {
         ties: [...factionLines(g, w, present), tiesLine(g, present), (() => { const n = new Set(neighbors(g).map(r => r.avatar)); const near = present.filter(r => n.has(r.avatar)).map(r => r.name); return near.length && systemOn(w, 'neighbors') ? `Neighbors of {{user}} (they live in the same area): ${near.join(', ')}.` : ''; })()],
         romance: [romanceLine(g, met)],
         bonds: bondsPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]
+        knows: knowsBlock(g, w, present.map(r => r.avatar)),   // [expanded] 0.2.0.8
         life: lifeLines(g, w, present),   // [expanded]
         house: houseLines(g, w, present), ooc: oocLines(g, w, present), phone: phoneLines(g, w, present), room: roomPromptLines(g, w),   // [expanded]
         stock: stockPromptLines(g, w, present.map(r => r.avatar)),   // [expanded]

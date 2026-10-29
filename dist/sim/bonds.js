@@ -41,6 +41,9 @@ export const pairsIn = (who) => {
     return out;
 };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+import { knowOf, knows, unaware, tieK, howText, NEWSY } from './knows.js';
+/** [expanded] 0.2.0.8: a fact as something known (standing facts are public unless set otherwise; episodes witnessed). */
+export const factK = (f) => ({ parts: f.who, pub: f.pub ?? (f.kind === 'standing' ? 'public' : 'witnessed'), know: f.know, day: f.day });
 export function bondsOf(g) {
     const b = (g.bonds ??= { pairs: {}, facts: [], life: 'calm', seq: 0 });
     b.pairs ??= {};
@@ -133,13 +136,16 @@ const newId = (b) => `b${(++b.seq).toString(36)}`;
 const cleanWho = (g, who) => [...new Set(who)].filter(a => !!g.cast[a]);
 // facts may also be about the player (written by the player; the night never writes them)
 const cleanWhoYou = (g, who) => [...new Set(who)].filter(a => a === YOU || !!g.cast[a]);
-export function addFact(g, who, text, kind = 'standing', src = 'user', delta) {
+export function addFact(g, who, text, kind = 'standing', src = 'user', delta, k) {
     const people = cleanWhoYou(g, who);
     const t = text.trim();
     if (people.length < 2 || people.length > 3 || !t)
         return null;
     const b = bondsOf(g);
-    const f = { id: newId(b), who: people, text: t, kind, day: g.day, src, ...(delta ? { delta } : {}) };
+    const f = { id: newId(b), who: people, text: t, kind, day: g.day, src, ...(delta ? { delta } : {}), ...(k?.pub ? { pub: k.pub } : {}) };
+    for (const a of k?.seen ?? [])
+        if (!people.includes(a) && (a === YOU || g.cast[a]))
+            (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: g.day };
     b.facts.push(f);
     // only episodes are trimmed (oldest first); standing facts are the player's and are never dropped
     const eps = b.facts.filter(x => x.kind === 'episode');
@@ -161,7 +167,7 @@ export const factsOfPair = (g, a, b) => bondsOf(g).facts.filter(f => f.who.inclu
 export const factsOfPerson = (g, a) => bondsOf(g).facts.filter(f => f.who.includes(a));
 /* ---------- changes ---------- */
 // Applies one moment: every pair among `who` moves by `steps` (-3…3) and the moment becomes an episode.
-export function applyChange(g, who, steps, text, src) {
+export function applyChange(g, who, steps, text, src, k) {
     const people = cleanWho(g, who);
     const s = clamp(Math.round(steps), -3, 3);
     if (people.length < 2 || people.length > 3 || !text.trim())
@@ -174,8 +180,8 @@ export function applyChange(g, who, steps, text, src) {
         }
         p.changed = g.day;
     }
-    addFact(g, people, text, 'episode', src, s || undefined);
-    return { who: people, names: people.map(a => g.cast[a].name), delta: s, text: text.trim(), src };
+    const f = addFact(g, people, text, 'episode', src, s || undefined, k ?? (src === 'scene' ? { seen: [YOU] } : undefined)); // a scene: you were there
+    return { who: people, names: people.map(a => g.cast[a].name), delta: s, text: text.trim(), src, you: !!f && knows(factK(f), YOU) };
 }
 // Once a day: pairs with nothing new for a week drift one point back toward where they started. Safe to call more
 // than once a day (it only runs once per day).
@@ -198,6 +204,10 @@ const PROMPT_CHARS = 2800; // about 800 tokens
 const fmtFact = (f) => (f.kind === 'standing' ? f.text : `(day ${f.day}) ${f.text}`);
 // The pairs of the people here (and what is known about them), then what the people here are known to feel about
 // housemates who are not here; within a size budget, the closest things first.
+// [expanded] 0.2.0.8: who knows what. A fact not everyone here knows says so ("Kathie does not know"); what someone
+// here knows about people who are not here (a fight they saw, a secret they were told) is told as theirs; the last
+// thing between someone here and someone who is not, for a few days.
+const FRESH_DAYS = 3, KNOWN_DAYS = 10;
 export function bondsLines(g, present, budget = PROMPT_CHARS) {
     syncTies(g);
     const here = present.filter(a => g.cast[a]);
@@ -212,7 +222,20 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
         full = true;
         return false;
     } lines.push(l); size += l.length; return true; };
-    const name = (a) => g.cast[a].name;
+    const name = (a) => (a === YOU ? '{{user}}' : g.cast[a]?.name ?? a);
+    const list = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+    // who here (besides the ones in it) does not know it
+    const tag = (f) => {
+        const by = here.filter(a => !f.who.includes(a));
+        if (!by.length)
+            return '';
+        const un = unaware(factK(f), by);
+        if (!un.length)
+            return '';
+        const secret = factK(f).pub === 'private';
+        return ` (${secret ? 'a secret: ' : ''}${un.length === by.length && by.length > 1 ? 'the others here do not know' : `${list(un.map(name))} ${un.length > 1 ? 'do' : 'does'} not know`})`;
+    };
+    const fmt = (f) => `${fmtFact(f)}${tag(f)}`;
     // 1) both here: how they get along, what their relationship is, what happened lately
     for (const [a, b] of pairsIn(here)) {
         const p = pairOf(g, a, b);
@@ -221,7 +244,7 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
         const recent = fs.filter(f => f.kind === 'episode').slice(-2);
         if (p.v === 0 && !standing.length && !recent.length)
             continue;
-        const parts = [...standing, ...recent].map(fmtFact);
+        const parts = [...standing, ...recent].map(fmt);
         if (!push(`${name(a)} & ${name(b)}: ${wordOf(p.v)}.${parts.length ? ` ${parts.join(' ')}` : ''}`))
             break;
         [...standing, ...recent].forEach(f => used.add(f.id));
@@ -234,24 +257,81 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
         if (!fs.length)
             continue;
         const shown = [...fs.filter(f => f.kind === 'standing'), ...fs.filter(f => f.kind === 'episode').slice(-2)];
-        if (!push(`{{user}} & ${name(a)}: ${shown.map(fmtFact).join(' ')}`))
+        if (!push(`{{user}} & ${name(a)}: ${shown.map(fmt).join(' ')}`))
             break;
         shown.forEach(f => used.add(f.id));
     }
-    // 3) one here, one not: only what their relationship is (standing facts), so they can talk about each other
+    // 3) one here, one not: what their relationship is (standing facts), and the last thing that happened lately
     for (const a of here)
         for (const b of others) {
             if (full)
                 break;
-            const standing = factsOfPair(g, a, b).filter(f => f.kind === 'standing' && !used.has(f.id));
-            if (!standing.length)
+            const fs = factsOfPair(g, a, b).filter(f => !used.has(f.id));
+            const standing = fs.filter(f => f.kind === 'standing');
+            const last = fs.filter(f => f.kind === 'episode' && g.day - f.day <= FRESH_DAYS).slice(-1);
+            if (!standing.length && !last.length)
                 continue;
-            if (!push(`${name(a)} about ${name(b)} (not here): ${wordOf(valueOf(g, a, b))}. ${standing.map(fmtFact).join(' ')}`))
+            if (!push(`${name(a)} about ${name(b)} (not here): ${wordOf(valueOf(g, a, b))}. ${[...standing, ...last].map(fmt).join(' ')}`))
                 break;
-            standing.forEach(f => used.add(f.id));
+            [...standing, ...last].forEach(f => used.add(f.id));
         }
+    // 4) [expanded] what someone here knows about others (not about themselves): seen, told or heard, lately
+    const known = [];
+    for (const f of bondsOf(g).facts) {
+        if (used.has(f.id) || f.kind !== 'episode' || g.day - f.day > KNOWN_DAYS || f.who.every(x => here.includes(x)))
+            continue;
+        const k = factK(f);
+        if (k.pub === 'public')
+            continue;
+        const by = here.filter(a => !f.who.includes(a) && knowOf(k, a));
+        if (!by.length)
+            continue;
+        const how = by.map(a => { const x = knowOf(k, a); return x.lvl === 'suspects' ? `${name(a)} only suspects it` : `${name(a)} knows (${howText(x, name)}${x.ver ? `; the version they heard: ${x.ver}` : ''})`; });
+        known.push(`${f.who.map(name).join(' & ')}: ${fmtFact(f)} — ${how.join('; ')}.`);
+        used.add(f.id);
+    }
+    for (const l of known.slice(-4))
+        if (!push(l))
+            break;
     return lines.length ? [`How the people here get along with each other:`, ...lines] : [];
 }
+// [expanded] 0.2.0.8: statuses (ties) the AI must know beyond upstream's line, which only has the ties of the people
+// here: what the house knows about people who are not here (couples, family, exes…), and secrets: who here does not
+// know (they hide it in front of them), or who here knows a secret about people who are not here.
+export function tieKnowLines(g, present) {
+    const here = present.filter(a => g.cast[a]);
+    const name = (a) => (a === YOU ? '{{user}}' : g.cast[a]?.name ?? a);
+    const list = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+    const word = (t) => `${name(t.a)} is ${TIE_WORD[t.type] ?? `${t.type} of`} ${name(t.b)}`;
+    const ok = (a) => a === YOU || !!g.cast[a];
+    const house = [], out = [];
+    for (const t of g.living?.ties ?? []) {
+        if (!ok(t.a) || !ok(t.b) || t.a === t.b)
+            continue;
+        const k = tieK(t);
+        const inScene = [t.a, t.b].filter(a => a === YOU || here.includes(a));
+        if (!t.secret) {
+            if (!inScene.length && NEWSY.has(t.type))
+                house.push(word(t));
+            continue;
+        }
+        const un = here.filter(a => !k.parts.includes(a) && !knows(k, a));
+        const sus = un.filter(a => knowOf(k, a)?.lvl === 'suspects');
+        const knowers = here.filter(a => !k.parts.includes(a) && knows(k, a));
+        if (inScene.length) {
+            out.push(`A secret: ${word(t)}.${un.length ? ` ${list(un.map(name))} ${un.length > 1 ? 'do' : 'does'} not know: ${inScene.filter(a => a !== YOU).length ? 'they hide it in front of them' : 'it is not shown'}.` : ' Everyone here knows.'}${sus.length ? ` ${list(sus.map(name))} only suspect${sus.length > 1 ? '' : 's'} it (hints, never stated).` : ''}`);
+        }
+        else
+            for (const a of knowers) {
+                out.push(`${name(a)} knows a secret (${howText(knowOf(k, a), name)}): ${word(t)}. They keep it to themselves unless they decide otherwise.`);
+            }
+        if (!inScene.length)
+            for (const a of sus)
+                out.push(`${name(a)} suspects that ${word(t).replace(/ is /, ' might be ')} (a hunch: hints, never stated).`);
+    }
+    return [...(house.length ? [`Known to everyone in the house: ${house.slice(0, 10).join('; ')}.`] : []), ...out.slice(0, 6)];
+}
+const TIE_WORD = { parent: 'a parent of', child: 'a child of', sibling: 'a sibling of', spouse: 'married to', partner: 'the partner of', dating: 'dating', cousin: 'a cousin of', roommate: 'a roommate of', friend: 'a friend of', bestfriend: 'the best friend of', ally: 'an ally of', colleague: 'a colleague of', rival: 'a rival of', enemy: 'an enemy of', ex: 'the ex of', mentor: 'the mentor of', apprentice: 'the apprentice of' };
 /* ---------- the night: one AI call ---------- */
 // The "# Personality { … }" part of a card written with headed sections; otherwise the start of the description.
 export function personalityOf(description, personality = '', max = 700) {
@@ -301,6 +381,8 @@ export function nightPrompt(g, n) {
         'One moment per line, exactly like this (the sentence says what happened, short, in the past tense):',
         'Name & Name | +1 | what happened',
         'Name & Name & Name | -1 | what happened (three people)',
+        'Name & Name | +1 | what happened | who else saw it',
+        `The last part is optional. For a moment in today's scenes: the names of the others who saw or heard it (the [In …] notes say who was in the room), or "nobody else" when the ones in it kept it between themselves (a whisper, a closed door, "don't tell anyone"); left out, everyone in the room saw it (${n.user} too). For a moment without ${n.user}: "secret" when they would hide it from the house, or the names of housemates who saw it; left out, only the ones in it know.`,
         'Write each sentence in the language the conversation is written in (English if there was none).',
         '',
         'Reply with only this:',
@@ -341,6 +423,22 @@ export function parseNight(raw, people, life) {
         const m = l.match(/^(.+?)\s*\|\s*([+-]?\s*\d)\s*\|\s*(.+)$/);
         if (!m)
             continue;
+        // [expanded] 0.2.0.8: "| who else saw it" at the end
+        let seen;
+        {
+            const cut = m[3].lastIndexOf('|');
+            if (cut > 0) {
+                const tail = m[3].slice(cut + 1).trim();
+                m[3] = m[3].slice(0, cut).trim();
+                if (/^(nobody( else)?|no one( else)?|none|secret|private|никто)/i.test(tail))
+                    seen = 'none';
+                else {
+                    const ns = tail.split(/\s*(?:&|\+|,|;)\s*|\s+(?:and|и)\s+/i).map(find).filter(Boolean);
+                    if (ns.length)
+                        seen = ns;
+                }
+            }
+        }
         const names = m[1].split(/\s*(?:&|\+|,)\s*|\s+(?:and|и)\s+/i).filter(Boolean); // (\b does not see Cyrillic letters)
         const who = names.map(find);
         if (who.some(x => !x) || new Set(who).size !== who.length || who.length < 2 || who.length > 3)
@@ -349,7 +447,7 @@ export function parseNight(raw, people, life) {
         if (!Number.isFinite(delta))
             continue;
         delta = part === 'scene' ? clamp(delta, -3, 3) : life === 'calm' ? clamp(delta, -1, 1) : clamp(delta, -3, 3);
-        out.push({ who: who, delta, text: m[3].trim().replace(/^["“]|["”]$/g, ''), src: part });
+        out.push({ who: who, delta, text: m[3].trim().replace(/^["“]|["”]$/g, ''), src: part, ...(seen ? { seen: Array.isArray(seen) ? seen.filter(a => !who.includes(a)) : seen } : {}) });
     }
     // off-screen limits: off → none; calm → one, two people; lively → three, at most one of ±3
     const scene = out.filter(x => x.src === 'scene');

@@ -93,6 +93,8 @@ function follow() {
     on('GROUP_MEMBER_DRAFTED', () => { TURN.member++; });
     on('GROUP_WRAPPER_FINISHED', () => { TURN.member = 0; void hideFillers(); });
     on('MESSAGE_SENT', (id: number) => { if (fillerAt(id)) return; const m: any = (globalThis as any).SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user) void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
+    // [expanded] 0.2.0.8: each line keeps who was in the room (who knows what was said)
+    for (const ev of ['MESSAGE_SENT', 'MESSAGE_RECEIVED']) on(ev, (id: number) => { void import('./sim/witness.js').then(m => m.stamp(id)).catch(() => { /* not a Home */ }); });
     // [expanded] the regulator reads the exchange that just ended (when a mechanics model is set)
     on('MESSAGE_SENT', (id: number) => { if (fillerAt(id)) return; void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });
     // Home: time passes with every message you send (Settings › This save can turn it off)

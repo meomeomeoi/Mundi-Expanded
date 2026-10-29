@@ -61,7 +61,7 @@ function settle(g: Save, w: WorldDef, p: F.Proposal): string {
     }
     p.state = 'rejected';
     const no = Object.keys(p.answers).filter(a => p.answers[a] === 'no');
-    if (p.owner !== 'house' && p.by !== 'player' && no.length) applyChange(g as any, [p.by, ...no].slice(0, 3), -1, `${nameOf(g, p.by)} wanted a ${p.name.toLowerCase()} for their room from the house fund; ${names(g, no.slice(0, 2))} said no.`, 'offscreen');
+    if (p.owner !== 'house' && p.by !== 'player' && no.length) applyChange(g as any, [p.by, ...no].slice(0, 3), -1, `${nameOf(g, p.by)} wanted a ${p.name.toLowerCase()} for their room from the house fund; ${names(g, no.slice(0, 2))} said no.`, 'offscreen', { pub: 'public' });   // in the house chat: everyone read it
     return `The house said no to the ${what}.`;
 }
 const keep = (g: Save) => { const x = F.furnishOf(G(g)); x.props = (x.props ?? []).filter(p => p.state === 'open' || g.day - p.day < 14).slice(-12); };

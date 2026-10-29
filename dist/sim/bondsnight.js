@@ -7,7 +7,9 @@ import { bgAsk } from './regulator.js';
 import { onDay } from './hooks.js';
 import { dayStart } from './diary.js';
 import { isMinor } from './family.js';
-import { bondsOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
+import { placeOf } from './places.js';
+import { profileOf, ORIENTS, STATUSES } from './profile.js';
+import { bondsOf, YOU, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
 const G = (g) => g;
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 // The daily drift back toward where each pair started (no AI; runs as the day turns, also while you sleep).
@@ -36,7 +38,10 @@ export async function bondsNight(g, w, day, range) {
     // children stay out of it (their relationships are not simulated)
     const people = Object.values(g.cast).filter(r => !isMinor(g, r.avatar)).map(r => {
         const c = charOf(r.avatar);
-        return { avatar: r.avatar, name: r.name, personality: personalityOf(c?.description ?? c?.data?.description ?? '', c?.personality ?? c?.data?.personality ?? '') };
+        // [expanded] 0.2.0.8: orientation, status and how they keep secrets (their profile), before the card
+        const pr = profileOf(g, r.avatar);
+        const traits = [pr?.orient ? ORIENTS.find(o => o[0] === pr.orient)?.[1].toLowerCase() : '', pr?.status ? STATUSES.find(o => o[0] === pr.status)?.[1].toLowerCase() : '', pr?.discreet !== undefined ? (pr.discreet >= 70 ? 'keeps secrets' : pr.discreet <= 30 ? 'a gossip' : '') : ''].filter(Boolean);
+        return { avatar: r.avatar, name: r.name, personality: `${traits.length ? `(${traits.join('; ')}) ` : ''}${personalityOf(c?.description ?? c?.data?.description ?? '', c?.personality ?? c?.data?.personality ?? '')}` };
     });
     if (people.length < 2)
         return [];
@@ -45,7 +50,28 @@ export async function bondsNight(g, w, day, range) {
     const names = new Set(people.map(p => p.name));
     const spoke = [...new Set(msgs.filter((m) => !m.is_user && names.has(String(m.name ?? ''))).map((m) => String(m.name)))]
         .map(n => people.find(p => p.name === n).avatar);
-    let convo = msgs.map((m) => `${m.is_user ? me : m.extra?.mundi_narrator ? 'Narrator' : m.name}: ${clean(m.mes).slice(0, 400)}`).slice(-80).join('\n');
+    // [expanded] 0.2.0.8: who was in the room, before each stretch (the reader says who else saw a moment)
+    let key = '';
+    const lines0 = [];
+    for (const m of msgs) {
+        const x = m.extra;
+        const k = x?.mundi_here ? `${x.mundi_loc}|${[...x.mundi_here].sort().join(',')}` : '';
+        if (k && k !== key) {
+            key = k;
+            const room = placeOf(g, w, x.mundi_loc)?.name ?? (String(x.mundi_loc).startsWith('home:') ? 'a bedroom' : x.mundi_loc);
+            lines0.push(`[In ${String(room).toLowerCase()}: ${[...x.mundi_here.map((a) => g.cast[a]?.name ?? '?'), me].join(', ')}]`);
+        }
+        lines0.push(`${m.is_user ? me : m.extra?.mundi_narrator ? 'Narrator' : m.name}: ${clean(m.mes).slice(0, 400)}`);
+    }
+    let convo = lines0.slice(-90).join('\n');
+    // who was around when each of them spoke today (a moment's witnesses, unless the reader says otherwise)
+    const around = {};
+    for (const m of msgs) {
+        const here = m.extra?.mundi_here ?? [];
+        const sp = here.find(a => g.cast[a]?.name === m.name);
+        if (sp)
+            here.forEach(x => (around[sp] ??= new Set()).add(x));
+    }
     // the day's group chats count too (on their phones): what was written there can change how they get along
     {
         const { chatsOf, nameOf } = await import('./chatrun.js');
@@ -74,7 +100,9 @@ export async function bondsNight(g, w, day, range) {
         // scene moments are only between people who were in today's scenes
         if (p.src === 'scene' && p.who.some(a => !spoke.includes(a)))
             continue;
-        const c = applyChange(gl, p.who, p.delta, p.text, p.src);
+        // [expanded] 0.2.0.8: who else knows it
+        const seen = p.seen === 'none' ? [] : p.seen ?? (p.src === 'scene' ? [...new Set(p.who.flatMap(a => [...(around[a] ?? [])]))].filter(a => p.who.every(x => around[x]?.has(a) || x === a)) : []);
+        const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen });
         if (c)
             changes.push(c);
     }
@@ -83,6 +111,9 @@ export async function bondsNight(g, w, day, range) {
     return changes;
 }
 // A short line for a notice: "Relationships: A & B +1 · C & D −1".
-export const changesNote = (list) => list.length
-    ? `Relationships: ${list.map(c => `${c.names.join(' & ')} ${c.delta > 0 ? `+${c.delta}` : c.delta < 0 ? `−${-c.delta}` : '·'}`).join(' · ')}`
-    : '';
+export const changesNote = (list0, all = false) => {
+    const list = all ? list0 : list0.filter(c => c.you);
+    return list.length
+        ? `Relationships: ${list.map(c => `${c.names.join(' & ')} ${c.delta > 0 ? `+${c.delta}` : c.delta < 0 ? `−${-c.delta}` : '·'}`).join(' · ')}`
+        : '';
+};

@@ -1600,6 +1600,10 @@ body.mundi-open #toast-container { display: none !important; }
 /* [expanded] upstream fix: in an open list the chosen option drew dark text on a dark highlight (unreadable) */
 #mundi-root#mundi-root select option:checked { background: var(--accent); color: #fff; }
 #mundi-root#mundi-root select option:hover { background: color-mix(in srgb, var(--accent) 35%, var(--bg2)); color: var(--fg); }
+/* [expanded] 0.2.0.8: who knows what */
+#mundi-root .mu-bd-tag.is-secret { color: #c792ea; border-color: color-mix(in srgb, #c792ea 45%, transparent); }
+#mundi-root .mu-bd-tag.is-sus { color: #f39c12; border-color: color-mix(in srgb, #f39c12 45%, transparent); }
+#mundi-root .mu-bd-tag.is-unknown { color: var(--muted); border-style: dashed; }
 /* [expanded] The Storage app (Mundi Expanded) */
 #mundi-root .mu-st { gap: 10px; }
 #mundi-root .mu-st-tabs button small { opacity: .7; font-weight: 600; margin-left: 2px; }

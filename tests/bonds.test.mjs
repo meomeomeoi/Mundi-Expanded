@@ -1,6 +1,7 @@
 // [expanded] Tests for the relationships between characters (src/sim/bonds.ts, pure logic). Run: node tests/bonds.test.mjs
 import assert from 'node:assert/strict';
 import * as B from '../dist/sim/bonds.js';
+import * as K from '../dist/sim/knows.js';
 
 let n = 0;
 const test = (name, fn) => { try { fn(); n++; } catch (e) { console.error(`FAIL ${name}\n`, e); process.exit(1); } };
@@ -175,8 +176,8 @@ test('scene prompt: pairs here first, then standing facts about people not here,
     const lines = B.bondsLines(g, ['Mia.png', 'Rin.png']);
     assert.match(lines[0], /get along with each other/);
     assert.match(lines[1], /^Mia & Rin: very close\. Mia always beats Rin.*\(day 1\) Rin slammed/);
-    assert.match(lines[2], /^Mia about Kai \(not here\): neutral\. Mia secretly admires Kai\.$/);
-    assert.ok(!lines.join('\n').includes('An episode about someone not here'), 'episodes of absent pairs stay out');
+    // [expanded] 0.2.0.8: the last thing between someone here and someone not, and who here does not know it
+    assert.match(lines[2], /^Mia about Kai \(not here\): neutral\. Mia secretly admires Kai\. \(day 1\) An episode about someone not here\. \(Rin does not know\)$/);
     assert.deepEqual(B.bondsLines(g, []), []);
     assert.deepEqual(B.bondsLines(game([]), ['Mia.png', 'Rin.png']), [], 'nothing to say: nothing sent');
     const tiny = B.bondsLines(g, ['Mia.png', 'Rin.png'], 60);
@@ -235,6 +236,38 @@ test('a refusal is not an answer', () => {
     assert.ok(B.looksAnswered('<think>hm</think>**SCENE**\nNONE'));
     assert.ok(!B.looksAnswered("I can't help with that request."));
     assert.ok(!B.looksAnswered(''));
+});
+
+test('who knows what: facts, ties, secrets (0.2.0.8)', () => {
+    const g = game([tie('Mia', 'Rin', 'close', 'sibling'), { ...tie('Kai', 'Rin', 'close', 'dating'), secret: true }]);
+    const f = B.addFact(g, ['Kai.png', 'Rin.png'], 'They kissed in the pantry.', 'episode', 'offscreen', 1, { pub: 'private' });
+    assert.equal(B.factK(f).pub, 'private'); assert.ok(!K.knows(B.factK(f), 'Mia.png')); assert.ok(K.knows(B.factK(f), 'Rin.png'));
+    assert.ok(K.knows(B.factK(B.addFact(g, ['Mia.png', 'Rin.png'], 'Sisters.')), 'Kai.png'), 'standing facts: the house knows');
+    // Mia here alone: nothing about the secret couple (she does not know), the sibling tie is upstream's line
+    assert.ok(!B.bondsLines(g, ['Mia.png']).join('\n').includes('pantry'));
+    assert.deepEqual(B.tieKnowLines(g, ['Mia.png']), []);
+    // she finds out (saw it): now she carries it
+    K.learn(B.factK(f), 'Mia.png', { lvl: 'knows', how: 'saw', day: 1 }, f);
+    assert.match(B.bondsLines(g, ['Mia.png']).join('\n'), /Kai & Rin: \(day 1\) They kissed in the pantry\. — Mia knows \(saw it\)/);
+    // the tie: Rin here with Mia, who does not know
+    assert.match(B.tieKnowLines(g, ['Rin.png', 'Mia.png'])[0], /^A secret: Kai is dating Rin\. Mia does not know: they hide it in front of them\./);
+    const t = g.living.ties[1]; K.learn(K.tieK(t), 'Mia.png', { lvl: 'suspects', how: 'saw', day: 2 }, t);
+    assert.match(B.tieKnowLines(g, ['Rin.png', 'Mia.png'])[0], /Mia only suspects it/);
+    assert.equal(K.clue(K.tieK(t), 'Mia.png', 3, t), 'knows');   // a second clue
+    assert.match(B.tieKnowLines(g, ['Mia.png'])[0], /^Mia knows a secret \(saw it\): Kai is dating Rin\./);
+    // not a secret: the house knows, said when neither is here
+    delete t.secret; assert.match(B.tieKnowLines(g, ['Mia.png'])[0], /^Known to everyone in the house: Kai is dating Rin\.$/);
+    // learning: seeing beats hearing, knowing beats suspecting
+    const k = { parts: ['a', 'b'], pub: 'witnessed', day: 1 };
+    assert.ok(K.learn(k, 'c', { lvl: 'knows', how: 'heard', day: 1, hops: 2 })); assert.ok(K.learn(k, 'c', { lvl: 'knows', how: 'saw', day: 2 }));
+    assert.ok(!K.learn(k, 'c', { lvl: 'suspects', how: 'saw', day: 3 })); assert.ok(!K.learn(k, 'a', { lvl: 'knows', how: 'saw', day: 3 }));
+});
+
+test('night: who else saw it (0.2.0.8)', () => {
+    const raw = 'SCENE\nMia & Rin | -2 | They argued about the dishes | Kai, Sora\nMia & Kai | +1 | Mia whispered a secret to Kai | nobody else\nRin & Sora | +1 | They laughed together\nOFF-SCREEN\nKai & Rin | +1 | They kissed in the pantry | secret';
+    const out = B.parseNight(raw, people, 'lively');
+    assert.deepEqual(out[0].seen, ['Kai.png', 'Sora.png']); assert.equal(out[0].text, 'They argued about the dishes');
+    assert.equal(out[1].seen, 'none'); assert.equal(out[2].seen, undefined); assert.equal(out[3].seen, 'none'); assert.equal(out[3].text, 'They kissed in the pantry');
 });
 
 console.log(`bonds: ${n} tests passed`);

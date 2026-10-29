@@ -121,4 +121,13 @@ test('[0.2.0.7] things they like doing go where the thing is; homebodies still s
     assert.equal(P.cleanProfile({ acts: [{ text: 'x', where: 'room', needs: 'watch' }, { text: 'y', where: 'room', needs: 'fly' }] }).acts.map(a => a.needs ?? '').join(','), 'watch,');
 });
 
+test('secrets, noticing, orientation, status (0.2.0.8)', () => {
+    const p = P.cleanProfile({ discreet: 140, nosy: '30', orient: 'bi', status: 'weird', acts: ['reading'] }, []);
+    assert.equal(p.discreet, 100); assert.equal(p.nosy, 30); assert.equal(p.orient, 'bi'); assert.equal(p.status, undefined);
+    assert.equal(P.discreetOf(P.cleanProfile({}, [])), 50);
+    const q = P.guessProfile('A cheerful gossip who cannot keep a secret. Bisexual. Has a boyfriend in another city.', []);
+    assert.equal(q.discreet, 20); assert.equal(q.nosy, 75); assert.equal(q.orient, 'bi'); assert.equal(q.status, 'taken');
+    assert.match(P.profilePrompt('Mia', 'card', []), /"discreet": 0-100/);
+});
+
 console.log(`profile: ${n} tests passed`);

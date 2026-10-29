@@ -106,6 +106,9 @@ function follow() {
     on('MESSAGE_SENT', (id) => { if (fillerAt(id))
         return; const m = globalThis.SillyTavern?.getContext?.().chat?.[id]; if (m?.is_user)
         void import('./ui/relui.js').then(x => x.detectAsk(String(m.mes ?? ''))); });
+    // [expanded] 0.2.0.8: each line keeps who was in the room (who knows what was said)
+    for (const ev of ['MESSAGE_SENT', 'MESSAGE_RECEIVED'])
+        on(ev, (id) => { void import('./sim/witness.js').then(m => m.stamp(id)).catch(() => { }); });
     // [expanded] the regulator reads the exchange that just ended (when a mechanics model is set)
     on('MESSAGE_SENT', (id) => { if (fillerAt(id))
         return; void import('./sim/regulator.js').then(m => m.onUserMessage(id)); });

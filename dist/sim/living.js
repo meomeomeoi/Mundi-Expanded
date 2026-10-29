@@ -255,7 +255,7 @@ const INVERSE = { parent: 'child of', child: 'parent of' };
 // For the AI: the ties of the people in this scene (only those, like the memories).
 export function tiesLine(g, present) {
     const here = new Set(present.map(r => r.avatar));
-    const list = ties(g).filter(t => here.has(t.a) || here.has(t.b));
+    const list = ties(g).filter(t => (here.has(t.a) || here.has(t.b)) && !t.secret); // [expanded] a secret tie: said with who knows it (bonds.ts)
     if (!list.length)
         return '';
     return `Family and ties: ${list.map(t => `${nameOfId(g, t.a)} is ${TIE_TYPES.find(x => x[0] === t.type)?.[1] ?? t.type} ${nameOfId(g, t.b)}${t.tone !== 'neutral' ? ` (${t.tone} relationship)` : ''}`).join('; ')}.`;

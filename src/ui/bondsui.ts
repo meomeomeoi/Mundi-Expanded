@@ -16,8 +16,10 @@ import { enableMoney } from '../sim/moneynight.js';
 import { TIE_TYPES } from '../sim/living.js';
 import {
     bondsOf, syncTies, pairOf, pairKey, pairsIn, setValue, toneOf, wordOf, addFact, editFact, removeFact, pinFact,
-    factsOfPair, factsOfPerson, statusOf, setStatus, LIVES, YOU, type BondFact, type GLike, type Life, type Tone,
+    factsOfPair, factsOfPerson, statusOf, setStatus, LIVES, YOU, factK, type BondFact, type GLike, type Life, type Tone,
 } from '../sim/bonds.js';
+import { knowOf, tieK, howText } from '../sim/knows.js';   // [expanded] 0.2.0.8
+import { partnersOf } from '../sim/romance.js';
 
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
 const BV = { sel: '', edit: '', draft: '', adding: false, addText: '', addWho: [] as string[] };
@@ -27,13 +29,18 @@ const people = (g: Save) => Object.values(g.cast);
 const nm = (g: Save, a: string) => (a === YOU ? personaName() : g.cast[a]?.name ?? a);
 const pic = (a: string) => (a === YOU ? personaThumb() : thumb(a));
 const canEdit = (g: Save) => bondsOf(G(g)).edit === true;
+// [expanded] 0.2.0.8: the app shows what you know (seen, told, suspected); everything with "Show the truth" or editing on
+const seesAll = (g: Save) => bondsOf(G(g)).truth === true || canEdit(g);
+const youKnow = (f: BondFact) => knowOf(factK(f), YOU);
+const visible = (g: Save, list: BondFact[]) => (seesAll(g) ? list : list.filter(f => youKnow(f)));
+const tieShown = (g: Save, a: string, b: string) => { const t = statusOf(G(g), a, b); return !!t && (!t.secret || seesAll(g) || !!knowOf(tieK(t), YOU)); };
 const known = (g: Save, a: string) => a === YOU || !!g.cast[a];
 const statusText = (g: Save, a: string, b: string) => {
-    const t = statusOf(G(g), a, b); if (!t) return '';
+    const t = statusOf(G(g), a, b); if (!t || !tieShown(g, a, b)) return '';
     const label = TIE_TYPES.find(x => x[0] === t.type)?.[1] ?? t.type;
     return `${nm(g, t.a)} is ${label} ${nm(g, t.b)}`;
 };
-const shortStatus = (g: Save, a: string, b: string) => { const t = statusOf(G(g), a, b); return t ? (TIE_TYPES.find(x => x[0] === t.type)?.[1] ?? t.type).replace(/ (of|to)$/, '') : ''; };
+const shortStatus = (g: Save, a: string, b: string) => { const t = statusOf(G(g), a, b); return t && tieShown(g, a, b) ? (TIE_TYPES.find(x => x[0] === t.type)?.[1] ?? t.type).replace(/ (of|to)$/, '') : ''; };
 // the player's closeness is upstream's (friendship 0…100 and romance): its own words and colors
 const youTier = (g: Save, a: string) => friendTier(bondOf(g, a));
 const youLine = (g: Save, a: string) => {
@@ -64,7 +71,7 @@ function graph(g: Save): string {
     // the person you picked, so a full house does not turn into a ball of lines
     const edges = pairsIn(list.map(p => p.avatar)).map(([a, b]) => {
         const p = pairOf(G(g), a, b);
-        const tied = !!statusOf(G(g), a, b); const has = factsOfPair(G(g), a, b).length > 0;
+        const tied = tieShown(g, a, b); const has = visible(g, factsOfPair(G(g), a, b)).length > 0;
         if (p.v === 0 && !tied && !has && !near(a, b) && selE !== pairKey(a, b)) return '';
         const quiet = p.v === 0 && !tied && !has;
         return line(a, b, COLOR[toneOf(p.v)], 1.4 + Math.abs(p.v) / 22, quiet ? 'stroke-dasharray="3 5" opacity="0.5"' : tied ? '' : 'stroke-dasharray="7 4"', '');
@@ -94,8 +101,12 @@ function block(g: Save, f: BondFact, showWho: boolean, edit: boolean): string {
         ${showWho ? `<small data-notr>${who}</small>` : ''}
         <textarea data-input="bd-draft" data-focus="bd-draft" rows="3">${esc(BV.draft)}</textarea>
         <div class="mu-bd-row"><button data-act="bd-save" data-id="${esc(f.id)}">${icon('check')}<span>Save</span></button><button class="mu-ghost" data-act="bd-cancel">Cancel</button></div></div>`;
-    const meta = f.kind === 'standing' ? '<em class="mu-bd-tag">standing</em>'
-        : `<em class="mu-bd-tag is-ep">day ${f.day}${f.src === 'offscreen' ? ' · off-screen' : f.src === 'scene' ? ' · in a scene' : ''}</em>${f.delta ? `<em class="mu-bd-delta ${f.delta > 0 ? 'is-up' : 'is-down'}">${f.delta > 0 ? '+' : '−'}${Math.abs(f.delta)}</em>` : ''}`;
+    const k = youKnow(f);   // [expanded] 0.2.0.8: how you know it
+    const src = !k ? '<em class="mu-bd-tag is-unknown">you do not know this</em>' : k.lvl === 'suspects' ? '<em class="mu-bd-tag is-sus">you suspect it</em>'
+        : k.how === 'told' || k.how === 'heard' ? `<em class="mu-bd-tag">${esc(howText(k, (a) => nm(g, a)).replace('told them', 'told you').replace(/^heard/, 'you heard'))}</em>` : '';
+    const secret = factK(f).pub === 'private' ? '<em class="mu-bd-tag is-secret">secret</em>' : '';
+    const meta = f.kind === 'standing' ? `<em class="mu-bd-tag">standing</em>${secret}${src}`
+        : `<em class="mu-bd-tag is-ep">day ${f.day}${f.src === 'offscreen' ? ' · off-screen' : f.src === 'scene' ? ' · in a scene' : ''}</em>${secret}${src}${f.delta ? `<em class="mu-bd-delta ${f.delta > 0 ? 'is-up' : 'is-down'}">${f.delta > 0 ? '+' : '−'}${Math.abs(f.delta)}</em>` : ''}`;
     return `<div class="mu-bd-fact${f.kind === 'standing' ? ' is-standing' : ''}">
         <div class="mu-bd-meta${edit ? ' has-tools' : ''}">${showWho || f.who.length > 2 ? `<small data-notr>${who}</small>` : ''}${meta}</div>
         <p data-notr>${esc(f.text)}</p>
@@ -108,7 +119,7 @@ function block(g: Save, f: BondFact, showWho: boolean, edit: boolean): string {
 // standing facts first, then the episodes, newest first
 const ordered = (list: BondFact[]) => [...list.filter(f => f.kind === 'standing'), ...list.filter(f => f.kind === 'episode').reverse()];
 const facts = (g: Save, list: BondFact[], showWho: boolean, empty: string) =>
-    `<div class="mu-bd-facts">${ordered(list).map(f => block(g, f, showWho, canEdit(g))).join('') || `<p class="mu-muted">${empty}</p>`}</div>`;
+    `<div class="mu-bd-facts">${ordered(visible(g, list)).map(f => block(g, f, showWho, canEdit(g))).join('') || `<p class="mu-muted">${empty}</p>`}</div>`;
 
 function addForm(g: Save, base: string[]): string {
     if (!canEdit(g)) return '';
@@ -133,6 +144,19 @@ function statusRow(g: Save, a: string, b: string): string {
     return `<label class="mu-field mu-bd-statusedit"><span>Status</span><select data-input="bd-status" data-k="${esc(pairKey(a, b))}" data-a="${esc(a)}" data-b="${esc(b)}">${opt('', 'No status')}${opts.join('')}</select></label>`;
 }
 
+// [expanded] 0.2.0.8: a secret. Your own (a romance or a status with you): yours to keep, any time. Between two
+// characters: when editing (it is theirs). Who else knows it, when you know that.
+function secretRow(g: Save, a: string, b: string): string {
+    const c = a === YOU ? b : b === YOU ? a : '';
+    const t = statusOf(G(g), a, b); const love = !!c && partnersOf(g).includes(c);
+    const mine = !!c && (love || !!t);
+    if (!mine && !(t && canEdit(g))) return t?.secret && tieShown(g, a, b) ? '<small class="mu-muted">A secret.</small>' : '';
+    const on = love ? !!bondsOf(G(g)).hide?.[c] : !!t?.secret;
+    const know = love ? bondsOf(G(g)).hide?.[c]?.know : t?.know;
+    const who = Object.entries(know ?? {}).filter(([x]) => x !== YOU && g.cast[x]).map(([x, k]) => `${nm(g, x)}${k.lvl === 'suspects' ? ' (suspects)' : ''}`);
+    return `<label class="mu-check"><input type="checkbox" data-input="bd-secret" data-a="${esc(a)}" data-b="${esc(b)}" ${on ? 'checked' : ''}><span>${mine ? 'Keep it a secret' : 'A secret between them'}<small>${on ? (who.length && (seesAll(g) || mine) ? `Knows: ${esc(who.join(', '))}.` : 'Nobody else knows (that you know of).') : 'Off: the whole house knows.'}</small></span></label>`;
+}
+
 /* ---------- panels ---------- */
 
 const title = (text: string) => `<div class="mu-bd-title"><b data-notr>${text}</b><button class="mu-ibtn mu-ghost" data-act="bd-sel" data-k="" aria-label="Close">${icon('x')}</button></div>`;
@@ -141,14 +165,14 @@ function pairPanel(g: Save, a: string, b: string): string {
     if (a === YOU || b === YOU) {   // the player and a character: closeness is upstream's, shown as it is
         const c = a === YOU ? b : a;
         return `<section class="mu-bd-panel">${title(`${esc(nm(g, YOU))} (you) & ${esc(nm(g, c))}`)}
-            ${statusRow(g, YOU, c)}
+            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}
             <small class="mu-muted">${esc(youLine(g, c))}: it grows with what you do together (see People).</small>
             ${facts(g, factsOfPair(G(g), YOU, c), false, 'Nothing written yet.')}
             ${addForm(g, [YOU, c])}</section>`;
     }
     const p = pairOf(G(g), a, b);
     return `<section class="mu-bd-panel">${title(`${esc(nm(g, a))} & ${esc(nm(g, b))}`)}
-        ${statusRow(g, a, b)}
+        ${statusRow(g, a, b)}${secretRow(g, a, b)}
         <div class="mu-bd-val"><span><i class="mu-bd-dot" style="background:${COLOR[toneOf(p.v)]}"></i><b data-bd-word>${wordOf(p.v)}</b> <small data-bd-num>${p.v > 0 ? '+' : ''}${p.v}</small></span>
             ${canEdit(g) ? `<input type="range" min="-100" max="100" step="1" value="${p.v}" data-input="bd-val" data-k="${esc(pairKey(a, b))}" style="--c:${COLOR[toneOf(p.v)]}">` : `<span class="mu-bd-meter"><i style="left:${(p.v + 100) / 2}%;background:${COLOR[toneOf(p.v)]}"></i></span>`}</div>
         ${facts(g, factsOfPair(G(g), a, b), false, 'No facts yet. What happens between them is written here at night.')}
@@ -193,6 +217,7 @@ export function bondsSettingsHtml(): string {
     const b = bondsOf(G(g)); const life = LIVES.find(l => l[0] === b.life)!;
     return `<section class="mu-bd-set"><h4>Relationships and the house</h4>
         <label class="mu-check"><input type="checkbox" data-input="bd-unlock" ${b.edit ? 'checked' : ''}><span>Let me edit relationships and the house's things</span></label>
+        <label class="mu-check"><input type="checkbox" data-input="bd-truth" ${b.truth ? 'checked' : ''}><span>Show the truth<small>${b.truth ? 'Relationships shows everything, and marks what you do not know.' : 'Off: Relationships shows what you know: what you saw, were told or suspect. Editing shows everything too.'}</small></span></label>
         <small class="mu-muted">${b.edit ? 'In Relationships you can edit facts, statuses and values; in Storage you can add, count, label, move and remove things.' : 'Off: Relationships and Storage only show; they change by themselves, with the story and night by night.'}</small>
         <b>Life without you</b>
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
@@ -235,6 +260,14 @@ Object.assign(INPUT, {
     'bd-draft': (el) => { BV.draft = el.value; },
     'bd-addtext': (el) => { BV.addText = el.value; },
     'bd-money': (el) => { const g = game(); if (!g) return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
+    'bd-truth': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).truth = !!el.checked; saveGame(); notify(); },
+    'bd-secret': (el) => {
+        const g = game(); if (!g) return; const a = el.dataset.a!, b = el.dataset.b!; const on = !!el.checked;
+        const c = a === YOU ? b : b === YOU ? a : '';
+        if (c && partnersOf(g).includes(c)) { const bs = bondsOf(G(g)); bs.hide ??= {}; if (on) bs.hide[c] ??= { day: g.day }; else delete bs.hide[c]; }
+        else { const t = statusOf(G(g), a, b); if (!t) return; if (on) { t.secret = true; t.day ??= g.day; } else { delete t.secret; delete t.know; } }
+        saveGame(); refreshPrompt(); notify();
+    },
     'bd-unlock': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).edit = !!el.checked; if (!el.checked) closeForms(); saveGame(); notify(); },
     'bd-status': (el) => {
         const g = editing(); if (!g) return;

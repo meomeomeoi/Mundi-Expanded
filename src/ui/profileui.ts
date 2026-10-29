@@ -61,6 +61,11 @@ function profileBody(g: Save, w: WorldDef, r: Resident): string {
             ${p.acts.map((x, i) => `<div class="mu-lp-act"><input type="text" maxlength="60" value="${esc(x.text)}" data-input="lp-act" data-who="${a}" data-i="${i}" data-focus="lpact${i}"><select data-input="lp-actwhere" data-who="${a}" data-i="${i}">${whereOpts(x.where)}</select><button class="mu-ibtn mu-ghost" data-act="lp-actdel" data-who="${a}" data-i="${i}" aria-label="Remove">${icon('x')}</button></div>`).join('')}
             ${p.acts.length < 8 ? `<button class="mu-ghost" data-act="lp-actadd" data-who="${a}">${icon('plus')}<span>Add</span></button>` : ''}
             <small class="mu-muted">Their favourite things come up often, not always: the rest of the time it is something ordinary.</small></div>
+        <label class="mu-field slider"><span>Keeps a secret · ${P.discreetOf(p)}% <small class="mu-muted">(${P.discreetOf(p) < 30 ? 'tells everyone' : P.discreetOf(p) > 70 ? 'a vault' : 'depends on who asks'})</small></span><input type="range" min="0" max="100" step="5" value="${P.discreetOf(p)}" data-input="lp-discreet" data-who="${a}"></label>
+        <label class="mu-field slider"><span>Notices and pries · ${P.nosyOf(p)}% <small class="mu-muted">(${P.nosyOf(p) < 30 ? 'oblivious' : P.nosyOf(p) > 70 ? 'misses nothing' : 'notices what is in front of them'})</small></span><input type="range" min="0" max="100" step="5" value="${P.nosyOf(p)}" data-input="lp-nosy" data-who="${a}"></label>
+        <div class="mu-row2"><label class="mu-field"><span>Orientation</span><select data-input="lp-orient" data-who="${a}">${P.ORIENTS.map(([v, l]) => `<option value="${v}" ${(p.orient ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label class="mu-field"><span>Relationship status</span><select data-input="lp-status" data-who="${a}">${P.STATUSES.map(([v, l]) => `<option value="${v}" ${(p.status ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+        <small class="mu-muted">Who keeps a secret and who notices things decides how news travels in the house. Orientation and status keep their love lives believable (a relationship inside the house is in Relationships).</small>
         <label class="mu-field"><span>Notes for the AI about them (OOC)</span><textarea rows="3" maxlength="400" data-input="lp-ooc" data-who="${a}" data-focus="lpooc" placeholder="Never brings up her ex first. Embarrassed about her hobby in front of others.">${esc(p.ooc)}</textarea><small class="mu-muted">Sent only when they are in the scene.</small></label>
         <div class="mu-row"><button data-act="lp-gen" data-who="${a}" ${busy}>${icon('sparkles')}<span>${LV.busy === r.avatar ? 'Writing…' : 'Make it again from the card'}</span></button>
             <button class="mu-ghost mu-danger" data-act="lp-clear" data-who="${a}">${icon('trash')}<span>No profile</span></button></div></section>`;
@@ -147,6 +152,10 @@ Object.assign(INPUT, {
     'lp-social': (el, e) => { const x = prof(el); if (!x) return; x.p.social = num(el); hand(x.p); saveGame(); if (e.type === 'change') refresh(); },
     'lp-act': (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.text = el.value.slice(0, 60); hand(x.p); saveGame(); } },
     'lp-actwhere': async (el) => { const x = prof(el); if (!x) return; const a = x.p.acts[Number(el.dataset.i)]; if (a) { a.where = el.value; hand(x.p); await refresh(); } },
+    'lp-discreet': (el, e) => { const x = prof(el); if (!x) return; x.p.discreet = num(el); saveGame(); if (e.type === 'change') notify(); },
+    'lp-nosy': (el, e) => { const x = prof(el); if (!x) return; x.p.nosy = num(el); saveGame(); if (e.type === 'change') notify(); },
+    'lp-orient': (el) => { const x = prof(el); if (!x) return; const v = el.value as P.Orient; if (v) x.p.orient = v; else delete x.p.orient; saveGame(); notify(); },
+    'lp-status': (el) => { const x = prof(el); if (!x) return; const v = el.value as P.RelStatus; if (v) x.p.status = v; else delete x.p.status; saveGame(); notify(); },
     'lp-ooc': (el) => { const x = prof(el); if (!x) return; x.p.ooc = el.value.slice(0, 400); saveGame(); },
     'lp-key': (el) => { const g = game(); if (!g) return; const lx = P.lifexOf(G(g)); const a = el.dataset.who ?? ''; lx.keys = el.checked ? [...new Set([...(lx.keys ?? []), a])] : (lx.keys ?? []).filter(x => x !== a); saveGame(); notify(); },
     'lp-locked': (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).locked = el.checked; saveGame(); notify(); },

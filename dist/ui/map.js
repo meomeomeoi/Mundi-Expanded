@@ -561,7 +561,7 @@ async function sleep() {
 // [expanded] The relationships between characters at night (one AI call, Home only); never stops the night.
 async function nightBonds(g, w, day, range) {
     try {
-        const note = changesNote(await bondsNight(g, w, day, range));
+        const note = changesNote(await bondsNight(g, w, day, range), !!g.bonds?.truth); /* [expanded] 0.2.0.8: only what you know */
         if (note) {
             refreshPrompt();
             toast(note, 'info', { ms: 8000 });

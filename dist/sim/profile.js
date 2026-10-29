@@ -11,6 +11,10 @@
 // Pure logic (no SillyTavern), tested on its own; the hook into upstream's routine in life.ts, the editor in lifeui.ts.
 import { looseJson } from './jsonfix.js';
 import { guessAfford, isAfford } from './furnish.js'; // [expanded] 0.2.0.7
+export const ORIENTS = [['', 'As in the card'], ['straight', 'Straight'], ['gay', 'Gay'], ['lesbian', 'Lesbian'], ['bi', 'Bisexual'], ['pan', 'Pansexual'], ['ace', 'Asexual'], ['unsure', 'Not sure yet']];
+export const STATUSES = [['', 'As in the card'], ['single', 'Single'], ['taken', 'Seeing someone outside the house'], ['married', 'Married (to someone outside the house)']];
+export const discreetOf = (p) => p?.discreet ?? 50;
+export const nosyOf = (p) => p?.nosy ?? 50;
 export const lifexOf = (g) => {
     const l = (g.lifex ??= { profiles: {}, dinner: true, dinnerAt: 20 });
     l.profiles ??= {};
@@ -45,6 +49,8 @@ export function cleanProfile(x, rooms = [], src = 'hand') {
         bed: clampH(x?.bed, 23), wake: clampH(x?.wake, 8), weekend: clamp(x?.weekend, 0, 3, 1), social: clamp(x?.social, 0, 100, 50),
         rooms: (Array.isArray(x?.rooms) ? x.rooms : []).map(String).filter((r) => known.has(r)).slice(0, 4),
         acts, ooc: String(x?.ooc ?? '').trim().slice(0, 400), src: x?.src ?? src, ...(x?.ov ? { ov: x.ov } : {}),
+        ...(x?.discreet !== undefined ? { discreet: clamp(x.discreet, 0, 100, 50) } : {}), ...(x?.nosy !== undefined ? { nosy: clamp(x.nosy, 0, 100, 50) } : {}),
+        ...(ORIENTS.some(o => o[0] && o[0] === x?.orient) ? { orient: x.orient } : {}), ...(STATUSES.some(o => o[0] && o[0] === x?.status) ? { status: x.status } : {}),
     };
 }
 /* ---------- a guess from the card, with no model ---------- */
@@ -62,6 +68,14 @@ const KEY = [
     [/\b(draw|paint|art(ist)?|sketch|рису|художн)/i, { add: [{ text: 'drawing', where: 'room' }] }],
     [/\b(tv|series|anime|movies?|сериал|аниме|фильм)/i, { add: [{ text: 'watching something on TV', where: 'living' }] }],
     [/\b(study|student|university|college|учёб|студент|универ)/i, { add: [{ text: 'studying', where: 'room' }] }],
+    // [expanded] 0.2.0.8: secrets and what they notice
+    [/\b(secretive|discreet|tight-lipped|keeps? (a |her |his )?secrets?|loyal|скрытн|молчалив|умеет хранить)/i, { discreet: 85 }],
+    [/\b(gossip|chatterbox|talkative|blabbermouth|(can'?t|cannot) keep a secret|сплетн|болтлив|болтушк)/i, { discreet: 20, nosy: 75 }],
+    [/\b(curious|nosy|observant|snoop|perceptive|любопытн|наблюдательн|проницательн)/i, { nosy: 80 }],
+    [/\b(oblivious|absent-?minded|dense|airhead|рассеянн|невнимательн)/i, { nosy: 20 }],
+    [/\blesbian|лесбиянк/i, { orient: 'lesbian' }], [/\bgay\b|гей\b/i, { orient: 'gay' }], [/\bbi(sexual)?\b|бисексуал/i, { orient: 'bi' }],
+    [/\bpansexual|пансексуал/i, { orient: 'pan' }], [/\basexual|асексуал/i, { orient: 'ace' }],
+    [/\b(married|husband|wife|замужем|женат)/i, { status: 'married' }], [/\b(boyfriend|girlfriend|парень|девушка)\b/i, { status: 'taken' }],
 ];
 /** A rough profile from the card's description (when there is no model, or it failed). */
 export function guessProfile(text, rooms) {
@@ -90,6 +104,8 @@ Rooms of the house they can spend time in: ${rooms.map(r => `${r.id} (${r.name})
 Write ${name}'s habits at home as JSON:
 {"bed": hour 0-23 they go to sleep (after midnight is fine, e.g. 2), "wake": hour they get up, "weekend": how many hours later at the weekend (0-3),
  "social": 0-100 (0 = keeps to their room, 100 = always where the others are), "rooms": [up to 3 room ids they like],
+ "discreet": 0-100 (how well they keep a secret: 100 = a vault, 0 = tells everyone), "nosy": 0-100 (how much they notice and pry into others' business),
+ "orient": "straight" | "gay" | "lesbian" | "bi" | "pan" | "ace" | "" ("" unless the card says or clearly implies it), "status": "single" | "taken" (a partner outside the house) | "married" (to someone outside the house) | "" ("" unless the card says),
  "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id, "needs": only when it needs a thing, one of watch (a TV), game (a console or a computer), game2 (playing with someone), work (a computer or a desk), music (an instrument), read (books), exercise, craft, bath}]}
 Rules for "acts": at most two may be about their main hobby or trait; the rest must be ordinary, varied things anyone does (on the phone, a nap, tidying up, a call with family, a snack, doing nothing in particular). Do not make every habit about one interest. Use the card for the times: a night owl goes to bed late, an early riser early. JSON only.`;
 }
