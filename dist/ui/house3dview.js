@@ -3,8 +3,9 @@
 // floor to walk there, WASD) and the dollhouse (from above, the walls cut low, drag to turn, wheel to zoom).
 import { canStep, pathTo, CELL } from '../sim/house3d.js';
 const H_WALL = 2.7, T_WALL = 0.12, EYE = 1.6, LOW = 1.0;
-const FLOOR_COL = { open: 0xc9a27a, hall: 0xc4a07c, bed: 0xb98d62, bath: 0xd7dde0, service: 0xa8a8a2, outdoor: 0x6f9d4c, pool: 0x9a7b5a };
-const WALL_IN = 0xf1ece4, WALL_OUT = 0xe2dccf;
+const FLOOR_COL = { open: 0xd9b48a, hall: 0xd4ae86, bed: 0xc79b74, bath: 0xe8eef0, service: 0xb9b6ae, outdoor: 0x86b35a, pool: 0xb08a62 };
+const WALL_IN = 0xf6efe4, WALL_OUT = 0xefe6d6;
+const INK = 0x3a2e2a;
 export function mountHouse(el, THREE, house, o = {}) {
     const W = () => el.clientWidth || 800, Hh = () => el.clientHeight || 500;
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -25,9 +26,53 @@ export function mountHouse(el, THREE, house, o = {}) {
     const Y = (f) => f.level * (H_WALL + 0.3);
     /* ---------- materials, text ---------- */
     const mats = new Map();
-    const mat = (c, extra = {}) => { const k = `${c}|${JSON.stringify(extra)}`; if (!mats.has(k))
-        mats.set(k, new THREE.MeshLambertMaterial({ color: c, ...extra })); return mats.get(k); };
-    const box = (w, h, d, c, x, y, z, g, extra = {}) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c, extra)); m.position.set(x, y, z); g.add(m); return m; };
+    // [toon] three steps of light, the look of a cartoon: simple shapes read as drawn, not cheap
+    const grad = (() => { const d = new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]); const t = new THREE.DataTexture(d, 3, 1); t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t; })();
+    const mat = (c, extra = {}) => { const k = `${c}|${JSON.stringify(Object.keys(extra).map(x => [x, extra[x]?.uuid ?? extra[x]]))}`; if (!mats.has(k))
+        mats.set(k, new THREE.MeshToonMaterial({ color: c, gradientMap: grad, ...extra })); return mats.get(k); };
+    const inkMat = new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: 0.55 });
+    const ink = (m) => { const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 30), inkMat); m.add(e); return m; };
+    const box = (w, h, d, c, x, y, z, g, extra = {}, lines = true) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c, extra)); m.position.set(x, y, z); g.add(m); if (lines)
+        ink(m); return m; };
+    // drawn textures (repeat in metres): planks, tiles, carpet, concrete, grass, decking
+    const texCanvas = (n, draw) => { const c = document.createElement('canvas'); c.width = c.height = n; draw(c.getContext('2d'), n); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+    const rnd = (() => { let s0 = 7; return () => ((s0 = (s0 * 16807) % 2147483647) / 2147483647); })();
+    const TEX = {
+        planks: texCanvas(256, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); for (let r = 0; r < 8; r++) {
+            const off = (r % 2) * n / 2 + rnd() * 40;
+            for (let k = -1; k < 3; k++) {
+                const l = 0.88 + rnd() * 0.12;
+                x.fillStyle = `rgb(${255 * l},${248 * l},${240 * l})`;
+                x.fillRect(off + k * n / 2, r * n / 8, n / 2 - 2, n / 8 - 2);
+            }
+        } x.fillStyle = 'rgba(80,50,30,.25)'; for (let r = 1; r <= 8; r++)
+            x.fillRect(0, r * n / 8 - 2, n, 2); }),
+        tiles: texCanvas(128, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.fillStyle = 'rgba(90,100,110,.35)'; for (let k = 0; k <= 4; k++) {
+            x.fillRect(k * n / 4 - 1, 0, 2, n);
+            x.fillRect(0, k * n / 4 - 1, n, 2);
+        } }),
+        carpet: texCanvas(128, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); for (let i = 0; i < 1400; i++) {
+            x.fillStyle = `rgba(0,0,0,${rnd() * 0.06})`;
+            x.fillRect(rnd() * n, rnd() * n, 2, 2);
+        } }),
+        concrete: texCanvas(128, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); for (let i = 0; i < 900; i++) {
+            x.fillStyle = `rgba(0,0,0,${rnd() * 0.08})`;
+            x.fillRect(rnd() * n, rnd() * n, 3, 3);
+        } }),
+        grass: texCanvas(128, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); for (let i = 0; i < 1600; i++) {
+            const l = rnd();
+            x.fillStyle = l > 0.5 ? `rgba(255,255,200,${l * 0.18})` : `rgba(0,40,0,${l * 0.22})`;
+            x.fillRect(rnd() * n, rnd() * n, 2, 5);
+        } }),
+        deck: texCanvas(128, (x, n) => { x.fillStyle = '#fff'; x.fillRect(0, 0, n, n); x.fillStyle = 'rgba(60,35,20,.35)'; for (let k = 0; k <= 6; k++)
+            x.fillRect(0, k * n / 6 - 1, n, 2); }),
+    };
+    const blob = texCanvas(64, (x, n) => { const gr = x.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2); gr.addColorStop(0, 'rgba(40,25,15,.55)'); gr.addColorStop(1, 'rgba(40,25,15,0)'); x.clearRect(0, 0, n, n); x.fillStyle = gr; x.fillRect(0, 0, n, n); });
+    const edgeAO = texCanvas(64, (x, n) => { const gr = x.createLinearGradient(0, 0, 0, n); gr.addColorStop(0, 'rgba(40,25,15,.38)'); gr.addColorStop(1, 'rgba(40,25,15,0)'); x.clearRect(0, 0, n, n); x.fillStyle = gr; x.fillRect(0, 0, n, n); });
+    const shadowMat = new THREE.MeshBasicMaterial({ map: blob, transparent: true, depthWrite: false });
+    const aoMat = new THREE.MeshBasicMaterial({ map: edgeAO, transparent: true, depthWrite: false });
+    const shadowAt = (g, x, y, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), shadowMat); m.rotation.x = -Math.PI / 2; m.position.set(x, y + 0.012, z); m.renderOrder = 1; g.add(m); };
+    const floorTex = { open: ['planks', 2.2], hall: ['planks', 2.2], bed: ['carpet', 1.5], bath: ['tiles', 1.2], service: ['concrete', 2], outdoor: ['grass', 3], pool: ['deck', 2] };
     const textTex = (text, size = 44, bg = 'rgba(20,22,30,.62)') => {
         const c = document.createElement('canvas');
         const ctx = c.getContext('2d');
@@ -49,11 +94,11 @@ export function mountHouse(el, THREE, house, o = {}) {
         t.colorSpace = THREE.SRGBColorSpace;
         return { t, aspect: w / c.height };
     };
-    const label = (text, h = 0.42) => { const { t, aspect } = textTex(text); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true })); s.scale.set(h * aspect, h, 1); s.renderOrder = 10; return s; };
+    const label = (text, h = 0.42) => { const { t, aspect } = textTex(text); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: true, transparent: true })); s.scale.set(h * aspect, h, 1); s.renderOrder = 10; return s; };
     /* ---------- a floor ---------- */
     const groups = new Map();
     function quadsFor(f, id, y, down = false) {
-        const pos = [], idx = [];
+        const pos = [], idx = [], uv = [];
         let n = 0;
         for (let r = 0; r < f.rows; r++) {
             let s = -1;
@@ -64,6 +109,7 @@ export function mountHouse(el, THREE, house, o = {}) {
                 if (!on && s >= 0) {
                     const x0 = s * CELL, x1 = c * CELL, z0 = r * CELL, z1 = (r + 1) * CELL;
                     pos.push(x0, y, z0, x1, y, z0, x1, y, z1, x0, y, z1);
+                    uv.push(x0, z0, x1, z0, x1, z1, x0, z1);
                     if (down)
                         idx.push(n, n + 1, n + 2, n, n + 2, n + 3);
                     else
@@ -75,6 +121,7 @@ export function mountHouse(el, THREE, house, o = {}) {
         }
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
         geo.setIndex(idx);
         geo.computeVertexNormals();
         return geo;
@@ -90,7 +137,13 @@ export function mountHouse(el, THREE, house, o = {}) {
         const floors = [];
         const windows = [];
         for (const r of f.rooms) {
-            const m = new THREE.Mesh(quadsFor(f, r.id, y0), mat(FLOOR_COL[r.kind] ?? 0xbbbbbb));
+            const ft = floorTex[r.kind];
+            const tx = ft ? TEX[ft[0]].clone() : null;
+            if (tx) {
+                tx.repeat.set(1 / ft[1], 1 / ft[1]);
+                tx.needsUpdate = true;
+            }
+            const m = new THREE.Mesh(quadsFor(f, r.id, y0), mat(FLOOR_COL[r.kind] ?? 0xbbbbbb, tx ? { map: tx } : {}));
             m.userData.room = r.id;
             g.add(m);
             floors.push(m);
@@ -103,7 +156,19 @@ export function mountHouse(el, THREE, house, o = {}) {
                 wtr.userData.room = r.id;
                 floors.push(wtr);
             }
-            furnish(r, y0, g);
+            {
+                const n0 = g.children.length;
+                furnish(r, y0, g);
+                const fp = [];
+                furn.set(`${f.id}|${r.id}`, fp);
+                for (const c of g.children.slice(n0)) {
+                    const p = c.geometry?.parameters;
+                    if (!p?.width || c.position.y - p.height / 2 > y0 + 0.08 || p.height < 0.05)
+                        continue;
+                    shadowAt(g, c.position.x, y0, c.position.z, p.width * 1.35 + 0.2, p.depth * 1.35 + 0.2);
+                    fp.push([c.position.x - p.width / 2, c.position.z - p.depth / 2, c.position.x + p.width / 2, c.position.z + p.depth / 2]);
+                }
+            }
             const L = label(r.name);
             L.position.set(r.x + r.w / 2, y0 + (r.kind === 'outdoor' || r.kind === 'pool' ? 1.2 : 2.3), r.z + r.d / 2);
             L.userData.room = r.id;
@@ -119,6 +184,18 @@ export function mountHouse(el, THREE, house, o = {}) {
             const along = w.z1 === w.z2 ? 'x' : 'z';
             const m = box(along === 'x' ? len + T_WALL : T_WALL, H_WALL, along === 'x' ? T_WALL : len + T_WALL, w.outer ? WALL_OUT : WALL_IN, (w.x1 + w.x2) / 2, y0 + H_WALL / 2, (w.z1 + w.z2) / 2, walls);
             m.userData.wall = true;
+            box(along === 'x' ? len + T_WALL : T_WALL + 0.03, 0.09, along === 'x' ? T_WALL + 0.03 : len + T_WALL, 0x9b7b5e, (w.x1 + w.x2) / 2, y0 + 0.045, (w.z1 + w.z2) / 2, walls, {}, false);
+            for (const sd of [-1, 1]) {
+                const a = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.45), aoMat);
+                a.rotation.x = -Math.PI / 2;
+                if (along === 'z')
+                    a.rotation.z = sd > 0 ? Math.PI / 2 : -Math.PI / 2;
+                else if (sd < 0)
+                    a.rotation.z = Math.PI;
+                a.position.set((w.x1 + w.x2) / 2 + (along === 'z' ? sd * (T_WALL / 2 + 0.22) : 0), y0 + 0.011, (w.z1 + w.z2) / 2 + (along === 'x' ? sd * (T_WALL / 2 + 0.22) : 0));
+                a.renderOrder = 1;
+                g.add(a);
+            }
             if (w.outer && len >= 2)
                 for (let k = 1; k <= Math.floor(len / 3.2) || (k === 1 && len >= 2); k++) {
                     const t = Math.floor(len / 3.2) ? k / (Math.floor(len / 3.2) + 1) : 0.5;
@@ -140,8 +217,10 @@ export function mountHouse(el, THREE, house, o = {}) {
             const s = f.stairs;
             const up = f.level < house.floors.length - 1, down = f.level > 0;
             if (up)
-                for (let k = 0; k < 12; k++)
-                    box(1.1, 0.22, 0.28, 0x9b7653, s.x, y0 + 0.11 + k * 0.22, s.z - 1.6 + k * 0.28, g).userData.stairs = 'up';
+                for (let k = 0; k < 12; k++) {
+                    const h = 0.22 * (k + 1);
+                    box(1.1, h, 0.28, k % 2 ? 0xa57f5a : 0x9b7653, s.x, y0 + h / 2, s.z - 1.6 + k * 0.28, g).userData.stairs = 'up';
+                }
             if (down) {
                 const hole = box(1.3, 0.02, 3.4, 0x3a2a1c, s.x + 1.4, y0 + 0.01, s.z, g);
                 hole.userData.stairs = 'down';
@@ -165,10 +244,40 @@ export function mountHouse(el, THREE, house, o = {}) {
         g.userData.floor = f;
         g.add(walls, ceil, labels, lights, peopleG);
         if (f.level === 0) {
-            const gr = new THREE.Mesh(new THREE.PlaneGeometry(house.width * 3, house.depth * 3), mat(0x7aa457));
+            const gt = TEX.grass.clone();
+            gt.repeat.set(house.width, house.depth);
+            gt.needsUpdate = true;
+            const gr = new THREE.Mesh(new THREE.PlaneGeometry(house.width * 3, house.depth * 3), mat(0x86b35a, { map: gt }));
             gr.rotation.x = -Math.PI / 2;
             gr.position.set(house.width / 2, -0.02, house.depth / 2);
             g.add(gr);
+            // a garden: trees and bushes around the house, a hedge at the edge of the plot
+            const taken = (x, z) => { const c = Math.floor(x / CELL), r = Math.floor(z / CELL); for (let dr = -8; dr <= 8; dr++)
+                for (let dc = -8; dc <= 8; dc++) {
+                    const id = f.grid[(r + dr) * f.cols + c + dc];
+                    if (id && r + dr >= 0 && c + dc >= 0 && r + dr < f.rows && c + dc < f.cols)
+                        return true;
+                } return false; };
+            for (let k = 0; k < 38; k++) {
+                const x = -6 + rnd() * (house.width + 12), z = -6 + rnd() * (house.depth + 12);
+                if (taken(x, z))
+                    continue;
+                if (rnd() < 0.55) {
+                    box(0.22, 1.4, 0.22, 0x7a5236, x, 0.7, z, g);
+                    const top = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0 + rnd() * 0.6, 0), mat([0x4f8f3a, 0x5fa044, 0x3f7d33][k % 3], { flatShading: true }));
+                    top.position.set(x, 1.9 + rnd() * 0.4, z);
+                    ink(top);
+                    g.add(top);
+                    shadowAt(g, x, 0, z, 2.6, 2.6);
+                }
+                else {
+                    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45 + rnd() * 0.3, 0), mat(0x5c9a40, { flatShading: true }));
+                    b.position.set(x, 0.35, z);
+                    b.scale.y = 0.7;
+                    ink(b);
+                    g.add(b);
+                }
+            }
         }
         scene.add(g);
         groups.set(f.id, { g, walls, ceil, floors, labels, lights, peopleG, windows });
@@ -197,6 +306,7 @@ export function mountHouse(el, THREE, house, o = {}) {
         }
     }
     /* ---------- furniture: simple shapes by the kind of room ---------- */
+    const furn = new Map(); // room → footprints (x0, z0, x1, z1)
     function furnish(r, y, g) {
         const t = `${r.id} ${r.kind === 'outdoor' || r.kind === 'pool' ? '' : r.name}`.toLowerCase();
         const cx = r.x + r.w / 2, cz = r.z + r.d / 2;
@@ -274,6 +384,34 @@ export function mountHouse(el, THREE, house, o = {}) {
         }
     }
     /* ---------- people ---------- */
+    // where people stand: free floor in the room (not in the furniture, not by the walls), spread out
+    function freeSpots(f, r, n) {
+        const fp = furn.get(`${f.id}|${r.id}`) ?? [];
+        const cx = r.x + r.w / 2, cz = r.z + r.d / 2;
+        const out = [];
+        const free = (x, z) => { const c = Math.floor(x / CELL), rr = Math.floor(z / CELL); for (let dr = -2; dr <= 2; dr++)
+            for (let dc = -2; dc <= 2; dc++)
+                if (f.grid[(rr + dr) * f.cols + c + dc] !== r.id)
+                    return false; return !fp.some(([a, b, c2, d]) => x > a - 0.35 && x < c2 + 0.35 && z > b - 0.35 && z < d + 0.35) && !onStairs(f, x, z); };
+        const cand = [];
+        for (let z = r.z + 0.6; z < r.z + r.d - 0.5; z += 0.25)
+            for (let x = r.x + 0.6; x < r.x + r.w - 0.5; x += 0.25)
+                if (free(x, z))
+                    cand.push([x, z]);
+        for (let i = 0; i < n; i++) {
+            let best = [cx, cz], sc = -1e9;
+            for (const [x, z] of cand) {
+                const near = out.length ? Math.min(...out.map(([a, b]) => Math.hypot(a - x, b - z))) : 1.2;
+                const v = Math.min(near, 1.4) * 3 - Math.hypot(x - cx, z - cz) * 0.5;
+                if (v > sc) {
+                    sc = v;
+                    best = [x, z];
+                }
+            }
+            out.push(best);
+        }
+        return out;
+    }
     const texCache = new Map();
     const loader = new THREE.TextureLoader();
     function placePeople() {
@@ -290,10 +428,9 @@ export function mountHouse(el, THREE, house, o = {}) {
                 const r = f.rooms.find(x => x.id === rid);
                 if (!r)
                     continue;
+                const spots = freeSpots(f, r, list.length);
                 list.forEach((p, i) => {
-                    const ang = (i / Math.max(1, list.length)) * Math.PI * 2 + 0.6;
-                    const rad = Math.min(r.w, r.d) * (list.length > 1 ? 0.28 : 0.12);
-                    const x = r.x + r.w / 2 + Math.cos(ang) * rad, z = r.z + r.d / 2 + Math.sin(ang) * rad;
+                    const [x, z] = spots[i];
                     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: p.asleep ? 0x8890a8 : 0xffffff, transparent: true, alphaTest: 0.08 }));
                     const hgt = p.asleep ? 0.0 : 1.68;
                     sp.center.set(0.5, 0);
@@ -317,8 +454,10 @@ export function mountHouse(el, THREE, house, o = {}) {
                         sp.material.color.set(0x6b7ad6);
                         sp.scale.set(0.5, hgt || 0.01, 1);
                     }
-                    if (hgt)
+                    if (hgt) {
                         G0.peopleG.add(sp);
+                        shadowAt(G0.peopleG, x, Y(f), z, 0.8, 0.5);
+                    }
                     const L = label(p.asleep ? `${p.name} 💤` : p.name, 0.22);
                     L.position.set(x, Y(f) + (hgt ? hgt + 0.18 : 0.9), z);
                     L.userData.person = p;
@@ -335,15 +474,16 @@ export function mountHouse(el, THREE, house, o = {}) {
     scene.add(hemi, sun, amb);
     function applyTime() {
         const night = time === 'night', eve = time === 'afternoon';
-        scene.background = new THREE.Color(night ? 0x0b1020 : eve ? 0xf0b37a : 0xa8d4f2);
-        scene.fog = new THREE.Fog(scene.background, 40, 90);
+        const [top, bot] = night ? ['#060a18', '#1b2440'] : eve ? ['#6d8fd0', '#ffc38a'] : ['#6fb2ee', '#dff0ff'];
+        scene.background = texCanvas(4, (x) => { const gr = x.createLinearGradient(0, 0, 0, 4); gr.addColorStop(0, top); gr.addColorStop(1, bot); x.fillStyle = gr; x.fillRect(0, 0, 4, 4); });
+        scene.fog = new THREE.Fog(new THREE.Color(bot), 45, 110);
         hemi.color.set(night ? 0x34406a : eve ? 0xffd2a6 : 0xe6f2ff);
         hemi.groundColor.set(night ? 0x141218 : 0x7a6a58);
         hemi.intensity = night ? 0.35 : eve ? 1.0 : 1.25;
         amb.color.set(night ? 0x2a3050 : eve ? 0xffe2c8 : 0xffffff);
-        amb.intensity = night ? 0.35 : eve ? 0.7 : 1.05;
+        amb.intensity = night ? 0.3 : eve ? 0.5 : 0.7;
         sun.color.set(night ? 0x8090c0 : eve ? 0xffa45c : 0xfff6e6);
-        sun.intensity = night ? 0.15 : eve ? 1.1 : 1.5;
+        sun.intensity = night ? 0.15 : eve ? 1.4 : 1.9;
         sun.position.set(eve ? -30 : -12, eve ? 8 : 30, eve ? 4 : -10);
         for (const [, G0] of groups) {
             G0.lights.children.forEach((l) => { l.intensity = night ? 2.2 : eve ? 0.9 : 0.5; });
@@ -369,7 +509,7 @@ export function mountHouse(el, THREE, house, o = {}) {
         const r = (roomId && f.rooms.find(x => x.id === roomId)) || f.rooms.find(x => x.kind === 'open') || f.rooms.find(x => x.kind === 'hall') || f.rooms[0];
         const cx = r.x + r.w / 2, cz = r.z + r.d / 2;
         const here = people.filter(p => p.room === r.id && p.floor === f.id && !p.hidden);
-        const spots = here.map((_, i) => { const ang = (i / Math.max(1, here.length)) * Math.PI * 2 + 0.6; const rad = Math.min(r.w, r.d) * (here.length > 1 ? 0.28 : 0.12); return [cx + Math.cos(ang) * rad, cz + Math.sin(ang) * rad]; });
+        const spots = here.length ? freeSpots(f, r, here.length) : [];
         // the free spot (not by a wall, not on the stairs) farthest from the people and nearest the room's middle otherwise
         let best = null, score = -1e9;
         for (let rr = 0; rr < f.rows; rr += 2)
