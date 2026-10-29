@@ -65,3 +65,19 @@
 #mundi-root .mh-peek-msg b { display: block; font-size: 10px; line-height: 1.2; }
 #mundi-root .mh-peek-msg small { display: block; font-size: 10px; line-height: 1.25; color: #3a3f48; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 #mundi-root .mh-peek > em { font-size: 13px; min-width: 22px; height: 22px; }
+#mundi-root .mu-door-who { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; font-weight: 800; background: rgba(255, 255, 255, .08); border: 1px dashed rgba(255, 255, 255, .3); }
+#mundi-root .mu-door.mu-dlg { overflow: hidden; }
+#mundi-root .mu-knock-bar { left: 0; right: 0; bottom: 0; height: 4px; border-radius: 0; }
+/* [expanded] 0.2.0.10: phone calls */
+#mundi-root .mu-call { position: absolute; z-index: 60; top: 74px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; min-width: 300px; border-radius: 22px; background: rgba(18, 20, 28, .86); backdrop-filter: blur(14px); color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, .45); overflow: hidden; animation: mu-beat-in .3s ease-out; }
+#mundi-root .mu-call img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-call.is-ringing img { animation: mu-ring 1.2s ease-in-out infinite; }
+@keyframes mu-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(80, 220, 120, .6); } 50% { box-shadow: 0 0 0 8px rgba(80, 220, 120, 0); } }
+#mundi-root .mu-call > span { flex: 1; display: grid; } #mundi-root .mu-call small { opacity: .7; font-size: 11px; } #mundi-root .mu-call b { font-size: 16px; }
+#mundi-root .mu-call button { width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 0; display: grid; place-items: center; color: #fff; }
+#mundi-root .mu-call-yes { background: #2fbf63 !important; } #mundi-root .mu-call-no { background: #e5484d !important; } #mundi-root .mu-call-no svg { transform: rotate(135deg); }
+#mundi-root .mu-call.is-on { top: 12px; min-width: 220px; padding: 6px 8px 6px 6px; } #mundi-root .mu-call.is-on img { width: 34px; height: 34px; } #mundi-root .mu-call.is-on button { width: 34px; height: 34px; }
+#mundi-root .mu-call-bar { left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #2fbf63, #8ae0a8); }
+/* on the line: the caller's picture in a phone frame, at the side */
+#mundi-root .mu-sprite.is-call { scale: .62; translate: 0 -18%; filter: drop-shadow(0 0 0 transparent); }
+#mundi-root .mu-sprite.is-call > img { border-radius: 26px; border: 6px solid #15171d; background: radial-gradient(circle at 50% 30%, #3b4a6b, #151b2a); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); padding-top: 18px; }

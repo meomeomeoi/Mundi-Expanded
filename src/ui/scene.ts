@@ -166,7 +166,8 @@ import { applyMoves, movePlaces } from '../sim/goes.js';   // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
 import { youPicHtml, youAuto, youLabels } from './youpic.js';
 import { beatsHtml, beatWanted, showBeat, personaText, clearBeat } from './beats.js';   // [expanded] 0.2.0.10
-import { parseBeat } from '../sim/exprs.js';   // [expanded] 0.2.0.7: your portrait
+import { parseBeat } from '../sim/exprs.js';
+import { onCall } from '../sim/calls.js';   // [expanded] 0.2.0.7: your portrait
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m: any, i: number) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
 function lineHtml(m: any, i: number, last: boolean, lastChar: number) {
@@ -226,7 +227,7 @@ export function sceneHtml() {
     const speaking = here.length > 1 ? (() => { const l = chat(); for (let i = l.length - 1; i >= 0 && i > l.length - 6; i--) { const a = speakerOf(l[i]); if (a) return a; if (l[i].is_user) return ''; } return ''; })() : '';
     const sprites = here.map((r, k) => {
         const src = spriteFor(r.avatar, ex[r.avatar] ?? null);
-        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
+        return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}</figcaption>${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
     return `<div class="mu-scene">
         <div class="mu-scene-bg" style="${background(g, w)}"></div>

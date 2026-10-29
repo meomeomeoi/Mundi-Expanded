@@ -12,6 +12,7 @@ import { chatsOf, nameOf, sendToChat, unreadKey, TYPING, shownMsgs, typeMs } fro
 import { pendingCall, answerCall, callText, startTalk } from '../sim/chatlife.js';
 import { pendingProp, answerProp, propText, propose, PROP_FREQS, propFreqOf } from '../sim/houseprops.js';
 import { furnishOf } from '../sim/furnish.js';
+import { callsOf } from '../sim/calls.js';
 import { furnishOn } from '../sim/furnishrun.js';
 export const GC = { draft: '', busy: false };
 // making or editing one of your chats: its name and members (id '' = a new one)
@@ -175,6 +176,8 @@ export function chatSettingsHtml(g) {
         <small class="mu-muted">${(() => { const f = C.FREQS.find(q => q[0] === x.freq); return f[2][1] ? `About ${f[2][0] === f[2][1] ? f[2][0] : `${f[2][0]}–${f[2][1]}`} a day: they talk about what happened (a film they saw, a fight, the fridge…).` : 'They only answer you.'; })()}</small>
         <div class="mu-row"><button class="mu-ghost" data-act="gc-now" data-v="talk" ${GC.busy ? 'aria-disabled="true"' : ''}>Conversation now</button><button class="mu-ghost" data-act="gc-now" data-v="call" ${GC.busy ? 'aria-disabled="true"' : ''}>Call now</button></div>
         <small class="mu-muted">Starts one right away, with whoever is awake and not here with you (a call needs a free evening slot).</small>
+        <b>Calls from them</b><div class="mu-bd-seg">${['off', 'rare', 'normal'].map(v => `<button class="${(callsOf(g).freq ?? 'rare') === v ? 'is-on' : ''}" data-act="cl-freq" data-v="${v}">${v === 'off' ? 'Never' : v === 'rare' ? 'Now and then' : 'Often'}</button>`).join('')}</div>
+        <small class="mu-muted">Someone close who is not with you calls: news, missing you, where are you. It rings for a while; answered, they are on the line in the scene.</small>
         ${furnishOn(w) ? `<b>Purchases for the house</b><div class="mu-bd-seg">${PROP_FREQS.map(([id, label]) => `<button class="${propFreqOf(g) === id ? 'is-on' : ''}" data-act="gc-propfreq" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">Someone proposes in the house chat to buy something from the fund: for everyone, or for their own room (harder). The house votes; you can too.</small>
         <div class="mu-row"><button class="mu-ghost" data-act="gc-propnow" ${GC.busy ? 'aria-disabled="true"' : ''}>Proposal now</button></div>` : ''}</section>`;
@@ -202,6 +205,8 @@ Object.assign(ACT, {
         saveGame();
         notify();
     },
+    'cl-freq': (el) => { const g = game(); if (!g)
+        return; callsOf(g).freq = el.dataset.v || 'rare'; saveGame(); notify(); },
     'gc-propfreq': (el) => { const g = game(); if (!g)
         return; furnishOf(g).propFreq = el.dataset.v || 'rare'; saveGame(); notify(); },
     'gc-propnow': async () => {
