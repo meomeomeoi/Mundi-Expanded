@@ -1,5 +1,33 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.9 · 2026-10-29
+
+Behind closed doors: listening, and flirting and closeness. Mundi tracks the state around it; the scenes themselves
+are the main model's, with your preset.
+
+- **Feelings, one way.** Romance between characters as its own axis (0–100; interest, a crush, in love), each way
+  apart: a crush can be unrequited and unspoken. It grows from the night reader's sparks only where it fits their
+  orientation and gender (profiles), slower with a partner outside the house, and fades when nothing feeds it. A
+  confession becomes a couple when it is returned, or unfinished business; a couple forms only from two crushes.
+  Upstream's random couples are off in a Home.
+- **You**: the romance line says it is their feelings for you (a crush is unspoken, not necessarily returned); your
+  own feelings can be marked (likes, in love; kept to yourself), so the house can notice and talk. Alone with you,
+  someone with an unspoken crush may confess. The scene says how flirting from you would land (glad, flustered,
+  uncomfortable: a partner right there); flirting in front of someone's partner has a price.
+- **Listening**: at a closed door (the mechanics model writes what you hear: mostly muffled sounds and scraps of
+  words, never graphic); you may be caught. Keep an eye on someone for a few hours. Someone may listen at your door
+  while someone is with you (rarely: nosy, close to you, or with feelings). The walls: thin, ordinary, thick. Asked
+  about a secret, people tell, hint or cover, by trust, loyalty and discretion.
+- **Nights**: couples sleep over now and then (never / sometimes / often; your partner too); a secret one slips out
+  early and may be seen. Nights together from the reader and off-screen; neighbours may hear; the morning after is
+  easy or awkward (affection in front of others, a new profile trait). Your partner can move into your room. A date at
+  home: you ask the house for a room tonight in the house chat; who agrees keeps away.
+- **Profiles**: gender (guessed from the card's pronouns), affection in front of others.
+- **Failed mechanics calls** (the night, the story reader, listening): a notice with Try again.
+- One switch turns flirting and romance off. Fix: the settings' segment buttons from 0.2.0.8 (the house's mood,
+  limits) did nothing.
+- Tests: love 5.
+
 ## Mundi Expanded 0.2.0.8 · 2026-10-29
 
 Relationships 2.0: who knows what. Rules decide everything; the AI only words it, and no new calls are made (the

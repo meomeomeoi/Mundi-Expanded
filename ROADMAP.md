@@ -177,6 +177,13 @@ only words it, and no new calls are made (the night call grows by about a third)
 - **Settings for limits**: rumors alive at once, things in a room, thoughts kept per pair.
 - Children stay out of all of it.
 
+## 9. Behind closed doors (0.2.0.9, done)
+
+Listening (at a door, keeping an eye on someone, someone at your door, the walls, asking around) and flirting and
+closeness (one-way feelings between characters, your own feelings, how flirting lands, confessions, nights together,
+staying over, moving in, a date at home), with a switch. Decided: romance is always one way (a character's feelings for
+someone); yours are set by you, not a number; Mundi never writes intimate scenes itself, only the state around them.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
