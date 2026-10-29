@@ -19,6 +19,7 @@ export const priceOfCat = (g: Save, c: F.CatFixture) => Math.max(1, Math.round(c
 export function placeOrder(g: Save, w: WorldDef, o: { cat: string; room: string; owner: F.Owner; pay: 'wallet' | 'fund'; by?: F.Owner; via?: 'order' | 'shop'; prop?: string; now?: boolean; share?: number; due?: number }): string {
     const c = F.catOf(o.cat); if (!c || !furnishOn(w)) return 'That cannot be ordered here.';
     const era = eraOf(g); if (!F.forEra(c, era)) return 'Not in this era.';
+    if (F.roomFull(G(g), o.room)) return 'That room is full (Settings: things a room).';   // [expanded] 0.2.0.8
     const name = F.catName(c, era); const money = moneyOn(g as any);
     const price = money ? Math.max(1, Math.round(priceOfCat(g, c) * (o.share ?? 1))) : 0;
     if (money && o.pay === 'wallet' && g.player.money < price) return 'Not enough money in your wallet.';

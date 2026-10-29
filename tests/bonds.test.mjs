@@ -117,12 +117,16 @@ test('facts: add, edit, pin, remove; standing facts are never trimmed', () => {
     assert.equal(B.addFact(g, ['Mia.png'], 'x'), null);
     assert.ok(B.editFact(g, f.id, 'Changed.')); assert.equal(B.factById(g, f.id).text, 'Changed.');
     assert.equal(B.editFact(g, f.id, '  '), false);
+    B.bondsOf(g).keep = 1000;   // the per-pair limit off: the house-wide one
     for (let i = 0; i < 320; i++) B.applyChange(g, ['Sora.png', 'Kai.png'], 0, `ep ${i}`, 'offscreen');
     const facts = B.bondsOf(g).facts;
     assert.equal(facts.filter(x => x.kind === 'episode').length, 300);
     assert.ok(B.factById(g, f.id), 'the standing fact survives');
     assert.equal(facts.filter(x => x.kind === 'episode')[0].text, 'ep 20', 'oldest episodes went first');
-    const ep = facts.find(x => x.kind === 'episode');
+    // [expanded] 0.2.0.8: kept per pair
+    B.bondsOf(g).keep = 12; B.applyChange(g, ['Sora.png', 'Kai.png'], 0, 'one more', 'offscreen');
+    assert.equal(B.factsOfPair(g, 'Sora.png', 'Kai.png').filter(x => x.kind === 'episode').length, 12);
+    const ep = B.bondsOf(g).facts.find(x => x.kind === "episode");
     B.pinFact(g, ep.id); assert.equal(B.factById(g, ep.id).kind, 'standing');
     assert.ok(B.removeFact(g, f.id)); assert.equal(B.factById(g, f.id), null);
     const ids = new Set(B.bondsOf(g).facts.map(x => x.id)); assert.equal(ids.size, B.bondsOf(g).facts.length, 'ids unique');

@@ -87,6 +87,9 @@ export const partnersOf = (g: Save) => Object.entries(R(g)).filter(([, r]) => r.
 // A new romance while you are with someone else: unless relationships are open, each partner who learns of it is hurt.
 function jealousy(g: Save, avatar: string, name: string): string[] {
     if (polyOn(g)) return [];
+    // [expanded] 0.2.0.8: in a Home a new romance while you are with someone starts as a secret (Relationships: "Keep
+    // it a secret"); each partner is hurt when they find out (foundOut), not at once
+    if (others(g, avatar).length && (g as any).bonds) { const b = (g as any).bonds; (b.hide ??= {})[avatar] ??= { day: g.day }; return [`Nobody else knows yet (${others(g, avatar).map(a => g.cast[a]?.name ?? a).join(', ')} included): it is a secret for now.`]; }
     const out: string[] = [];
     for (const other of partnersOf(g)) {
         if (other === avatar) continue;
@@ -97,6 +100,17 @@ function jealousy(g: Save, avatar: string, name: string): string[] {
         out.push(`${who} found out about ${name}: romance −20, bond −12.`);
     }
     return out;
+}
+
+const others = (g: Save, avatar: string) => partnersOf(g).filter(a => a !== avatar);
+/** [expanded] 0.2.0.8: a partner of yours finds out you are also with someone (`avatar`): hurt, as upstream's jealousy. */
+export function foundOut(g: Save, other: string, avatar: string): string {
+    if (polyOn(g) || other === avatar || !partnersOf(g).includes(other)) return '';
+    const who = g.cast[other]?.name ?? other, name = g.cast[avatar]?.name ?? avatar;
+    addRomance(g, other, -20); bump(g, other, -12); approve(g, other, -15);
+    ((g as any).jealous ??= {})[other] = { of: avatar, day: g.day };
+    note(g, '{0} found out that {u} is also with {1}, and is hurt.', [who, name], [other, avatar], g.player.loc, 'love');
+    return `${who} found out about ${name}: romance −20, bond −12.`;
 }
 
 // After the reply: the engine applies the answer.

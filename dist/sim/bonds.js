@@ -150,6 +150,15 @@ export function addFact(g, who, text, kind = 'standing', src = 'user', delta, k)
         if (!people.includes(a) && (a === YOU || g.cast[a]))
             (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: g.day };
     b.facts.push(f);
+    // [expanded] 0.2.0.8: at most `keep` episodes per pair (or trio): the oldest go first
+    {
+        const key = [...people].sort().join('|');
+        const mine = b.facts.filter(x => x.kind === 'episode' && [...x.who].sort().join('|') === key);
+        if (mine.length > (b.keep ?? 12)) {
+            const drop = new Set(mine.slice(0, mine.length - (b.keep ?? 12)).map(x => x.id));
+            b.facts = b.facts.filter(x => !drop.has(x.id));
+        }
+    }
     // only episodes are trimmed (oldest first); standing facts are the player's and are never dropped
     const eps = b.facts.filter(x => x.kind === 'episode');
     if (eps.length > MAX_EPISODES) {
@@ -196,6 +205,8 @@ export function drift(g, day = g.day) {
     for (const [k, p] of Object.entries(b.pairs)) {
         if (p.v === p.base || day - (p.changed ?? -Infinity) < QUIET_DAYS)
             continue;
+        if ((b.talk ?? []).some(t => pairKey(t.a, t.b) === k))
+            continue; // [expanded] 0.2.0.8: unfinished business does not fade
         p.v += p.v > p.base ? -1 : 1;
         const [a, c] = k.split('|');
         if (g.cast[a] && g.cast[c])
@@ -385,10 +396,13 @@ export function nightPrompt(g, n) {
             ? `What was said today:\n${n.convo}\n\nList what changed between these people (not with ${n.user}) because of today's scenes: only real moments that were in the conversation (a fight, a kindness, teasing that hurt, a shared laugh, help, a secret kept…). Step from -3 to +3. If nothing changed between them, write NONE.`
             : 'There were no scenes with two of them today: write NONE.',
         ...(scene && n.secrets?.length ? ['', `Secrets in the house (never reveal them yourself): ${n.secrets.map((x, i) => `${i + 1}. ${x.text} (known to: ${x.known.join(', ')})`).join(' ')}`,
-            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word, someone told), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. If someone who knows one promised in a scene to keep it to themselves: PROMISE | who promised | the secret's number. Only what clearly happened in the scenes.`] : []),
+            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word, someone told), add a line in the SCENE part: FOUND | who found out | the secret's number | who told them (if someone did). ${n.user} counts too. If someone who knows one promised in a scene to keep it to themselves: PROMISE | who promised | the secret's number. Only what clearly happened in the scenes.`] : []),
         '',
         'PART 2 — life in the house without ' + n.user + '.',
         n.life === 'off' ? 'Turned off: write NONE.' : `${off} It must fit who they are and how they get along now, and not repeat what happened lately.`,
+        ...(n.talks?.length ? ['', `Unfinished business: ${n.talks.map((t, i) => `${i + 1}. ${t}`).join(' ')}`, 'If today\'s scenes had them really talk it out (or it happened without ' + n.user + ' tonight), add: TALKED | the number.'] : []),
+        ...(n.shift ? ['', `Tonight, only if there is a real reason in how they get along and what happened lately, ONE bigger change may happen between two of them: SHIFT | Name & Name | friends, enemies${n.shift !== 'off' ? ', dating' : ''} or ex | why, in a few words | secret (optional: they keep it to themselves). ${n.shift === 'story' ? 'Dating only if there was already flirting or a clear spark between them in what happened lately. ' : ''}${n.shift !== 'off' ? 'Dating must fit who they are (orientation, partners outside the house). ' : ''}Most nights: no SHIFT line.`] : []),
+        ...(n.small ? ['', 'Maybe (not often) someone did a small thing and kept quiet about it (borrowed something without asking, broke something, ate someone\'s food, lost their job, owes money): SMALL | Name | what they did | whose it was (optional).'] : []),
         '',
         'One moment per line, exactly like this (the sentence says what happened, short, in the past tense):',
         'Name & Name | +1 | what happened',
@@ -487,8 +501,64 @@ export function parseFound(raw, find, count, kind = 'FOUND') {
             continue;
         const i = Number(m[2]) - 1;
         const who = find(m[1]);
+        const tail = line.split('|')[3]?.trim();
+        const by = tail ? find(tail.replace(/^(told by|by)\s+/i, '')) : null; // [expanded] who told them
         if (who && i >= 0 && i < count && !out.some(x => x.who === who && x.i === i))
-            out.push({ who, i });
+            out.push({ who, i, ...(by ? { by } : {}) });
     }
     return out.slice(0, 4);
+}
+/** [expanded] 0.2.0.8: "TALKED | number" (indexes from 0). */
+export function parseTalked(raw, count) {
+    const out = new Set();
+    for (const line of String(raw ?? '').split('\n')) {
+        const m = line.trim().replace(/^[-*•]\s*/, '').match(/^TALKED\s*\|\s*#?(\d+)/i);
+        if (m && +m[1] >= 1 && +m[1] <= count)
+            out.add(+m[1] - 1);
+    }
+    return [...out];
+}
+/** "SHIFT | A & B | kind | why | secret" (people found by `find`; at most one). */
+export function parseShift(raw, find) {
+    for (const line of String(raw ?? '').split('\n')) {
+        const p = line.trim().replace(/^[-*•]\s*/, '').split('|').map(x => x.trim());
+        if ((p[0] ?? '').toUpperCase() !== 'SHIFT' || p.length < 4)
+            continue;
+        const [x, y] = p[1].split(/\s*(?:&|\+|,)\s*|\s+(?:and|и)\s+/i).map(find);
+        const kind = (p[2].toLowerCase().match(/friends|enemies|dating|ex/)?.[0] ?? '');
+        if (x && y && x !== y && kind)
+            return { a: x, b: y, kind, why: p[3] || '', secret: /secret|тайн/i.test(p[4] ?? '') };
+    }
+    return null;
+}
+/** "SMALL | Name | what | whose" (at most one). */
+export function parseSmall(raw, find) {
+    for (const line of String(raw ?? '').split('\n')) {
+        const p = line.trim().replace(/^[-*•]\s*/, '').split('|').map(x => x.trim());
+        if ((p[0] ?? '').toUpperCase() !== 'SMALL' || p.length < 3)
+            continue;
+        const who = find(p[1]);
+        const about = p[3] ? find(p[3]) : null;
+        if (who && p[2])
+            return { who, text: p[2].slice(0, 160), ...(about && about !== who ? { about } : {}) };
+    }
+    return null;
+}
+/** Whether a bigger change is believable by the rules (the model only proposes it). `lovers`: who already has a
+ *  partner in the house; `taken`: who has one outside (their profile); `spark`: flirting before (for "from the story"). */
+export function shiftOk(g, s, o) {
+    const v = valueOf(g, s.a, s.b);
+    const t = statusOf(g, s.a, s.b);
+    const family = !!t && ['parent', 'child', 'sibling', 'cousin'].includes(t.type);
+    if (s.kind === 'friends')
+        return v >= 35 && !family && !(t && ['friend', 'bestfriend', 'dating', 'partner', 'spouse'].includes(t.type));
+    if (s.kind === 'enemies')
+        return v <= -40 && !(t && ['enemy', 'rival'].includes(t.type));
+    if (s.kind === 'ex')
+        return !!t && ['dating', 'partner'].includes(t.type) && v <= 10;
+    if (o.romance === 'off' || family || (t && ['dating', 'partner', 'spouse', 'ex'].includes(t.type)))
+        return false;
+    if (o.lovers(s.a).length || o.lovers(s.b).length || o.taken(s.a) || o.taken(s.b))
+        return false;
+    return o.romance === 'grow' ? v >= 45 : v >= 55 && o.spark;
 }

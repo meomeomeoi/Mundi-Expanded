@@ -85,12 +85,14 @@ export const catalogFor = (era: Era, kind?: RoomKind) => CATALOG.filter(c => for
 export type Owner = 'house' | string;   // 'house', 'player', or a character's avatar
 export type Via = 'start' | 'bought' | 'order' | 'shop' | 'found' | 'gift' | 'story' | 'hand';
 export interface Fixture { id: string; cat?: string; name: string; room: string; owner: Owner; via: Via; day: number; decor?: boolean }
-export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[]; curb?: { cat: string; day: number }; rummaged?: number; props?: Proposal[]; propFreq?: 'off' | 'rare' | 'sometimes' }
+export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[]; curb?: { cat: string; day: number }; rummaged?: number; props?: Proposal[]; propFreq?: 'off' | 'rare' | 'sometimes'; /** [expanded] 0.2.0.8: things a room takes */ limit?: number }
 export type GLike = { day: number; furnishx?: FurnishX };
 export function furnishOf(g: GLike): FurnishX {
     const f = (g.furnishx ??= { items: [], seq: 0 }); f.items ??= []; f.seq ??= 0; return f;
 }
 export const PLAYER_ROOM = 'home:player';
+/** [expanded] 0.2.0.8: a room with as many things as it takes (the setting; boxes on their way count). */
+export const roomFull = (g: GLike, room: string) => { const f = furnishOf(g); return f.items.filter(x => x.room === room).length + (f.orders ?? []).filter(o => o.room === room && o.state !== 'here').length >= (f.limit ?? 15); };
 export const fixturesIn = (g: GLike, room: string) => furnishOf(g).items.filter(x => x.room === room);
 export const fixtureById = (g: GLike, id: string) => furnishOf(g).items.find(x => x.id === id) ?? null;
 export const affordsOf = (x: Fixture): Afford[] => (x.decor ? [] : catOf(x.cat)?.affords ?? []);
@@ -102,6 +104,7 @@ export function addFixture(g: GLike, o: { cat?: string | null; name?: string; ro
     const name = (c ? catName(c, o.era ?? 'now') : String(o.name ?? '')).replace(/\s+/g, ' ').trim().slice(0, 60);
     if (!name || !o.room) return null;
     const f = furnishOf(g);
+    if (roomFull(g, o.room)) return null;   // [expanded] 0.2.0.8: a full room takes nothing more
     const x: Fixture = { id: `f${++f.seq}`, ...(c ? { cat: c.id } : { decor: true }), name, room: o.room, owner: o.owner ?? 'house', via: o.via ?? 'hand', day: g.day };
     f.items.push(x);
     return x;

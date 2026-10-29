@@ -14,6 +14,7 @@ import { bondsOf, tieKnowLines, YOU, type GLike } from './bonds.js';
 import { knowOf, knows, howText, type Knowable } from './knows.js';
 import { sawTogether } from './secretsrun.js';
 import { tellLines, hearNews } from './gossiprun.js';
+import { consequenceLines } from './consequences.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const hm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -96,6 +97,6 @@ export function youLines(g: Save, present: string[]): string[] {
 /** The scene prompt's "Who knows what" block. */
 export function knowsBlock(g: Save, w: WorldDef, present: string[]): string[] {
     if (!isScenario(w)) return [];
-    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...tellLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
+    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...tellLines(g, present), ...consequenceLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
     return lines.length ? ['Who knows what (people act on what they know; what they do not know, they do not bring up):', ...lines] : [];
 }

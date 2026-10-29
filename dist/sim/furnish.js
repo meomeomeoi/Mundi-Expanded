@@ -80,6 +80,8 @@ export function furnishOf(g) {
     return f;
 }
 export const PLAYER_ROOM = 'home:player';
+/** [expanded] 0.2.0.8: a room with as many things as it takes (the setting; boxes on their way count). */
+export const roomFull = (g, room) => { const f = furnishOf(g); return f.items.filter(x => x.room === room).length + (f.orders ?? []).filter(o => o.room === room && o.state !== 'here').length >= (f.limit ?? 15); };
 export const fixturesIn = (g, room) => furnishOf(g).items.filter(x => x.room === room);
 export const fixtureById = (g, id) => furnishOf(g).items.find(x => x.id === id) ?? null;
 export const affordsOf = (x) => (x.decor ? [] : catOf(x.cat)?.affords ?? []);
@@ -92,6 +94,8 @@ export function addFixture(g, o) {
     if (!name || !o.room)
         return null;
     const f = furnishOf(g);
+    if (roomFull(g, o.room))
+        return null; // [expanded] 0.2.0.8: a full room takes nothing more
     const x = { id: `f${++f.seq}`, ...(c ? { cat: c.id } : { decor: true }), name, room: o.room, owner: o.owner ?? 'house', via: o.via ?? 'hand', day: g.day };
     f.items.push(x);
     return x;

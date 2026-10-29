@@ -15,6 +15,8 @@ import { bondsOf, factK, valueOf, trustOf, tieWord, YOU, type GLike, type TieLik
 import { learn, knows, tieK, type Know, type Knowable } from './knows.js';
 import { spread, juiciness, garble, type News, type Mood } from './gossip.js';
 import { LOVE } from './secrets.js';
+import { react, caughtTalking } from './consequences.js';
+import type { Small } from './bonds.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const H = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
@@ -22,7 +24,7 @@ export const gossipOf = (g: Save) => { const b = bondsOf(G(g)); const x = (b.gos
 const nm = (g: Save, a: string) => (a === YOU ? personaName() : g.cast[a]?.name ?? a);
 
 /** Everything that can go around: facts not everyone knows, secret ties, your secret relationships. */
-export interface Item extends News { text: string; k: Knowable; store: { know?: Record<string, Know> } }
+export interface Item extends News { text: string; k: Knowable; store: { know?: Record<string, Know> }; love?: boolean; smallOf?: Small }
 export function newsOf(g: Save): Item[] {
     const b = bondsOf(G(g)); const out: Item[] = [];
     for (const f of b.facts as BondFact[]) {
@@ -31,9 +33,11 @@ export function newsOf(g: Save): Item[] {
     }
     for (const t of (G(g).living?.ties ?? []) as TieLike[]) {
         if (!t.secret || (t.a !== YOU && !g.cast[t.a]) || (t.b !== YOU && !g.cast[t.b])) continue;
-        out.push({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0, juicy: juiciness({ love: LOVE.has(t.type), secret: true, delta: 2 }), text: tieWord(t, (a) => nm(g, a)), k: tieK(t), store: t });
+        out.push({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0, juicy: juiciness({ love: LOVE.has(t.type), secret: true, delta: 2 }), text: tieWord(t, (a) => nm(g, a)), k: tieK(t), store: t, love: LOVE.has(t.type) });
     }
-    for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
+    for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true });
+    // [expanded] small secrets: told once, then they stop
+    for (const x of b.small ?? []) if (g.cast[x.who]) out.push({ id: x.id, parts: [x.who], pub: 'private', know: x.know, day: x.day, juicy: juiciness({ small: true }), small: true, text: `${nm(g, x.who)} ${x.text}`, k: { parts: [x.who], pub: 'private', know: x.know, day: x.day }, store: x, smallOf: x });
     return out;
 }
 
@@ -79,7 +83,12 @@ export async function gossipNight(g: Save, day: number): Promise<string[]> {
         const it = items.find(i => i.id === t.news)!;
         if ((t.know.hops ?? 1) >= 3) { const v = garble(t.know.ver ?? it.text, it.parts.map(a => nm(g, a)), Object.keys(g.cast).filter(a => !it.parts.includes(a)).map(a => nm(g, a)), H(`${g.world}|${t.news}|${t.to}|garble`)); if (v) t.know.ver = v; }
         if (t.to === YOU) { x.tell[t.from] = { news: t.news, text: t.know.ver ?? it.text, day }; notes.push(`${nm(g, t.from)} has news for you`); continue; }
-        if (learn(it.k, t.to, t.know, it.store)) notes.push(`${nm(g, t.from)} → ${nm(g, t.to)}: ${it.text}`);
+        if (learn(it.k, t.to, t.know, it.store)) {
+            notes.push(`${nm(g, t.from)} → ${nm(g, t.to)}: ${it.text}`);
+            const f = { id: it.id, parts: it.parts, text: it.text, love: !!it.love, k: it.k, ...(it.smallOf ? { small: it.smallOf } : {}) };
+            if (t.know.lvl === 'knows') react(g, f, t.to);
+            if (it.pub === 'private') caughtTalking(g, f, t.from, t.to);
+        }
     }
     // news for you that waited three days without a chance goes stale
     for (const [a, v] of Object.entries(x.tell)) if (day - v.day > 3 || !g.cast[a]) delete x.tell[a];

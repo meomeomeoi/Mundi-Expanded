@@ -23,6 +23,8 @@ export function placeOrder(g, w, o) {
     const era = eraOf(g);
     if (!F.forEra(c, era))
         return 'Not in this era.';
+    if (F.roomFull(G(g), o.room))
+        return 'That room is full (Settings: things a room).'; // [expanded] 0.2.0.8
     const name = F.catName(c, era);
     const money = moneyOn(g);
     const price = money ? Math.max(1, Math.round(priceOfCat(g, c) * (o.share ?? 1))) : 0;

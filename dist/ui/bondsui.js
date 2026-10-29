@@ -4,7 +4,7 @@
 import { houseRulesHtml } from './profileui.js';
 import { eraSettingsHtml } from './phoneskin.js';
 import { chatSettingsHtml } from './chatui.js';
-import { saveGame, notify, esc, game } from '../core/store.js';
+import { saveGame, notify, esc, game, toast } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { thumb, personaThumb, personaName } from '../st/bridge.js';
 import { icon } from './icons.js';
@@ -16,9 +16,10 @@ import { enableMoney } from '../sim/moneynight.js';
 import { TIE_TYPES } from '../sim/living.js';
 import { bondsOf, syncTies, pairOf, pairKey, pairsIn, setValue, toneOf, wordOf, addFact, editFact, removeFact, pinFact, factsOfPair, factsOfPerson, statusOf, setStatus, LIVES, YOU, factK, } from '../sim/bonds.js';
 import { knowOf, tieK, howText } from '../sim/knows.js'; // [expanded] 0.2.0.8
-import { partnersOf } from '../sim/romance.js';
+import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
 import { gossipOf } from '../sim/gossiprun.js';
+const roomLimit = (g) => Number(g.furnishx?.limit ?? 15);
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
 const BV = { sel: '', edit: '', draft: '', adding: false, addText: '', addWho: [] };
 const G = (g) => g;
@@ -241,6 +242,14 @@ export function bondsSettingsHtml() {
         <b>How the house talks</b>
         <div class="mu-bd-seg">${MOODS.map(([id, label]) => `<button class="${gossipOf(g).mood === id ? 'is-on' : ''}" data-act="bd-mood" data-v="${id}">${label}</button>`).join('')}</div>
         <div class="mu-bd-seg">${[3, 6, 10].map(n => `<button class="${gossipOf(g).max === n ? 'is-on' : ''}" data-act="bd-gmax" data-v="${n}">${n} at once</button>`).join('')}</div>
+        <b>Bigger changes without you</b>
+        <div class="mu-bd-seg">${[['rare', 'Rare'], ['normal', 'Every few weeks'], ['often', 'Often']].map(([id, label]) => `<button class="${(b.shifts ?? 'normal') === id ? 'is-on' : ''}" data-act="bd-shifts" data-v="${id}">${label}</button>`).join('')}</div>
+        <div class="mu-bd-seg">${[['off', 'No romance'], ['story', 'Romance from the story'], ['grow', 'Romance may grow']].map(([id, label]) => `<button class="${(b.romance ?? 'story') === id ? 'is-on' : ''}" data-act="bd-romance" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">Becoming friends, falling out for good, breaking up${(b.romance ?? 'story') !== 'off' ? ', or starting to see each other' : ''}: only with a reason in what happened lately, checked by the rules (how they get along, partners, orientation). ${(b.romance ?? 'story') === 'story' ? 'Romance only where there was flirting before.' : (b.romance ?? 'story') === 'grow' ? 'Romance may start between two who get along well.' : ''} Off with "Life without you" off.</small>
+        <b>Limits</b>
+        <div class="mu-bd-seg">${[6, 12, 24].map(n => `<button class="${(b.keep ?? 12) === n ? 'is-on' : ''}" data-act="bd-keep" data-v="${n}">${n} facts a pair</button>`).join('')}</div>
+        <div class="mu-bd-seg">${[10, 15, 25].map(n => `<button class="${roomLimit(g) === n ? 'is-on' : ''}" data-act="bd-roomlimit" data-v="${n}">${n} things a room</button>`).join('')}</div>
+        <small class="mu-muted">What happened between two people: the oldest go first (what their relationship is stays). A full room takes nothing more until something goes.</small>
         <small class="mu-muted">Who knows something tells the ones they spent the day with, by how juicy it is, how well they keep secrets, how loyal they are to the people it is about and how much they trust the listener. Only the juiciest few go around at once; a promise to keep it nearly stops it. You hear it from the ones close to you.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-money" ${g.house?.on ? 'checked' : ''}><span>Money in this house</span></label>
         <small class="mu-muted">${g.house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small>
@@ -306,6 +315,14 @@ Object.assign(INPUT, {
     'bd-addtext': (el) => { BV.addText = el.value; },
     'bd-money': (el) => { const g = game(); if (!g)
         return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
+    'bd-shifts': (el) => { const g = game(); if (!g)
+        return; bondsOf(G(g)).shifts = el.dataset.v || 'normal'; saveGame(); notify(); },
+    'bd-romance': (el) => { const g = game(); if (!g)
+        return; bondsOf(G(g)).romance = el.dataset.v || 'story'; saveGame(); notify(); },
+    'bd-keep': (el) => { const g = game(); if (!g)
+        return; bondsOf(G(g)).keep = Number(el.dataset.v) || 12; saveGame(); notify(); },
+    'bd-roomlimit': (el) => { const g = game(); if (!g)
+        return; g.furnishx = g.furnishx ?? { items: [], seq: 0 }; g.furnishx.limit = Number(el.dataset.v) || 15; saveGame(); notify(); },
     'bd-mood': (el) => { const g = game(); if (!g)
         return; gossipOf(g).mood = el.dataset.v || 'usual'; saveGame(); notify(); },
     'bd-gmax': (el) => { const g = game(); if (!g)
@@ -324,8 +341,16 @@ Object.assign(INPUT, {
             bs.hide ??= {};
             if (on)
                 bs.hide[c] ??= { day: g.day };
-            else
+            else if (bs.hide[c]) { // out in the open: your other partners find out now (unless they knew)
+                const k = bs.hide[c].know ?? {};
                 delete bs.hide[c];
+                for (const o of partnersOf(g))
+                    if (o !== c && !k[o]) {
+                        const t = foundOut(g, o, c);
+                        if (t)
+                            toast(t, 'warn', { ms: 9000 });
+                    }
+            }
         }
         else {
             const t = statusOf(G(g), a, b);

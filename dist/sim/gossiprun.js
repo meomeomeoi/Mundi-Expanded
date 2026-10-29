@@ -15,6 +15,7 @@ import { bondsOf, factK, valueOf, trustOf, tieWord, YOU } from './bonds.js';
 import { learn, knows, tieK } from './knows.js';
 import { spread, juiciness, garble } from './gossip.js';
 import { LOVE } from './secrets.js';
+import { react, caughtTalking } from './consequences.js';
 const G = (g) => g;
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -34,11 +35,15 @@ export function newsOf(g) {
     for (const t of (G(g).living?.ties ?? [])) {
         if (!t.secret || (t.a !== YOU && !g.cast[t.a]) || (t.b !== YOU && !g.cast[t.b]))
             continue;
-        out.push({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0, juicy: juiciness({ love: LOVE.has(t.type), secret: true, delta: 2 }), text: tieWord(t, (a) => nm(g, a)), k: tieK(t), store: t });
+        out.push({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0, juicy: juiciness({ love: LOVE.has(t.type), secret: true, delta: 2 }), text: tieWord(t, (a) => nm(g, a)), k: tieK(t), store: t, love: LOVE.has(t.type) });
     }
     for (const [a, h] of Object.entries(b.hide ?? {}))
         if (g.cast[a])
-            out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
+            out.push({ id: `h:${a}`, parts: [YOU, a], pub: 'private', know: h.know, day: h.day, juicy: 0.9, text: `${nm(g, YOU)} and ${nm(g, a)} are together`, k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true });
+    // [expanded] small secrets: told once, then they stop
+    for (const x of b.small ?? [])
+        if (g.cast[x.who])
+            out.push({ id: x.id, parts: [x.who], pub: 'private', know: x.know, day: x.day, juicy: juiciness({ small: true }), small: true, text: `${nm(g, x.who)} ${x.text}`, k: { parts: [x.who], pub: 'private', know: x.know, day: x.day }, store: x, smallOf: x });
     return out;
 }
 // who spent time with whom on a day (the plans: an hour or more awake in the same room), their own group chats, and
@@ -107,8 +112,14 @@ export async function gossipNight(g, day) {
             notes.push(`${nm(g, t.from)} has news for you`);
             continue;
         }
-        if (learn(it.k, t.to, t.know, it.store))
+        if (learn(it.k, t.to, t.know, it.store)) {
             notes.push(`${nm(g, t.from)} → ${nm(g, t.to)}: ${it.text}`);
+            const f = { id: it.id, parts: it.parts, text: it.text, love: !!it.love, k: it.k, ...(it.smallOf ? { small: it.smallOf } : {}) };
+            if (t.know.lvl === 'knows')
+                react(g, f, t.to);
+            if (it.pub === 'private')
+                caughtTalking(g, f, t.from, t.to);
+        }
     }
     // news for you that waited three days without a chance goes stale
     for (const [a, v] of Object.entries(x.tell))

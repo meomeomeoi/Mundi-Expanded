@@ -12,7 +12,10 @@ import { profileOf, nosyOf, ORIENTS, STATUSES } from './profile.js';
 import { tieK, learn, type Know, type Knowable } from './knows.js';
 import { hearFight } from './secrets.js';
 const Hh = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
-import { bondsOf, YOU, factK, parseFound, type TieLike, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM, type Change, type GLike } from './bonds.js';
+import { react, talksOf, closeTalk, loversOf } from './consequences.js';
+import { addBond } from './social.js';
+import { LOVE } from './secrets.js';
+import { bondsOf, YOU, factK, parseFound, parseTalked, parseShift, parseSmall, shiftOk, setStatus, statusOf, valueOf, factsOfPair, type TieLike, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM, type Change, type GLike } from './bonds.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const clean = (t: unknown) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
@@ -68,12 +71,18 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     if (spoke.length < 2 && b.life === 'off') { b.lastNight = day; return []; }
     // [expanded] 0.2.0.8: the secrets (secret ties, your secret relationships), for "who found out today"
     const nm = (a: string) => (a === YOU ? me : g.cast[a]?.name ?? a);
-    const secrets: { text: string; known: string[]; k: Knowable; store: { know?: Record<string, Know> } }[] = [];
-    for (const t of (gl.living?.ties ?? []) as TieLike[]) if (t.secret && (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b])) { const k = tieK(t); secrets.push({ text: `${nm(t.a)} and ${nm(t.b)}: ${t.type}`, known: [t.a, t.b, ...Object.keys(t.know ?? {}).filter(x => t.know![x].lvl === 'knows')].map(nm), k, store: t }); }
+    const secrets: { text: string; known: string[]; k: Knowable; store: { know?: Record<string, Know> }; love?: boolean; parts: string[] }[] = [];
+    for (const t of (gl.living?.ties ?? []) as TieLike[]) if (t.secret && (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b])) { const k = tieK(t); secrets.push({ text: `${nm(t.a)} and ${nm(t.b)}: ${t.type}`, known: [t.a, t.b, ...Object.keys(t.know ?? {}).filter(x => t.know![x].lvl === 'knows')].map(nm), k, store: t, love: LOVE.has(t.type), parts: [t.a, t.b] }); }
     // recent things not everyone knows (fights, secrets of the week), for who found out and who promised
-    for (const f of b.facts.filter(x => x.kind === 'episode' && day - x.day <= 7 && factK(x).pub !== 'public').slice(-5)) secrets.push({ text: `${f.who.map(nm).join(' & ')}: ${f.text}`, known: [...f.who, ...Object.keys(f.know ?? {}).filter(x => f.know![x].lvl === 'knows')].map(nm), k: factK(f), store: f });
-    for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know![x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
-    const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })) });
+    for (const f of b.facts.filter(x => x.kind === 'episode' && day - x.day <= 7 && factK(x).pub !== 'public').slice(-5)) secrets.push({ text: `${f.who.map(nm).join(' & ')}: ${f.text}`, known: [...f.who, ...Object.keys(f.know ?? {}).filter(x => f.know![x].lvl === 'knows')].map(nm), k: factK(f), store: f, parts: f.who });
+    for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know![x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h, love: true, parts: [YOU, a] });
+    // [expanded] unfinished business; a bigger change now and then (the setting), and small secrets
+    const talks = talksOf(g).filter(t => (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b]));
+    const every = ({ rare: 42, normal: 21, often: 10 } as Record<string, number>)[b.shifts ?? 'normal'] / (b.life === 'lively' ? 2 : 1);
+    const shiftDue = b.life !== 'off' && day - ((b as any).shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
+    const smallDue = b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
+    const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })),
+        talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: b.romance ?? 'story' } : {}), small: smallDue });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
@@ -88,7 +97,28 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     }
     // [expanded] 0.2.0.8: secrets found out in today's scenes
     const findName = (q: string) => { const t = q.trim().toLowerCase(); if (t === me.toLowerCase() || t === '{{user}}' || t === 'the player') return YOU; const hit = people.filter(p => p.name.toLowerCase() === t || p.name.toLowerCase().split(/\s+/)[0] === t.split(/\s+/)[0]); return hit.length === 1 ? hit[0].avatar : null; };
-    for (const f of parseFound(raw, findName, secrets.length)) learn(secrets[f.i].k, f.who, { lvl: 'knows', how: 'saw', day }, secrets[f.i].store);
+    for (const f of parseFound(raw, findName, secrets.length)) {
+        const x = secrets[f.i];
+        if (learn(x.k, f.who, { lvl: 'knows', how: f.by && f.by !== f.who ? 'told' : 'saw', day, ...(f.by && f.by !== f.who ? { from: f.by } : {}) }, x.store)) react(g, { id: `n${f.i}`, parts: x.parts, text: x.text, love: !!x.love, k: x.k }, f.who);
+        // you told someone a secret that was not yours: the ones it is about trust you a little less
+        if (f.by === YOU) for (const p of x.parts) if (g.cast[p]) addBond(g, p, -4);
+    }
+    for (const i of parseTalked(raw, talks.length)) closeTalk(g, talks[i].id);
+    // a bigger change, if the rules find it believable
+    const sh = shiftDue ? parseShift(raw, findName) : null;
+    if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: b.romance ?? 'story', lovers: (a) => loversOf(g, a), taken: (a) => ['taken', 'married'].includes(profileOf(g as any, a)?.status ?? ''),
+        spark: factsOfPair(gl, sh.a, sh.b).some(f => g.day - f.day <= 30 && /flirt|kiss|blush|crush|date|romantic|spark|held hands|флирт|поцел|покрасн|свидан/i.test(f.text)) })) {
+        const v = valueOf(gl, sh.a, sh.b);
+        const type = sh.kind === 'friends' ? (v >= 70 ? 'bestfriend' : 'friend') : sh.kind === 'enemies' ? (v > -60 ? 'rival' : 'enemy') : sh.kind;
+        setStatus(gl, sh.a, sh.b, type);
+        const t = statusOf(gl, sh.a, sh.b); if (t) { t.day = day; if (sh.secret && sh.kind === 'dating') t.secret = true; else { delete t.secret; delete t.know; } }
+        const c = applyChange(gl, [sh.a, sh.b], sh.kind === 'friends' || sh.kind === 'dating' ? 1 : -1, sh.why || `${nm(sh.a)} and ${nm(sh.b)}: ${sh.kind}.`, 'offscreen', sh.secret && sh.kind === 'dating' ? { pub: 'private' } : sh.kind === 'dating' || sh.kind === 'ex' ? { pub: 'public' } : undefined);
+        if (c) changes.push(c);
+        (b as any).shiftDay = day;
+    }
+    // a small thing someone did and kept quiet
+    const sm = smallDue ? parseSmall(raw, findName) : null;
+    if (sm && sm.who !== YOU && g.cast[sm.who]) { const list = (b.small ??= []); list.push({ id: `s${day}${list.length}`, who: sm.who, ...(sm.about && sm.about !== YOU ? { about: sm.about } : {}), text: sm.text, day }); if (list.length > 20) list.splice(0, list.length - 20); }
     for (const f of parseFound(raw, findName, secrets.length, 'PROMISE')) { const k = secrets[f.i].store.know?.[f.who]; if (k) k.promised = true; }
     // loud fights without you are heard through the walls by whoever is nosy enough
     for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {

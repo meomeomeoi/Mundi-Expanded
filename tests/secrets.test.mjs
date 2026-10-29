@@ -61,4 +61,22 @@ test('gossip: who tells whom, loyalty, promises, limits, small things once', () 
     assert.equal(Go.garble('Masha & Leah: kissed', ['Masha'], ['Kathie'], 0.1), 'Kathie & Leah: kissed'); assert.equal(Go.garble('x', ['Masha'], ['Kathie'], 0.5), null);
 });
 
+test('night: unfinished business, bigger changes by the rules, small secrets', () => {
+    const find = (q) => ({ mia: 'Mia.png', rin: 'Rin.png', kai: 'Kai.png' })[q.toLowerCase()] ?? null;
+    assert.deepEqual(B.parseTalked('TALKED | 2\nTALKED | 9', 2), [1]);
+    const sh = B.parseShift('OFF-SCREEN\nSHIFT | Mia & Rin | dating | late talks turned into more | secret', find);
+    assert.deepEqual(sh, { a: 'Mia.png', b: 'Rin.png', kind: 'dating', why: 'late talks turned into more', secret: true });
+    assert.deepEqual(B.parseSmall('SMALL | Kai | broke the blue mug | Mia', find), { who: 'Kai.png', text: 'broke the blue mug', about: 'Mia.png' });
+    const cast = { 'Mia.png': { avatar: 'Mia.png', name: 'Mia' }, 'Rin.png': { avatar: 'Rin.png', name: 'Rin' } };
+    const g = { day: 5, cast, living: { ties: [] } };
+    B.setValue(g, 'Mia.png', 'Rin.png', 60);
+    const o = { romance: 'story', lovers: () => [], taken: () => false, spark: false };
+    assert.equal(B.shiftOk(g, sh, o), false, 'from the story: no spark, no romance');
+    assert.equal(B.shiftOk(g, sh, { ...o, spark: true }), true);
+    assert.equal(B.shiftOk(g, sh, { ...o, romance: 'off', spark: true }), false);
+    assert.equal(B.shiftOk(g, sh, { ...o, spark: true, taken: (a) => a === 'Rin.png' }), false, 'a partner outside the house');
+    assert.equal(B.shiftOk(g, { ...sh, kind: 'enemies' }, o), false); assert.equal(B.shiftOk(g, { ...sh, kind: 'friends' }, o), true);
+    B.setStatus(g, 'Mia.png', 'Rin.png', 'sibling'); assert.equal(B.shiftOk(g, sh, { ...o, romance: 'grow' }), false, 'family');
+});
+
 console.log(`secrets: ${n} tests passed`);

@@ -9,7 +9,8 @@ import { planMods, houseNotes } from './lifehooks.js';
 import { ownRoom, housePlan } from './lifeday.js';
 import { isOuting } from './places.js';
 import { profileOf, discreetOf, nosyOf } from './profile.js';
-import { YOU, type GLike, type TieLike } from './bonds.js';
+import { YOU, tieWord, type GLike, type TieLike } from './bonds.js';
+import { react } from './consequences.js';
 import { clue, learn, tieK, knows } from './knows.js';
 import { LOVE, meetsFor, withMeets, accessTo, noticeChance, careOf, MEET_MARK, type Meet } from './secrets.js';
 import type { Slot } from './profile.js';
@@ -19,6 +20,7 @@ const tiesOf = (g: Save): TieLike[] => ((g as unknown as GLike).living?.ties ?? 
 /** The secret couples among the characters. */
 export const secretCouples = (g: Save) => tiesOf(g).filter(t => t.secret && LOVE.has(t.type) && g.cast[t.a] && g.cast[t.b]);
 const tieOfPair = (g: Save, a: string, b: string) => tiesOf(g).find(t => (t.a === a && t.b === b) || (t.a === b && t.b === a));
+const foundOf = (g: Save, t: TieLike) => ({ id: `t:${t.a}|${t.b}`, parts: [t.a, t.b], text: tieWord(t, (a) => name(g, a)), love: LOVE.has(t.type), k: tieK(t) });
 const roomOf = (g: Save, a: string) => (g.cast[a] ? ownRoom(g.cast[a]) : '');
 const name = (g: Save, a: string) => (a === YOU ? 'you' : g.cast[a]?.name ?? a);
 
@@ -44,6 +46,7 @@ houseNotes.push((g, w, r) => {
 function noticed(g: Save, t: TieLike, who: string, what: string): 'suspects' | 'knows' | null {
     const r = clue(tieK(t), who, g.day, t);
     if (r) { const k = t.know![who]; k.ver = what; }
+    if (r === 'knows') react(g, foundOf(g, t), who);   // what finding out does (consequences.ts)
     if (r && who === YOU) setTimeout(() => toast(r === 'knows' ? `You are sure now: ${what.replace(/^saw /, '')}. ${name(g, t.a)} and ${name(g, t.b)} are together, and keep it to themselves.` : `You noticed something: ${what.replace(/^saw /, 'you saw ')}.`, 'info', { ms: 9000 }), 60);
     return r;
 }
@@ -81,6 +84,6 @@ export function sawTogether(g: Save, here: string[], loc: string) {
     if (!loc.startsWith('home:')) return;
     for (const t of secretCouples(g)) {
         if (!here.includes(t.a) || !here.includes(t.b)) continue;
-        for (const x of [YOU, ...here.filter(a => a !== t.a && a !== t.b)]) if (learn(tieK(t), x, { lvl: 'knows', how: 'saw', day: g.day, ver: `saw ${name(g, t.a)} and ${name(g, t.b)} together in a bedroom` }, t) && x === YOU) toast(`${name(g, t.a)} and ${name(g, t.b)}: now you know.`, 'info');
+        for (const x of [YOU, ...here.filter(a => a !== t.a && a !== t.b)]) if (learn(tieK(t), x, { lvl: 'knows', how: 'saw', day: g.day, ver: `saw ${name(g, t.a)} and ${name(g, t.b)} together in a bedroom` }, t)) { if (x === YOU) toast(`${name(g, t.a)} and ${name(g, t.b)}: now you know.`, 'info'); else react(g, foundOf(g, t), x); }
     }
 }
