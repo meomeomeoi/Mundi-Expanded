@@ -430,7 +430,7 @@ export async function addUserLine(text: string) {
 }
 export async function narratorLine(text: string) {
     const before = chat().length;
-    await ctx().executeSlashCommandsWithOptions(`/sys ${scriptText(text)}`);
+    await ctx().executeSlashCommandsWithOptions(`/sys ${scriptText(String(text).replace(/\{\{user\}\}/gi, personaName()))}`);   // [expanded] the name, not the macro (a narrator line is not always run through the macros)
     for (let i = before; i < chat().length; i++) chat()[i].extra = { ...(chat()[i].extra ?? {}), mundi: true, mundi_narrator: true };
     saveChatDebounced();
 }

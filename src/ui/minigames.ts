@@ -58,7 +58,7 @@ function gameHtml(g: Save, w: WorldDef): string {
     const head = `<header class="mu-og-head"><b>${esc(p.a.icon ?? '')} ${esc(p.a.label)}</b>${partner ? `<span class="mu-og-partner"><img src="${esc(thumb(GV.partner))}" alt="">${GV.bubble ? `<q data-notr>${esc(GV.bubble)}</q>` : ''}</span>` : ''}<button class="mu-ibtn mu-ghost" data-act="og-quit" title="Stop">${icon('x')}</button></header>`;
     let body = '';
     if (GV.phase === 'load') body = `<p class="mu-muted mu-og-load">${GV.setup ? '' : 'Getting ready…'}</p>${GV.setup ? setupHtml(g) : ''}`;
-    else if (GV.phase === 'done') body = `<div class="mu-og-done"><p data-notr>${esc(GV.text)}</p><button class="mu-primary" data-act="og-finish">${icon('check')}<span>Done</span></button></div>`;
+    else if (GV.phase === 'done') body = `<div class="mu-og-done"><p data-notr>${esc(GV.text.replace(/\{\{user\}\}/g, personaName()))}</p><button class="mu-primary" data-act="og-finish">${icon('check')}<span>Done</span></button></div>`;
     else body = ({ cook: cookHtml, guitar: guitarHtml, clean: cleanHtml, crossword: crossHtml, work: focusHtml, study: focusHtml, code: codeHtml, write: writeHtml } as Record<R.Game, (g: Save) => string>)[GV.game as R.Game](g);
     void w;
     return `<div class="mu-dlg-veil"></div><div class="mu-panel mu-dlg mu-glassdlg mu-og mu-og-${GV.game}" role="dialog">${head}${body}</div>`;

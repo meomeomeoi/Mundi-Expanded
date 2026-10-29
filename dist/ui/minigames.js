@@ -74,7 +74,7 @@ function gameHtml(g, w) {
     if (GV.phase === 'load')
         body = `<p class="mu-muted mu-og-load">${GV.setup ? '' : 'Getting ready…'}</p>${GV.setup ? setupHtml(g) : ''}`;
     else if (GV.phase === 'done')
-        body = `<div class="mu-og-done"><p data-notr>${esc(GV.text)}</p><button class="mu-primary" data-act="og-finish">${icon('check')}<span>Done</span></button></div>`;
+        body = `<div class="mu-og-done"><p data-notr>${esc(GV.text.replace(/\{\{user\}\}/g, personaName()))}</p><button class="mu-primary" data-act="og-finish">${icon('check')}<span>Done</span></button></div>`;
     else
         body = { cook: cookHtml, guitar: guitarHtml, clean: cleanHtml, crossword: crossHtml, work: focusHtml, study: focusHtml, code: codeHtml, write: writeHtml }[GV.game](g);
     void w;
