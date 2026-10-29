@@ -65,7 +65,7 @@ export function house3dHtml(): string {
     if (!H3.open) return '';
     const name = H3.room;
     return `<div class="mu-h3"><div class="mu-h3-stage" data-keep="h3" data-morph-skip></div>
-        <div class="mu-h3-top"><b data-notr>${esc(name || '…')}</b><span class="mu-h3-floor" data-notr>${esc(H3.floor)}</span></div>
+        <div class="mu-h3-top"><span class="mu-alpha" title="An early version: walking here does not move you in the game yet">alpha</span><b data-notr>${esc(name || '…')}</b><span class="mu-h3-floor" data-notr>${esc(H3.floor)}</span></div>
         <div class="mu-h3-tools"><div class="mu-bd-seg"><button class="${H3.mode === 'walk' ? 'is-on' : ''}" data-act="h3-mode" data-v="walk">${icon('user')}<span>Walk</span></button><button class="${H3.mode === 'overview' ? 'is-on' : ''}" data-act="h3-mode" data-v="overview">${icon('home')}<span>Dollhouse</span></button></div>
             <button class="mu-ibtn mu-ghost" data-act="h3-close" aria-label="Close">${icon('x')}</button></div>
         ${H3.pick ? `<div class="mu-h3-pick"><span data-notr>${esc(H3.pick.name)}</span><button class="mu-primary" data-act="h3-go">${icon('forward')}<span>Go to them</span></button><button class="mu-ghost" data-act="h3-unpick">${icon('x')}</button></div>` : ''}

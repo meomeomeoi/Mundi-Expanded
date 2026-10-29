@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased · The house in 3D (alpha)
+
+An early, extra view of the house; the game itself does not depend on it. Marked "alpha" in the game.
+
+- **3D** on the map of a Home with a floor plan: walk through the house in the first person (drag to look, click the
+  floor to walk, WASD) or see it as a dollhouse from above, the walls cut low.
+- Built from the floor plan's rooms: walls, doors to the open space, the hall between rooms, windows, stairs; a toon
+  look with ink lines, drawn textures (planks, tiles, carpet), soft shadows, a garden; light by the time of day.
+- Furniture from Kenney's Furniture Kit (CC0, bundled) by the kind of room, plus what the house's things say stands
+  there (a PC, a bookshelf, a double bed…).
+- People where their day puts them, as their 2D sprites (on a plinth when drawn to the knees); shut bedrooms show only
+  "someone is inside". Clicking someone offers "Go to them"; a shut door knocks, as on the map.
+- Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
+  roadmap (section 10).
+
 ## Mundi Expanded 0.2.0.9 · 2026-10-29
 
 Behind closed doors: listening, and flirting and closeness. Mundi tracks the state around it; the scenes themselves

@@ -184,6 +184,30 @@ closeness (one-way feelings between characters, your own feelings, how flirting 
 staying over, moving in, a date at home), with a switch. Decided: romance is always one way (a character's feelings for
 someone); yours are set by you, not a number; Mundi never writes intimate scenes itself, only the state around them.
 
+## 10. The house in 3D (alpha since 0.2.0.9; about three or four releases to finish)
+
+An extra way to see the house in a Home with a floor plan: walk through it in the first person, or see it as a
+dollhouse. Characters stay 2D sprites (on a plinth when drawn to the knees); the conversations stay the VN scene.
+Done in the alpha: the house built from the plan (walls, doors, the hall, windows, stairs), a toon look with ink lines
+and drawn textures, Kenney's Furniture Kit (CC0) by the kind of room and from the house's things, light by the time of
+day, people where their day puts them, shut bedrooms with "someone is inside", "Go to them" and knocking from 3D.
+
+To finish:
+- **Walking is real**: stopping in another room for a moment moves you there in the game (time, doors, knocking, as
+  on the map); hallways and landings belong to the nearest real place (or a "hallway" place the house can have).
+- **Within earshot**: rooms joined without doors (an open kitchen and living room) hear each other; the scene says who
+  is within earshot ("Leah is in the kitchen: she hears if you raise your voice"); called by name, they come over (the
+  same as following). Shut doors stop it; thin walls let only loud things through.
+- **Call them over** from 3D next to "Go to them": they come if they are free, awake and not upset with you.
+- **Furniture, better**: pieces checked against each other and against open sides (no wardrobe in the middle of an
+  open plan), models for what the kit lacks (a car, a treadmill, a guitar, a console, an easel), people by their things
+  (the gamer at the PC, someone on the sofa), lamps that light up at night.
+- **Stairs** from the kit's models, joined to the floors; walking up and down instead of a click.
+- **Phones**: touch controls (a stick to walk, drag to look), lighter rendering.
+- **Backgrounds from the house**: render each room's view (day, evening, night) from the same camera, for img2img and
+  ControlNet in ComfyUI: room pictures that match each other and the furniture, and door hotspots taken from 3D.
+- **Your own house**: the same from any floor plan made in the World creator; an editor for doors and stairs.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for

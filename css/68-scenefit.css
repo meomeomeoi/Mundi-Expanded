@@ -36,3 +36,4 @@
 #mundi-root .mu-h3-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); padding: 4px 12px; border-radius: 10px; background: rgba(12, 14, 20, .45); color: #e8e8ee; font-size: 12px; pointer-events: none; white-space: nowrap; }
 #mundi-root .mu-h3-btn { display: inline-flex; align-items: center; gap: 6px; }
 #mundi-root .mu-rooms-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#mundi-root .mu-alpha { display: inline-block; justify-self: start; padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #1a1205; background: linear-gradient(135deg, #ffd45a, #ff9f3a); box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
