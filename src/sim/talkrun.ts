@@ -211,6 +211,8 @@ export function pass() {
     const g = game(); const c = TK.card; if (!g || !c) return;
     if (c.kind === 'come') { const a = c.who[0]; const x = talkOf(g); x.init[a] = Math.max(0, (x.init[a] ?? 0) - 30); x.snub[a] = (x.snub[a] ?? 0) + 1; delete x.sought?.[a]; c.cur.how = 'passed'; }
     else if (c.cur.how === 'pending') c.cur.how = 'passed';
+    // [expanded] 14.4: you stay in the room (eating, doing something): the next reply is about you, not their talk
+    if (c.kind === 'talk' && c.cur.how === 'passed') void bridge().then(b => b.setAsk(`[${names(g, c.who)} keep their conversation to themselves in the background. This reply is about what {{user}} says or does; do not write their conversation.]`, 4 * 60000));
     card(null); saveGame(); void sync();
 }
 
@@ -411,7 +413,7 @@ presentNotes.push((g, w, present) => {
     if (cur && cur.room === g.player.loc && now - cur.at <= 40 && cur.how !== 'pending') {
         const what = cur.about || cur.topic;
         if (cur.who.length === 1) { if (cur.how === 'joined') out.push(`${name(g, cur.who[0])} came up to {{user}} to talk about ${what}.`); }
-        else out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${({ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: '{{user}} did not join them.', pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' } as Record<string, string>)[cur.how] ?? ''}`);
+        else out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${({ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: '{{user}} walked past and did not join them: they carry on quietly between themselves in the background and leave {{user}} alone. Do not write their conversation; at most a glance or a word to {{user}}, and only if {{user}} speaks to them do they turn to {{user}}.', pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' } as Record<string, string>)[cur.how] ?? ''}`);
     }
     if (tcfg(g).battery) for (const r of present) {
         const t = tierOf(g, r.avatar);

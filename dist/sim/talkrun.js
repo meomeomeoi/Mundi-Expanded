@@ -320,6 +320,9 @@ export function pass() {
     }
     else if (c.cur.how === 'pending')
         c.cur.how = 'passed';
+    // [expanded] 14.4: you stay in the room (eating, doing something): the next reply is about you, not their talk
+    if (c.kind === 'talk' && c.cur.how === 'passed')
+        void bridge().then(b => b.setAsk(`[${names(g, c.who)} keep their conversation to themselves in the background. This reply is about what {{user}} says or does; do not write their conversation.]`, 4 * 60000));
     card(null);
     saveGame();
     void sync();
@@ -661,7 +664,7 @@ presentNotes.push((g, w, present) => {
                 out.push(`${name(g, cur.who[0])} came up to {{user}} to talk about ${what}.`);
         }
         else
-            out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${{ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: '{{user}} did not join them.', pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' }[cur.how] ?? ''}`);
+            out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${{ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: '{{user}} walked past and did not join them: they carry on quietly between themselves in the background and leave {{user}} alone. Do not write their conversation; at most a glance or a word to {{user}}, and only if {{user}} speaks to them do they turn to {{user}}.', pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' }[cur.how] ?? ''}`);
     }
     if (tcfg(g).battery)
         for (const r of present) {

@@ -15,6 +15,12 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14.4 (0.2.1-14.4) · 2026-10-30
+
+- **Walk past**: the scene used to be told only "{{user}} did not join them", so the next reply (to eating, to anything
+  you did in that room) went on writing their conversation. Now it says they carry on quietly in the background and
+  leave you alone unless you speak to them, and for a few minutes each reply is told it is about what you do.
+
 ## Mundi Expanded 14.3 (0.2.1-14.3) · 2026-10-30
 
 - **Out of the house, in the profile**: "What they do in life" (told to the AI) and up to four times out of the house:

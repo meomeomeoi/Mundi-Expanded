@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-14.3';
+export const VERSION = '0.2.1-14.4';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,9 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-14.4', fork: true, title: 'Walk past means walk past', items: [
+            ['chat', 'Walking past a conversation and staying in the room (to eat, say): the next replies are about what you do; their talk goes on in the background instead of being written out.'],
+        ] },
     { v: '0.2.1-14.3', fork: true, title: 'Out of the house', items: [
             ['map', 'Profiles have "What they do in life" and their times out of the house (classes, work, the gym, nights out: days and hours, past midnight too). "The housemates leave the house" now follows them; before, with no shift set, nobody ever left.'],
             ['user', 'This Home\'s job and shift table is gone (the profile does it); a job and shift from an older save move into the profile by themselves.'],
