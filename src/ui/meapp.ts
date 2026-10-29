@@ -21,7 +21,7 @@ export function meApp(g: Save, w: WorldDef, head: string): string {
     const tabs = ([['skills', 'Skills'], ['works', 'Works'], ['chores', 'Chores'], ['week', 'Week'], ['set', 'Settings']] as const)
         .map(([id, l]) => `<button class="mu-chip ${ME.tab === id ? 'is-on' : ''}" data-act="me-tab" data-v="${id}">${l}</button>`).join('');
     const body = ME.tab === 'skills' ? skillsHtml(g) : ME.tab === 'works' ? worksHtml(g) : ME.tab === 'chores' ? choresHtml(g, w) : ME.tab === 'week' ? weekHtml(g) : setHtml(g);
-    return `${head}<div class="mu-ph-body mu-me"><div class="mu-chips mu-cal-tabs">${tabs}</div>${body}</div>`;
+    return `${head}<div class="mu-ph-body mu-meapp"><div class="mu-chips mu-cal-tabs">${tabs}</div>${body}</div>`;
 }
 
 function skillsHtml(g: Save): string {

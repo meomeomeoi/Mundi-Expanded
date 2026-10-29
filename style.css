@@ -2134,7 +2134,7 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-own-pick { display: grid; gap: 10px; width: min(460px, calc(100% - 24px)); }
 #mundi-root .mu-own-pick h3 { margin: 0; }
 #mundi-root .mu-own-pick .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-#mundi-root .mu-own-pick .mu-chip img, #mundi-root .mu-me .mu-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; }
+#mundi-root .mu-own-pick .mu-chip img, #mundi-root .mu-meapp .mu-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; }
 #mundi-root .mu-og { display: grid; gap: 10px; width: min(620px, calc(100% - 20px)); max-height: calc(100% - 40px); overflow: auto; }
 #mundi-root .mu-og p { margin: 0; }
 #mundi-root .mu-og-head { display: flex; align-items: center; gap: 10px; }
@@ -2209,6 +2209,11 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-tip div + div, .mu-tip div + div { margin-top: 2px; }
 #mundi-root .mu-traits .mu-chip.has-fx { position: relative; }
 #mundi-root .mu-traits .mu-chip.has-fx::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: #7fd3ff; box-shadow: 0 0 6px #7fd3ff; }
+#mundi-root .mu-meapp { grid-template-columns: minmax(0, 1fr); }
+#mundi-root .mu-meapp .mu-cal-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+#mundi-root .mu-meapp .mu-me-skill { grid-template-columns: minmax(96px, 40%) minmax(0, 1fr) 22px; }
+#mundi-root .mu-meapp .mu-me-skill input[type=range] { width: 100%; min-width: 0; }
+#mundi-root .mu-meapp .mu-me-skill small { grid-column: 1 / -1; margin-top: -4px; }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }
