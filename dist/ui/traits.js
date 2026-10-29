@@ -1,12 +1,14 @@
 // Traits: ready-made descriptions picked as chips (e.g. Proficiency: strong, smart), up to a limit per group.
 import { esc } from '../core/store.js';
-export function traitsHtml(groups, picked, act) {
+/** `info` ([expanded] 0.2.1-12): what an option does (a tooltip, and a dot when it changes the rules). */
+export function traitsHtml(groups, picked, act, info) {
     return groups.map(g => {
         const mine = picked?.[g.id] ?? [];
         return `<div class="mu-field mu-traits"><span>${esc(g.label)} <small>${mine.length}/${g.max}</small></span>
             <div class="mu-chips">${g.options.map(o => {
             const on = mine.includes(o);
-            return `<button class="mu-chip ${on ? 'is-on' : ''}" data-act="${esc(act)}" data-k="${esc(g.id)}" data-v="${esc(o)}" ${!on && mine.length >= g.max ? 'aria-disabled="true"' : ''}>${esc(o)}</button>`;
+            const fx = info?.(o); // [expanded]
+            return `<button class="mu-chip ${on ? 'is-on' : ''} ${fx?.game ? 'has-fx' : ''}" data-act="${esc(act)}" data-k="${esc(g.id)}" data-v="${esc(o)}" ${fx ? `data-tip="${esc(fx.lines.join('\n'))}"` : ''} ${!on && mine.length >= g.max ? 'aria-disabled="true"' : ''}>${esc(o)}</button>`;
         }).join('')}</div></div>`;
     }).join('');
 }

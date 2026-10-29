@@ -200,7 +200,8 @@ async function startClean(g: Save) {
     const p = R.OWN.pending!; const kind = /chore-(\w+)/.exec(p.a.id)?.[1] ?? 'room';
     const spots = Array.from({ length: 9 }, () => ({ x: 8 + Math.random() * 80, y: 10 + Math.random() * 70, v: 1, r: 26 + Math.random() * 26 }));
     const things = (MESS[kind] ?? MESS.room).map(e => ({ e, x: 6 + Math.random() * 84, y: 8 + Math.random() * 74, done: false }));
-    GV.d = { kind, spots: kind === 'trash' ? [] : spots, things, ends: Date.now() + (25 + (GV.partner ? 8 : 0)) * 1000 };
+    const handy = ((g.player as any).traits?.proficiency ?? []).includes('Handy');   // a Handy persona has more time
+    GV.d = { kind, spots: kind === 'trash' ? [] : spots, things, ends: Date.now() + (25 + (GV.partner ? 8 : 0) + (handy ? O.HANDY_SECONDS : 0)) * 1000 };
     GV.phase = 'play'; notify();
     const tick = () => { if (GV.game !== 'clean') return; const left = GV.d.ends - Date.now(); const el = document.querySelector<HTMLElement>('#mundi-root .mu-og-clock'); if (el) el.textContent = `${Math.max(0, Math.ceil(left / 1000))}s`;
         if (GV.partner && Math.random() < 0.03) { const s = GV.d.spots.find((x: any) => x.v > 0); if (s) { s.v = Math.max(0, s.v - 0.5); paintSpots(); } }

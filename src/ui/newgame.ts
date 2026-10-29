@@ -1,5 +1,7 @@
 // New game: first a scenario (one character card, straight into a chat) or a world;
 // a world goes: style and world → who lives in it → your character (the world's own sheet) → start.
+import { traitEffects } from '../sim/own.js';   // [expanded]
+import './tips.js';   // [expanded] tooltips that follow the cursor
 import { rpgOf } from '../core/rpgdef.js';
 import { placeFits } from '../sim/needs.js';
 import { safeUrl } from '../core/safe.js';
@@ -250,7 +252,7 @@ function heroSheetHtml(persona: boolean) {
     const origin = asks(w, 'origin') && !isScenario(w) ? (w.catalogs.origins ?? []) : [];
     return `${isScenario(w) ? situationHtml() : ''}${origin.length ? `<section class="mu-origins"><h3>Origin</h3><div class="mu-cards small">${origin.map(o => `
             <button class="mu-origin ${h.origin === o.id ? 'is-on' : ''}" data-act="ng-origin" data-id="${esc(o.id)}"><b>${esc(o.name)}</b><small>${money(w, o.money)}</small><p>${esc(o.desc ?? '')}</p></button>`).join('')}</div></section>` : ''}
-        ${sh.traits?.length && asks(w, 'traits') ? `<section class="mu-attrs">${traitsHtml(sh.traits, h.traits, 'ng-trait')}</section>` : ''}
+        ${sh.traits?.length && asks(w, 'traits') ? `<section class="mu-attrs">${traitsHtml(sh.traits, h.traits, 'ng-trait', isScenario(w) ? traitEffects : undefined /* [expanded] 0.2.1-12 */)}</section>` : ''}
         ${asks(w, 'bio') ? `<section class="mu-bio"><label class="mu-field"><span>${persona ? 'About you in this world (optional; your persona\'s description is not changed)' : 'About you (optional)'}</span><textarea rows="4" data-input="ng-bio" data-focus="ngbio" placeholder="${persona ? 'What you do here, what people know about you' : 'Personality, quirks, what drives you'}">${esc(h.bio)}</textarea></label></section>` : ''}`;
 }
 

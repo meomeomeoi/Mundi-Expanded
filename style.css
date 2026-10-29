@@ -2204,6 +2204,11 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-me-day > span { display: flex; gap: 6px; align-items: center; font-size: 13px; } #mundi-root .mu-me-day img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
 #mundi-root .mu-me-text { max-height: 220px; overflow: auto; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, .1); font-family: Georgia, serif; font-size: 13.5px; }
 #mundi-root .mu-me-work .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+/* tooltips that follow the cursor (data-tip), and the dot on traits that change the rules */
+#mundi-root .mu-tip, .mu-tip { position: fixed; z-index: 100000; display: none; max-width: 280px; padding: 7px 10px; border-radius: 10px; background: rgba(14, 16, 22, .94); color: #e9ecf2; font-size: 12px; line-height: 1.4; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); pointer-events: none; }
+#mundi-root .mu-tip div + div, .mu-tip div + div { margin-top: 2px; }
+#mundi-root .mu-traits .mu-chip.has-fx { position: relative; }
+#mundi-root .mu-traits .mu-chip.has-fx::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: #7fd3ff; box-shadow: 0 0 6px #7fd3ff; }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }

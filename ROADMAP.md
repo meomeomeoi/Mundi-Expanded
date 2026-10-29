@@ -244,7 +244,10 @@ call a session at most; everything has a setting.
 Next, discussed:
 - **Work and student life, deeper**: a job with its own days, a boss and promotions (not just a focus game and pay);
   a student's courses, exams on the calendar and grades; both talked about in the house.
-- **Traits, light effects**: Charming, Athletic, Lazy… doing a little in the rules (not only in the prompt).
+- **Personality, and the rest of the traits** (reminder): Personality (Shy, Hot-headed, Lazy, Romantic…) only reaches the
+  prompt; Charming too. Decide what each does in the rules (Lazy and chores, Charming and friendship, Shy and quick
+  reactions…), and give the interests without a skill (Fashion, Nature, Movies, Nightlife, Travel) something; the
+  traits' tooltips list what each does.
 
 ## Later (discussed, not designed yet)
 

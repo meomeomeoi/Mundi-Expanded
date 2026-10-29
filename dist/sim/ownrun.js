@@ -495,6 +495,8 @@ afterSync.push((g, w, here) => {
         void morningDigest(g, w);
     if (!x.setup) {
         x.setup = 'asked';
+        for (const [sk, l] of Object.entries(O.seedFromTraits(g.player.traits)))
+            x.skills[sk] = Math.max(x.skills[sk] ?? 0, O.xpAt(l)); /* the persona's traits count from the start */
         saveGame();
         void import('../ui/peek.js').then(m => m.pushPeek({ title: 'Me', text: 'New: your own skills, works and chores. Open "Me" in the phone to set what you are good at.', app: 'me' })).catch(() => { });
     }

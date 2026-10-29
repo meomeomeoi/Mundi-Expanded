@@ -15,7 +15,18 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
-## Mundi Expanded 12 (0.2.1-12) · 2026-10-29
+## Mundi Expanded 12.1 (0.2.1-12.1) · 2026-10-29
+
+- **What the traits do**: when you pick your persona's traits for a Home, a dot marks the ones that change the rules,
+  and hovering one shows what it does (a small window by the cursor): the skill it starts you at, or, for Handy, more
+  time in the cleaning games. Every trait is also told to the scene.
+- **Starting skills from the traits right away**: the first time a Home opens with this version, the traits set your
+  starting skills; the Me app still lets you adjust them (before, nothing happened until you saved them there).
+- **Fixed what some traits meant**: Handy no longer counts as cooking (it gives more time when cleaning); Charming no
+  longer counts as work (it only reaches the scene for now); traits that gave a skill level of 1 (no change) give 2.
+- Roadmap: Personality and the traits without effects are a reminder there.
+
+
 
 Your own life: time spent alone that comes back to the others. Settings are in the new Me app (Settings tab).
 

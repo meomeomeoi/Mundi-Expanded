@@ -26,9 +26,9 @@ export const LEVEL_WORDS = ['', 'a beginner', 'a beginner', 'getting there', 'de
 /** Starting levels from the traits picked when the persona was made (Mundi's Proficiency and Interests). */
 const TRAIT_SKILL = {
     'good cook': [['cooking', 4]], musical: [['music', 4]], 'tech-savvy': [['coding', 4]], smart: [['study', 3], ['coding', 2]], creative: [['writing', 3], ['music', 2]],
-    athletic: [['fitness', 4]], strong: [['fitness', 3]], 'good with numbers': [['work', 3], ['coding', 2]], handy: [['cooking', 2]], charming: [['work', 2]],
-    cooking: [['cooking', 2]], music: [['music', 2]], books: [['writing', 2], ['study', 2]], technology: [['coding', 2]], games: [['coding', 1]], sports: [['fitness', 2]], art: [['writing', 1]],
-    ambitious: [['work', 2], ['study', 1]], curious: [['study', 1]],
+    athletic: [['fitness', 4]], strong: [['fitness', 3]], 'good with numbers': [['work', 3], ['coding', 2]],
+    cooking: [['cooking', 2]], music: [['music', 2]], books: [['writing', 2], ['study', 2]], technology: [['coding', 2]], sports: [['fitness', 2]], art: [['writing', 2]],
+    ambitious: [['work', 2]], curious: [['study', 2]],
 };
 export function seedFromTraits(traits) {
     const out = {};
@@ -36,6 +36,15 @@ export function seedFromTraits(traits) {
         for (const [s, l] of TRAIT_SKILL[String(t).toLowerCase()] ?? [])
             out[s] = Math.max(out[s] ?? 1, l);
     return out;
+}
+/** Traits that do something in the rules besides skills (Handy: more time in the cleaning game). */
+export const HANDY_SECONDS = 6;
+const TRAIT_EXTRA = { handy: [`Cleaning mini-games: +${HANDY_SECONDS} seconds`] };
+/** What a trait does in a Home, for its tooltip; `game`: whether it changes anything in the rules (the dot). */
+export function traitEffects(option) {
+    const k = option.toLowerCase();
+    const lines = [...(TRAIT_SKILL[k] ?? []).map(([s, l]) => `${SKILLS[s].name}: starts at level ${l} (of 10)`), ...(TRAIT_EXTRA[k] ?? [])];
+    return { lines: [...lines, 'The scene is told about it'], game: lines.length > 0 };
 }
 /** What the traits mean for the scene, in words ("good cook, musical; outgoing, sarcastic; into games and music"). */
 export function traitsLine(traits) {

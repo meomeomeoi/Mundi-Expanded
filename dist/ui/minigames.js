@@ -336,7 +336,8 @@ async function startClean(g) {
     const kind = /chore-(\w+)/.exec(p.a.id)?.[1] ?? 'room';
     const spots = Array.from({ length: 9 }, () => ({ x: 8 + Math.random() * 80, y: 10 + Math.random() * 70, v: 1, r: 26 + Math.random() * 26 }));
     const things = (MESS[kind] ?? MESS.room).map(e => ({ e, x: 6 + Math.random() * 84, y: 8 + Math.random() * 74, done: false }));
-    GV.d = { kind, spots: kind === 'trash' ? [] : spots, things, ends: Date.now() + (25 + (GV.partner ? 8 : 0)) * 1000 };
+    const handy = (g.player.traits?.proficiency ?? []).includes('Handy'); // a Handy persona has more time
+    GV.d = { kind, spots: kind === 'trash' ? [] : spots, things, ends: Date.now() + (25 + (GV.partner ? 8 : 0) + (handy ? O.HANDY_SECONDS : 0)) * 1000 };
     GV.phase = 'play';
     notify();
     const tick = () => {

@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-12';
+export const VERSION = '0.2.1-12.1';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,10 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-12.1', fork: true, title: 'What the traits do', items: [
+        ['star', 'Picking your persona\'s traits for a Home: a dot marks the ones that change the rules, and hovering one shows what it does (a skill it starts you at, more time in the cleaning games for Handy).'],
+        ['user', 'Your traits give you your starting skills right away (no need to open Me first); Me still lets you adjust them.'],
+    ] },
     { v: '0.2.1-12', fork: true, title: 'Your own life', items: [
         ['star', 'Mini-games for what you do on your own: cooking (a dish from what is in the fridge, its choices and the heat), the guitar (a rhythm game you can hear), cleaning (scrub and put away), a crossword, work and study (focus, while the house is noisy), programming (find the bug, choose the design), writing (pick or write the lines). Or just do it.'],
         ['user', 'Skills that grow (slowly, Settings), told to the scene: the guitar is heard through the walls, the meal is judged, the story can be read (or snooped). The traits picked for your persona now count in Home. A new app: Me.'],

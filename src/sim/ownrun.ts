@@ -350,7 +350,7 @@ afterSync.push((g, w, here) => {
     const last = chat().slice(-3).filter((m: any) => m?.is_user && /birthday|b-?day|день рожд|поздравл|с др\b/i.test(String(m.mes ?? '')));
     if (last.length) for (const r of here) if (x.cal.bday[r.avatar] === doy) x.cal.wished[r.avatar] = g.day;
     if (x.sleptAt && !(g as any).asleep) void morningDigest(g, w);
-    if (!x.setup) { x.setup = 'asked'; saveGame(); void import('../ui/peek.js').then(m => m.pushPeek({ title: 'Me', text: 'New: your own skills, works and chores. Open "Me" in the phone to set what you are good at.', app: 'me' })).catch(() => { /* tests */ }); }
+    if (!x.setup) { x.setup = 'asked'; for (const [sk, l] of Object.entries(O.seedFromTraits((g.player as any).traits)) as [O.Skill, number][]) x.skills[sk] = Math.max(x.skills[sk] ?? 0, O.xpAt(l)); /* the persona's traits count from the start */ saveGame(); void import('../ui/peek.js').then(m => m.pushPeek({ title: 'Me', text: 'New: your own skills, works and chores. Open "Me" in the phone to set what you are good at.', app: 'me' })).catch(() => { /* tests */ }); }
     // away and back: what happened meanwhile
     const home = !isOuting(g.player.loc) && g.player.loc !== OUT; const now = nowAbs(g);
     if (!home) { x.away ??= { from: now }; return; }
