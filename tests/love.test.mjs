@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import * as L from '../dist/sim/love.js';
 import * as P from '../dist/sim/profile.js';
+import * as LI from '../dist/sim/secrets.js';
 
 let n = 0;
 const test = (name, fn) => { try { fn(); n++; } catch (e) { console.error(`FAIL ${name}\n`, e); process.exit(1); } };
@@ -37,6 +38,12 @@ test('sparks and how flirting lands', () => {
     assert.equal(L.flirtMood({ romance: 50, partnerHere: false, taken: false, grudge: false }), 'welcome');
     assert.equal(L.flirtMood({ romance: 20, partnerHere: false, taken: false, grudge: false }), 'flustered');
     assert.equal(L.flirtMood({ romance: 60, partnerHere: true, taken: false, grudge: false }), 'uncomfortable');
+});
+
+test('listening at a door: caught more often the nosier, and each time again', () => {
+    assert.equal(LI.caughtChance([], 0), 0, 'asleep inside: nobody to catch you');
+    assert.ok(LI.caughtChance([20], 0) < LI.caughtChance([90], 0));
+    assert.ok(LI.caughtChance([50], 2) > LI.caughtChance([50], 0)); assert.ok(LI.caughtChance([100], 9) <= 0.6);
 });
 
 console.log(`love: ${n} tests passed`);

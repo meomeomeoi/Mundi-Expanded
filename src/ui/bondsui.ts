@@ -22,6 +22,7 @@ import { knowOf, tieK, howText } from '../sim/knows.js';   // [expanded] 0.2.0.8
 import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
 import * as L from '../sim/love.js';
+import { WALLS, wallsOf } from '../sim/listen.js';
 import { gossipOf } from '../sim/gossiprun.js';
 const roomLimit = (g: Save) => Number((g as any).furnishx?.limit ?? 15);
 
@@ -248,6 +249,9 @@ export function bondsSettingsHtml(): string {
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-flirt" ${L.flirtOn(G(g) as any) ? 'checked' : ''}><span>Flirting and romance<small>${L.flirtOn(G(g) as any) ? 'Feelings between them grow and fade, crushes, confessions, couples, how flirting lands, nights together.' : 'Off: no feelings between them, no new couples, no nights together (yours with your partners stay upstream\'s).'}</small></span></label>
+        <b>The walls</b>
+        <div class="mu-bd-seg">${WALLS.map(([id, label]) => `<button class="${wallsOf(g) === id ? 'is-on' : ''}" data-act="bd-walls" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">What is heard through them: a fight, a night together, someone listening at a door (yours too: rarely, a nosy one).</small>
         <b>How the house talks</b>
         <div class="mu-bd-seg">${MOODS.map(([id, label]) => `<button class="${gossipOf(g).mood === id ? 'is-on' : ''}" data-act="bd-mood" data-v="${id}">${label}</button>`).join('')}</div>
         <div class="mu-bd-seg">${[3, 6, 10].map(n => `<button class="${gossipOf(g).max === n ? 'is-on' : ''}" data-act="bd-gmax" data-v="${n}">${n} at once</button>`).join('')}</div>
@@ -296,6 +300,7 @@ Object.assign(ACT, {
 });
 // [expanded] 0.2.0.8/0.2.0.9: the settings' segment buttons (actions, not inputs)
 Object.assign(ACT, {
+    'bd-walls': (el) => { const g = game(); if (!g) return; (bondsOf(G(g)) as any).walls = el.dataset.v || 'normal'; saveGame(); notify(); },
     'bd-shifts': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).shifts = (el.dataset.v as any) || 'normal'; saveGame(); notify(); },
     'bd-romance': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).romance = (el.dataset.v as any) || 'story'; saveGame(); notify(); },
     'bd-keep': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).keep = Number(el.dataset.v) || 12; saveGame(); notify(); },

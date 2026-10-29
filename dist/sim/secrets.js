@@ -53,3 +53,5 @@ export const noticeChance = (access, nosy, care) => Math.max(0, Math.min(0.95, a
 export const careOf = (discreetA, discreetB) => Math.max(0.2, Math.min(0.85, 0.35 + (discreetA + discreetB) / 400));
 /** A loud fight heard through the walls (step -2 or worse): the chance for one person at home. */
 export const hearFight = (delta, nosy) => (delta > -2 ? 0 : Math.min(0.8, (delta <= -3 ? 0.45 : 0.25) * (0.5 + nosy / 100)));
+/** The chance you are caught listening at a door: someone inside awake and nosy, and more each time today. */
+export function caughtChance(nosy, tries) { return nosy.length ? Math.min(0.6, (0.06 + Math.max(...nosy) / 400) * (1 + tries * 0.6)) : 0; }

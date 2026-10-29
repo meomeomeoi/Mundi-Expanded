@@ -11,6 +11,7 @@ import { placeOf } from './places.js';
 import { profileOf, nosyOf, ORIENTS, STATUSES } from './profile.js';
 import { tieK, learn } from './knows.js';
 import { hearFight } from './secrets.js';
+import { wallsK } from './listen.js';
 const Hh = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
     h = Math.imul(h, 16777619);
@@ -212,7 +213,7 @@ export async function bondsNight(g, w, day, range) {
         if (!fact || factK(fact).pub === 'private')
             continue;
         for (const r of Object.values(g.cast))
-            if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g, r.avatar))))
+            if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g, r.avatar))) * wallsK(g))
                 learn(factK(fact), r.avatar, { lvl: 'knows', how: 'saw', day, ver: 'heard it through the walls' }, fact);
     }
     b.lastNight = day;

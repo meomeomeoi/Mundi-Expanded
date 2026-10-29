@@ -11,6 +11,7 @@ import { placeOf } from './places.js';
 import { profileOf, nosyOf, ORIENTS, STATUSES } from './profile.js';
 import { tieK, learn, type Know, type Knowable } from './knows.js';
 import { hearFight } from './secrets.js';
+import { wallsK } from './listen.js';
 const Hh = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
 import { react, talksOf, closeTalk, loversOf } from './consequences.js';
 import { nightLoveText, applyLove, mutualFor } from './lovenight.js';
@@ -129,7 +130,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     // loud fights without you are heard through the walls by whoever is nosy enough
     for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
         const fact = b.facts.filter(f => f.kind === 'episode' && f.text === c.text).at(-1); if (!fact || factK(fact).pub === 'private') continue;
-        for (const r of Object.values(g.cast)) if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g as any, r.avatar)))) learn(factK(fact), r.avatar, { lvl: 'knows', how: 'saw', day, ver: 'heard it through the walls' }, fact);
+        for (const r of Object.values(g.cast)) if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g as any, r.avatar))) * wallsK(g)) learn(factK(fact), r.avatar, { lvl: 'knows', how: 'saw', day, ver: 'heard it through the walls' }, fact);
     }
     b.lastNight = day;
     saveGame();

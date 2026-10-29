@@ -2,7 +2,7 @@
 // card in "Here", except "Play as them"); on the left, the outfits they have (subfolders of their Expressions folder),
 // shown only when they have any.
 import { esc, game, notify, state, toast, type Save, type Resident } from '../core/store.js';
-import { getWorld, type WorldDef } from '../core/world.js';
+import { isScenario, getWorld, type WorldDef } from '../core/world.js';
 import { ACT } from './reg.js';
 import { icon } from './icons.js';
 import { isWith, bondOf, isPartner, social } from '../sim/social.js';
@@ -29,6 +29,7 @@ function actions(g: Save, w: WorldDef, r: Resident): string[] {
     out.push(btn('pc-plan', r.avatar, 'pin', 'Make plans'));
     out.push(solo ? `<button data-act="solo-off">${icon('users')}<span>Talk with everyone</span></button>` : btn('solo-on', r.avatar, 'chat', 'Talk only with them'));
     out.push(...buttonsIn(stayButton(r.avatar)), ...buttonsIn(romanceButtons(r.avatar)));
+    if (isScenario(w)) out.push(btn('rd-watch', r.avatar, 'eye', 'Keep an eye on them'));   // [expanded] 0.2.0.9
     out.push(btn('pc-open', r.avatar, 'user', 'Their card'));
     return out;
 }
@@ -110,6 +111,7 @@ Object.assign(ACT, {
         const who = el.dataset.who ?? '';
         RAD.who = RAD.who === who ? '' : who; RAD.at = ''; RAD.r = 0; RAD.side = 'full'; notify();
     },
+    'rd-watch': async (el) => { const g = game(); if (!g) return; const { watch } = await import('../sim/listen.js'); watch(g, el.dataset.who!); RAD.who = ''; toast(`You will keep an eye on ${g.cast[el.dataset.who!]?.name ?? 'them'} for the next few hours: where they go, and with whom.`, 'info'); notify(); },
     'spr-close': () => { if (RAD.who) { RAD.who = ''; notify(); } },
     'spr-outfit': async (el) => {
         const who = el.dataset.who!; const o = el.dataset.o ?? '';

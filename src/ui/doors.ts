@@ -57,15 +57,30 @@ export function doorHtml(): string {
         : DR.mode === 'asleep' ? `<p>It is quiet behind the door: ${esc(names)} ${inside.length > 1 ? 'are' : 'is'} asleep.</p>`
         : `<p>${esc(names)} ${inside.length > 1 ? 'are' : 'is'} in. The door is closed.</p>`;
     const btns = DR.mode === 'empty' ? `<button class="mu-danger" data-act="door-sneak" title="If they come back while you are inside, they find you; they may also notice later">${icon('lock')}<span>Go in anyway</span></button><button class="mu-primary" data-act="door-leave">Leave it</button>`
-        : DR.mode === 'asleep' ? `<button data-act="door-leave">Let them sleep</button><button data-act="door-knock">${icon('chat')}<span>Knock</span></button>
+        : DR.mode === 'asleep' ? `<button data-act="door-leave">Let them sleep</button><button data-act="door-listen" ${LS.busy ? 'aria-disabled="true"' : ''}>${icon('speaker')}<span>Listen</span></button><button data-act="door-knock">${icon('chat')}<span>Knock</span></button>
             <button class="mu-primary" data-act="door-wake" ${wakeable ? '' : 'aria-disabled="true" title="Only for someone you are very close to (friendship 60+) or together with"'}>${icon('bolt')}<span>Wake them</span></button>`
-        : `<button data-act="door-leave">Leave</button><button class="mu-primary" data-act="door-knock">${icon('chat')}<span>Knock</span></button>`;
+        : `<button data-act="door-leave">Leave</button><button data-act="door-listen" ${LS.busy ? 'aria-disabled="true"' : ''} title="Put your ear to the door. You might be caught.">${icon('speaker')}<span>${LS.busy ? 'Listening…' : 'Listen'}</span></button><button class="mu-primary" data-act="door-knock">${icon('chat')}<span>Knock</span></button>`;
     return `<div class="mu-dlg-veil" data-act="door-leave"></div><div class="mu-panel mu-dlg mu-glassdlg mu-door" role="dialog"><div class="mu-door-faces">${faces}</div>
         <h3>${icon('home')} ${esc(owners.length > 1 ? `${owners.map(r => r.name).join(' and ')}'s room` : `${owners[0].name}'s room`)}</h3>
         ${body}${DR.note ? `<p class="mu-door-note">${esc(DR.note)}</p>` : ''}<div class="mu-row mu-dlg-btns">${btns}</div></div>`;
 }
 
 const close = () => { DR.mode = ''; DR.loc = ''; DR.note = ''; };
+// [expanded] 0.2.0.9: listening at the door (the mechanics model writes what you hear; sim/listen.ts)
+const LS = { busy: false };
+async function listenAt(loc: string): Promise<boolean> {
+    const g = game(); const w = g && getWorld(g.world); if (!g || !w) return false;
+    const L = await import('../sim/listen.js'); const { bgAsk } = await import('../sim/regulator.js'); const { refused, failNotice } = await import('./retry.js');
+    LS.busy = true; notify();
+    let raw = '';
+    try { raw = await bgAsk(L.listenPrompt(g, w, loc), 400, L.LISTEN_SYSTEM); } finally { LS.busy = false; }
+    const text = String(raw ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').trim();
+    if (!text || refused(text)) { failNotice('listen', 'Nothing came through the door (the mechanics model gave no answer).', () => listenAt(loc)); notify(); return false; }
+    const r = L.heard(g, w, loc, text);
+    if (DR.loc === loc) DR.note = r.text;
+    if (r.caught) { toast(r.caught, 'warn', { ms: 9000 }); close(); } else if (DR.loc !== loc) toast(r.text, 'info', { ms: 12000 });
+    const { refreshPrompt } = await import('../sim/prompt.js'); refreshPrompt(); notify(); return true;
+}
 async function goIn(loc: string) { close(); D.passDoor(loc); const b = document.createElement('button'); b.dataset.loc = loc; await ACT['go']?.(b, new Event('click')); }
 async function sync() { saveGame(); const { syncScene } = await import('../sim/game.js'); await syncScene(); const { refreshPrompt } = await import('../sim/prompt.js'); refreshPrompt(); notify(); }
 function answer(g: Save, w: WorldDef, r: Resident, a: D.Answer, loc: string) {
@@ -94,6 +109,7 @@ Object.assign(ACT, {
         }
         answer(g, w, r, D.knock(whoOf(g, r), hour, roll), DR.loc);
     },
+    'door-listen': async (el) => { if (el.getAttribute('aria-disabled') || !DR.loc) return; await listenAt(DR.loc); },
     'door-sneak': async () => {
         const g = game(); const w = g && getWorld(g.world); if (!g || !w || !DR.loc) return;
         const loc = DR.loc; const owners = ownersOf(g, w, loc).map(r => r.avatar);

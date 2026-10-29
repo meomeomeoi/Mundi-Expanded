@@ -10,12 +10,15 @@ import { presentAt } from './people.js';
 import { placeOf } from './places.js';
 import { dayStart } from './diary.js';
 import { partnersOf, romanceTier } from './romance.js';
-import { bondsOf, tieKnowLines, YOU, type GLike } from './bonds.js';
+import { bondsOf, tieKnowLines, valueOf, YOU, type GLike } from './bonds.js';
+import { bondOf } from './social.js';
+import { profileOf, discreetOf } from './profile.js';
 import { knowOf, knows, howText, type Knowable } from './knows.js';
 import { sawTogether } from './secretsrun.js';
 import { tellLines, hearNews } from './gossiprun.js';
 import { consequenceLines } from './consequences.js';
 import { loveLines } from './lovenight.js';
+import './listen.js';   // [expanded] 0.2.0.9: listening (its hooks)
 
 const G = (g: Save) => g as unknown as GLike;
 const hm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -95,9 +98,28 @@ export function youLines(g: Save, present: string[]): string[] {
     return [...(open.length ? [`Known to everyone in the house: ${open.join('; ')}.`] : []), ...out];
 }
 
+/** [expanded] 0.2.0.9: asked about a secret they know (about people who are not here): tell, hint or cover for them. */
+export function askLines(g: Save, present: string[]): string[] {
+    const out: string[] = []; const name = (a: string) => (a === YOU ? '{{user}}' : g.cast[a]?.name ?? a);
+    const items: { parts: string[]; text: string; k: Knowable }[] = [];
+    for (const t of (G(g).living?.ties ?? []) as any[]) if (t.secret && g.cast[t.a] && g.cast[t.b]) items.push({ parts: [t.a, t.b], text: `${name(t.a)} and ${name(t.b)}`, k: { parts: [t.a, t.b], pub: 'private', know: t.know, day: t.day ?? 0 } });
+    const lx = (bondsOf(G(g)) as any).love;
+    for (const [k, v] of Object.entries((lx?.v ?? {}) as Record<string, number>)) { const [a, b] = k.split('>'); if (v >= 40 && !lx.said?.[k] && g.cast[a] && g.cast[b]) items.push({ parts: [a], text: `${name(a)}'s feelings for ${name(b)}`, k: { parts: [a], pub: 'private', know: lx.know?.[k]?.know, day: 0 } }); }
+    for (const it of items) {
+        if (it.parts.some(p => present.includes(p))) continue;
+        for (const a of present) {
+            const x = knowOf(it.k, a); if (!x || x.lvl !== 'knows') continue;
+            const trust = (bondOf(g, a) - 50) * 2, loyal = Math.max(...it.parts.map(p => valueOf(G(g), a, p))), disc = discreetOf(profileOf(g as any, a));
+            const how = disc >= 80 || loyal - trust > 20 ? `would cover for ${it.parts.length > 1 ? 'them' : name(it.parts[0])}` : trust - loyal > 20 && disc < 70 ? 'would tell {{user}} what they know' : 'would only hint';
+            out.push(`If {{user}} asks ${name(a)} about ${it.text}: ${name(a)} ${how}.`);
+        }
+    }
+    return out.slice(0, 3);
+}
+
 /** The scene prompt's "Who knows what" block. */
 export function knowsBlock(g: Save, w: WorldDef, present: string[]): string[] {
     if (!isScenario(w)) return [];
-    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...loveLines(g, present), ...tellLines(g, present), ...consequenceLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
+    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...loveLines(g, present), ...tellLines(g, present), ...askLines(g, present), ...consequenceLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
     return lines.length ? ['Who knows what (people act on what they know; what they do not know, they do not bring up):', ...lines] : [];
 }
