@@ -273,6 +273,25 @@ happened": "Try again".
 Next, maybe: a token budget for the long memory (drop the oldest ordinary lines first when it is over); a weekly
 look back ("a week in the house") for the diary; memory for guests who come back.
 
+## An audit (to do, not now)
+
+A careful pass over the whole fork for bugs and things that contradict each other, before more features. What to look
+for, from what has already slipped through:
+- **Two systems telling the AI the same thing differently**: the phone's "someone may notice" (0.2.0.10) next to the
+  per-person roll (14.1); witness lines saying "did not hear" while someone overheard (fixed in 13). List every
+  presentNotes / phoneNotes / prompt block and what each claims, and look for overlaps and contradictions.
+- **CSS that undoes upstream**: a `translate` that replaced upstream's centring (12.2–12.4), `overflow-x: hidden` that
+  made the phone's body a scroll box (12.3–14.1). Grep the fork's css for transform/translate/overflow/position on
+  upstream's classes.
+- **Events nobody passes on**: the sliders' "change" (14.1). Check every data-input handler against what app.ts sends.
+- **Flows that can get stuck**: a goodbye cut off by Stop (12.3); look for other "waiting for a reply" states
+  (asks, events, invitations, the talk card) and what happens on Stop, an error or a swipe.
+- **Model replies**: every bgAsk/quiet caller: refusal, empty, wrong form, cut off by the token limit; each should
+  say so (Try again) rather than act as if nothing happened.
+- **Old saves**: every new field read with a default; nothing assumes a field a save from 0.2.0.x lacks.
+- Tools: a test run of a whole simulated week (the harnesses in tests/ and the ones used during 12–14), the prompt
+  of a scene printed and read end to end, and the UI clicked through in every phone skin.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
