@@ -8,6 +8,7 @@ import { isCustom, getWorld, activeStatuses, gameMode, GAME_MODES, systemOn, isS
 import { dressHtml } from './dressui.js';
 import { homeJobOf, SHIFTS, DAYS } from '../sim/hometime.js';
 import { homeSettingsHtml } from './homeui.js';
+import { placeOn, extraRooms } from '../sim/places.js'; // [expanded]
 import { memoryTabHtml } from './memoryui.js'; // [expanded] 0.2.1-14
 import { ctx, thumb, characters, charOf, personaThumb, personaName, lorebooks, chatLore, bindChatLore, createLorebook } from '../st/bridge.js';
 import { homeAddress, placeOf } from '../sim/places.js';
@@ -169,7 +170,7 @@ function tabRules(g, w) {
     const slider = (label, key, v, min, max, step, unit) => `<label class="mu-field slider"><span>${label} · ${v}${unit}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-input="wc-cfg" data-k="${esc(key)}"></label>`;
     const live = (c.clock ?? 'action') === 'live';
     return `<section class="mu-wc-sec"><h4>${esc(w.name)}</h4><p>${esc(w.description)}</p><p class="mu-muted">Game mode: <b>${GAME_MODES.find(m => m.id === gameMode(w)).name}</b> (change it in the world creator).</p></section>
-        ${isScenario(w) ? `<section class="mu-wc-sec">${homeSettingsHtml(g)}</section>${dressHtml(g, w)}${systemOn(w, 'romance') ? `<section class="mu-wc-sec"><h4>Love</h4><label class="mu-check"><input type="checkbox" data-input="wc-poly" ${c.poly ? 'checked' : ''}><span>Open relationships</span></label></section>` : ''}<section class="mu-wc-sec"><h4>Rooms</h4>${list(w.places.map(p => p.name))}</section>` : `
+        ${isScenario(w) ? `<section class="mu-wc-sec">${homeSettingsHtml(g)}</section>${dressHtml(g, w)}${systemOn(w, 'romance') ? `<section class="mu-wc-sec"><h4>Love</h4><label class="mu-check"><input type="checkbox" data-input="wc-poly" ${c.poly ? 'checked' : ''}><span>Open relationships</span></label></section>` : ''}<section class="mu-wc-sec"><h4>Rooms</h4>${list([...w.places.filter(p => placeOn(g, w, p.id) && !p.link), ...extraRooms(g)].map(p => p.name)) /* [expanded] 14.2: the rooms this game has (on, and added), not every room the world knows */}<p class="mu-muted">Which rooms the house has: This Home → The house.</p></section>` : `
         <section class="mu-wc-sec"><h4>Time</h4>
             <div class="mu-heropick is-start">
                 <button class="mu-herocard ${live ? '' : 'is-on'}" data-act="wc-clock" data-v="action"><b>Only with actions</b><p>The clock moves only when you do something: eat, drink, sleep, work, travel, or let time pass. Talking does not spend time.</p></button>
