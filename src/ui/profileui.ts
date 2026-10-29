@@ -32,6 +32,19 @@ const hourOpts = (sel: number) => Array.from({ length: 24 }, (_, h) => `<option 
 
 /** In a person's page (Home). */
 const keyHtml = (g: Save, r: Resident) => `<label class="mu-check"><input type="checkbox" data-input="lp-key" data-who="${esc(r.avatar)}" ${(P.lifexOf(G(g)).keys ?? []).includes(r.avatar) ? 'checked' : ''}><span>Gave you a key to their room<small>You can go in when they are out (a partner always can).</small></span></label>`;
+// [expanded] 0.2.1-14.3: what they do in life, and when they are out of the house for it (was This Home's job and shift)
+function outHtml(p: P.Profile, a: string): string {
+    const out = p.out ?? [];
+    return `<label class="mu-field"><span>What they do in life</span><input type="text" maxlength="80" value="${esc(p.job ?? '')}" placeholder="nursing student, barista, works from home…" data-input="lp-job" data-who="${a}" data-focus="lpjob"></label>
+        <div class="mu-field"><span>Out of the house</span>
+            ${out.map((b, i) => `<div class="mu-lp-out"><input type="text" maxlength="60" value="${esc(b.what)}" placeholder="at classes" data-input="lp-outwhat" data-who="${a}" data-i="${i}" data-focus="lpout${i}">
+                <span class="mu-lp-days">${P.DAY_NAMES.map((d, k) => `<button class="mu-chip ${b.days.includes(k) ? 'is-on' : ''}" data-act="lp-outday" data-who="${a}" data-i="${i}" data-d="${k}">${d}</button>`).join('')}</span>
+                <select data-input="lp-outfrom" data-who="${a}" data-i="${i}">${hourOpts(b.from)}</select><span>–</span><select data-input="lp-outto" data-who="${a}" data-i="${i}">${hourOpts(b.to)}</select>
+                <button class="mu-ibtn mu-ghost" data-act="lp-outdel" data-who="${a}" data-i="${i}" aria-label="Remove">${icon('x')}</button></div>`).join('')}
+            ${out.length < 4 ? `<button class="mu-ghost" data-act="lp-outadd" data-who="${a}">${icon('plus')}<span>Add a time out</span></button>` : ''}
+            <small class="mu-muted">Classes, work, the gym, nights out: they are out of the house then (with "The housemates leave the house" on, This Home → World). An end before the start goes past midnight.</small></div>`;
+}
+
 export function profileHtml(g: Save, w: WorldDef, r: Resident): string {
     if (!isScenario(w)) return '';
     return `${profileBody(g, w, r)}${keyHtml(g, r)}`;
@@ -54,6 +67,7 @@ function profileBody(g: Save, w: WorldDef, r: Resident): string {
         <small class="mu-muted">The day changes a little every day. Click an hour to set it by hand (asleep → their room → around the house → back to the profile).</small>
         <div class="mu-row2"><label class="mu-field"><span>Goes to bed</span><select data-input="lp-bed" data-who="${a}">${hourOpts(p.bed)}</select></label>
             <label class="mu-field"><span>Gets up</span><select data-input="lp-wake" data-who="${a}">${hourOpts(p.wake)}</select></label></div>
+        ${outHtml(p, a) /* [expanded] 0.2.1-14.3 */}
         <label class="mu-field"><span>At the weekend</span><select data-input="lp-weekend" data-who="${a}">${[0, 1, 2, 3].map(n => `<option value="${n}" ${n === p.weekend ? 'selected' : ''}>${n ? `${n} h later` : 'The same hours'}</option>`).join('')}</select></label>
         <label class="mu-field slider"><span>Free time with others · ${p.social}% <small class="mu-muted">(${p.social < 30 ? 'keeps to their room' : p.social > 70 ? 'always where people are' : 'a bit of both'})</small></span><input type="range" min="0" max="100" step="5" value="${p.social}" data-input="lp-social" data-who="${a}"></label>
         <div class="mu-field"><span>Rooms they like</span><div class="mu-chips">${rooms.map(x => `<button class="mu-chip ${p.rooms.includes(x.id) ? 'is-on' : ''}" data-act="lp-room" data-who="${a}" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join('')}</div></div>
@@ -139,6 +153,9 @@ Object.assign(ACT, {
         P.setHour(x.p, we, h, next); await refresh();
     },
     'lp-room': async (el) => { const x = prof(el); if (!x) return; const id = el.dataset.id!; x.p.rooms = x.p.rooms.includes(id) ? x.p.rooms.filter(r => r !== id) : [...x.p.rooms, id].slice(0, 4); hand(x.p); await refresh(); },
+    'lp-outadd': (el) => { const x = prof(el); if (!x) return; (x.p.out ??= []).push({ what: 'at work', days: [...P.WEEKDAYS], from: 9, to: 17 }); hand(x.p); void refresh(); },
+    'lp-outdel': (el) => { const x = prof(el); if (!x) return; x.p.out = (x.p.out ?? []).filter((_, i) => i !== Number(el.dataset.i)); hand(x.p); void refresh(); },
+    'lp-outday': (el) => { const x = prof(el); const b = x?.p.out?.[Number(el.dataset.i)]; if (!x || !b) return; const d = Number(el.dataset.d); b.days = b.days.includes(d) ? b.days.filter(k => k !== d) : [...b.days, d].sort(); hand(x.p); void refresh(); },
     'lp-actadd': (el) => { const x = prof(el); if (!x) return; x.p.acts.push({ text: '', where: 'room' }); hand(x.p); saveGame(); notify(); },
     'lp-actdel': async (el) => { const x = prof(el); if (!x) return; x.p.acts.splice(Number(el.dataset.i), 1); hand(x.p); await refresh(); },
     'lp-visits': (el) => { const g = game(); if (!g) return; P.lifexOf(G(g)).visits = (el.dataset.v as any) || 'rare'; saveGame(); notify(); },
@@ -147,6 +164,12 @@ Object.assign(ACT, {
     'lp-setup-gen': async () => { const c = gw(); if (!c || LV.busy) return; await genAll(c.g, c.w, Object.keys(c.g.cast)); P.lifexOf(G(c.g)).asked = true; saveGame(); notify(); },
 });
 const num = (el: HTMLInputElement) => Number(el.value);
+Object.assign(INPUT, {   // [expanded] 0.2.1-14.3
+    'lp-job': (el) => { const x = prof(el); if (!x) return; x.p.job = (el as HTMLInputElement).value.trim(); hand(x.p); saveGame(); },
+    'lp-outwhat': (el) => { const x = prof(el); const b = x?.p.out?.[Number(el.dataset.i)]; if (!x || !b) return; b.what = (el as HTMLInputElement).value.trim() || 'out'; hand(x.p); saveGame(); },
+    'lp-outfrom': (el) => { const x = prof(el); const b = x?.p.out?.[Number(el.dataset.i)]; if (!x || !b) return; b.from = Number((el as HTMLSelectElement).value); hand(x.p); void refresh(); },
+    'lp-outto': (el) => { const x = prof(el); const b = x?.p.out?.[Number(el.dataset.i)]; if (!x || !b) return; b.to = Number((el as HTMLSelectElement).value); hand(x.p); void refresh(); },
+});
 Object.assign(INPUT, {
     'lp-bed': async (el) => { const x = prof(el); if (!x) return; x.p.bed = num(el); hand(x.p); await refresh(); },
     'lp-wake': async (el) => { const x = prof(el); if (!x) return; x.p.wake = num(el); hand(x.p); await refresh(); },

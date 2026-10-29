@@ -5,12 +5,15 @@ import { getWorld, isScenario } from '../core/world.js';
 import { advance } from './time.js';
 
 export const REPLY_MINUTES = 5;
+// [expanded] 0.2.1-14.3: how many minutes a message is, chosen per game (2, 5, 10 or 15)
+export const MSG_MINUTES = [2, 5, 10, 15];
+export const msgMinutes = (g: Parameters<typeof cfg>[0]) => { const v = Number((cfg(g) as any).msgMinutes); return MSG_MINUTES.includes(v) ? v : REPLY_MINUTES; };
 export const perMessage = (g: Parameters<typeof cfg>[0]) => cfg(g).perMessage !== false;
 
 export async function homeTick(): Promise<boolean> {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w || !isScenario(w) || !perMessage(g) || state.view !== 'scene') return false;
-    advance(g, w, REPLY_MINUTES).forEach(m => toast(m, 'warn'));
+    advance(g, w, msgMinutes(g)).forEach(m => toast(m, 'warn'));
     const { runPlans } = await import('../ui/plans.js'); runPlans();
     const { syncScene } = await import('./game.js'); await syncScene();
     saveGame();

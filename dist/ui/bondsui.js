@@ -5,7 +5,7 @@ import { talkSettingsHtml, truthRow } from './talkui.js'; // [expanded] 0.2.0.11
 import { houseRulesHtml } from './profileui.js';
 import { eraSettingsHtml } from './phoneskin.js';
 import { chatSettingsHtml } from './chatui.js';
-import { saveGame, notify, esc, game, toast, nowAbs } from '../core/store.js';
+import { saveGame, notify, esc, game, toast, nowAbs, cfg } from '../core/store.js';
 import { getWorld, isScenario } from '../core/world.js';
 import { thumb, personaThumb, personaName } from '../st/bridge.js';
 import { icon } from './icons.js';
@@ -284,6 +284,8 @@ export function bondsSettingsHtml() {
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-flirt" ${L.flirtOn(G(g)) ? 'checked' : ''}><span>Flirting and romance<small>${L.flirtOn(G(g)) ? 'Feelings between them grow and fade, crushes, confessions, couples, how flirting lands, nights together.' : 'Off: no feelings between them, no new couples, no nights together (yours with your partners stay upstream\'s).'}</small></span></label>
+        ${L.flirtOn(G(g)) ? `<label class="mu-check"><input type="checkbox" data-input="wc-poly" ${cfg(g).poly ? 'checked' : ''}><span>Open relationships for you<small>Your partners know about each other and do not mind: you can be with several people at once, no jealousy.</small></span></label>
+        <label class="mu-check"><input type="checkbox" data-input="bd-polyhouse" ${cfg(g).polyHouse ? 'checked' : ''}><span>Open relationships in the house<small>Between the housemates: someone with a partner may start seeing someone else too, and nobody calls it cheating. Someone whose profile says "taken" or "married" (outside the house) still is.</small></span></label>` : ''}
         ${L.flirtOn(G(g)) ? `<b>Partners staying the night</b><div class="mu-bd-seg">${NI.STAYS.map(([id, label]) => `<button class="${(NI.nightsOf(g).stay ?? 'sometimes') === id ? 'is-on' : ''}" data-act="bd-stay" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">Couples sleep in one room now and then (yours with you too); a secret one slips out early, and someone up early may see.</small>` : ''}
         <b>The walls</b>
@@ -421,6 +423,8 @@ Object.assign(ACT, {
         return; gossipOf(g).max = Number(el.dataset.v) || 6; saveGame(); notify(); },
 });
 Object.assign(INPUT, {
+    'bd-polyhouse': (el) => { const g = game(); if (!g)
+        return; cfg(g).polyHouse = el.checked || undefined; saveGame(); notify(); }, // [expanded] 0.2.1-14.3
     'bd-dateroom': (el) => { DV.room = String(el.value); notify(); },
     'bd-draft': (el) => { BV.draft = el.value; },
     'bd-addtext': (el) => { BV.addText = el.value; },

@@ -11,7 +11,7 @@ import { saveGame, toast, type Save } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { personaName } from '../st/bridge.js';
 import { onDay } from './hooks.js';
-import { partnersOf, foundOut } from './romance.js';
+import { partnersOf, foundOut, polyHouseOn } from './romance.js';
 import { bondsOf, applyChange, addTrust, valueOf, YOU, type GLike, type TieLike, type Talk, type Small } from './bonds.js';
 import { knowOf, type Knowable } from './knows.js';
 import { LOVE } from './secrets.js';
@@ -31,7 +31,7 @@ export function react(g: Save, it: Found, who: string) {
         if (partnersOf(g).includes(who)) { const t = foundOut(g, who, a); if (t) toast(t, 'warn', { ms: 9000 }); silent(g, it, who); }
         return;
     }
-    if (it.love) for (const p of it.parts) {
+    if (it.love && !polyHouseOn(g)) for (const p of it.parts) {   // [expanded] 14.3: open in the house: not cheating
         if (!loversOf(g, who).includes(p)) continue;
         const other = it.parts.find(x => x !== p)!;
         applyChange(G(g), [who, p], -3, `${N(g, who)} found out that ${N(g, p)} is seeing ${N(g, other)} behind their back.`, 'offscreen', { pub: 'witnessed' });

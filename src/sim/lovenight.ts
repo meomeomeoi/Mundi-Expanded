@@ -14,6 +14,7 @@ import { applyChange, setStatus, statusOf, YOU, type GLike, type TieLike } from 
 import { knowOf, type Knowable } from './knows.js';
 import { loversOf, openTalk } from './consequences.js';
 import * as L from './love.js';
+import { polyHouseOn } from './romance.js';   // [expanded] 0.2.1-14.3
 
 const G = (g: Save) => g as unknown as GLike;
 const N = (g: Save, a: string) => (a === YOU ? personaName() : g.cast[a]?.name ?? a);
@@ -48,7 +49,7 @@ export function loveLines(g: Save, present: string[]): string[] {
     // how flirting from you would land
     const moods = present.filter(a => g.cast[a]).map(a => {
         const partner = loversOf(g, a).find(p => p !== YOU && present.includes(p));
-        const m = L.flirtMood({ romance: romValue(g, a), partnerHere: !!partner, taken: taken(g, a) || loversOf(g, a).some(p => p !== YOU), grudge: activeFeelings(g, a).some(f => GRUDGE.test(f.tag)) });
+        const m = L.flirtMood({ romance: romValue(g, a), partnerHere: !!partner, taken: taken(g, a) || (!polyHouseOn(g) && loversOf(g, a).some(p => p !== YOU)), grudge: activeFeelings(g, a).some(f => GRUDGE.test(f.tag)) });
         return `${N(g, a)} would be ${m === 'welcome' ? 'glad of it' : m === 'flustered' ? 'flustered (not unhappy)' : `uncomfortable${partner ? ` (${N(g, partner)}, their partner, is right here)` : ''}`}`;
     });
     if (moods.length && !present.every(a => partnersOf(g).includes(a))) out.push(`If {{user}} flirts: ${moods.join('; ')}. Someone not interested says so kindly or changes the subject.`);

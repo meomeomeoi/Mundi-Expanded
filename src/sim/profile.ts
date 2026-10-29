@@ -46,7 +46,36 @@ export interface Profile {
     skills?: Record<string, number>; tidy?: number;
     src?: 'gen' | 'rules' | 'hand';
     ov?: { wd?: Record<string, Kind>; we?: Record<string, Kind> };   // hours set by hand
+    /** [expanded] 0.2.1-14.3: what they do in life (told to the AI), and when they are out of the house for it */
+    job?: string; out?: OutBlock[];
 }
+/** [expanded] 0.2.1-14.3: out of the house: what for, which days (0 Monday … 6 Sunday), from and to (hours; to < from:
+ *  past midnight). */
+export interface OutBlock { what: string; days: number[]; from: number; to: number }
+export const WEEKDAYS = [0, 1, 2, 3, 4], WEEKEND = [5, 6], EVERY = [0, 1, 2, 3, 4, 5, 6];
+export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** The day of the week of a game day (day 1 is a Monday, as upstream's shifts count). */
+export const weekdayOf = (day: number) => ((day - 1) % 7 + 7) % 7;
+const daysOf = (v: unknown): number[] => {
+    if (Array.isArray(v)) return [...new Set(v.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))].sort();
+    const t = String(v ?? '').toLowerCase();
+    return /week ?end/.test(t) ? WEEKEND : /every|all|daily/.test(t) ? EVERY : /fri.*sat|fri(day)? ?(and|&|,) ?sat/.test(t) ? [4, 5] : WEEKDAYS;
+};
+export function cleanOut(v: unknown): OutBlock[] {
+    return (Array.isArray(v) ? v : []).map((b: any) => ({ what: String(b?.what ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'out', days: daysOf(b?.days), from: clampH(b?.from, 9), to: clampH(b?.to, 17) }))
+        .filter(b => b.days.length && b.from !== b.to).slice(0, 4);
+}
+/** What takes them out of the house at this hour of this day ('' : nothing). */
+export function outAt(p: Pick<Profile, 'out'> | null | undefined, day: number, h: number): string {
+    for (const b of p?.out ?? []) {
+        if (b.from < b.to) { if (b.days.includes(weekdayOf(day)) && h >= b.from && h < b.to) return b.what; }
+        else if ((b.days.includes(weekdayOf(day)) && h >= b.from) || (b.days.includes(weekdayOf(day - 1)) && h < b.to)) return b.what;
+    }
+    return '';
+}
+const hh = (n: number) => `${n}:00`;
+export const daysText = (d: number[]) => (d.join() === WEEKDAYS.join() ? 'weekdays' : d.join() === WEEKEND.join() ? 'weekends' : d.length === 7 ? 'every day' : d.map(i => DAY_NAMES[i]).join(', '));
+export const outText = (b: OutBlock) => `${b.what} (${daysText(b.days)} ${hh(b.from)}–${hh(b.to)})`;
 export interface LifeX {
     profiles: Record<string, Profile>; dinner: boolean; dinnerAt: number; asked?: boolean;
     keys?: string[];                          // who gave you a key to their room
@@ -92,6 +121,7 @@ export function cleanProfile(x: any, rooms: string[] = [], src: Profile['src'] =
         ...(['f', 'm', 'nb'].includes(x?.gender) ? { gender: x.gender } : {}), ...(['shy', 'normal', 'open'].includes(x?.pda) ? { pda: x.pda } : {}),
         ...(ORIENTS.some(o => o[0] && o[0] === x?.orient) ? { orient: x.orient } : {}), ...(STATUSES.some(o => o[0] && o[0] === x?.status) ? { status: x.status } : {}),
         ...(x?.tidy !== undefined ? { tidy: clamp(x.tidy, 0, 100, 50) } : {}),
+        ...(String(x?.job ?? '').trim() ? { job: String(x.job).replace(/\s+/g, ' ').trim().slice(0, 80) } : {}), ...(Array.isArray(x?.out) ? { out: cleanOut(x.out) } : {}),
         ...(x?.skills && typeof x.skills === 'object' ? { skills: Object.fromEntries(Object.entries(x.skills).filter(([k]) => SKILL_IDS.includes(k)).map(([k, v]) => [k, clamp(v, 0, 10, 0)]).filter(([, v]) => (v as number) > 0)) } : {}),
     };
 }
@@ -145,6 +175,10 @@ export function guessProfile(text: string, rooms: string[]): Profile {
         if (rs) p.rooms.push(...rs); if (add) p.acts.push(...add);
     }
     p.acts.push({ text: 'scrolling on the phone', where: 'room' }, { text: 'listening to music', where: 'room' });
+    // [expanded] 0.2.1-14.3: out of the house (the card's school or job, nights out)
+    if (/(student|university|college|school|студент|учится|универ|школ)/i.test(text)) p.out = [...(p.out ?? []), { what: 'at classes', days: WEEKDAYS, from: 9, to: 15 }];
+    else if (/(works? (as|at|in)|\bjob\b|nurse|barista|waitress|waiter|office|clerk|cashier|работает|медсестр|бариста|офис)/i.test(text)) p.out = [...(p.out ?? []), { what: 'at work', days: WEEKDAYS, from: 9, to: 17 }];
+    if (/(party|clubb|nightlife|bar hopping|тусов|клуб)/i.test(text)) p.out = [...(p.out ?? []), { what: 'out with friends', days: [4, 5], from: 21, to: 1 }];
     p.rooms = [...new Set(p.rooms)];
     const gd = genderOf(text); if (gd) p.gender = gd;   // [expanded] 0.2.0.9
     return cleanProfile(p, rooms, 'rules');
@@ -166,6 +200,8 @@ Write ${name}'s habits at home as JSON:
  "gender": "f" | "m" | "nb" | "" (from the card), "pda": "shy" | "normal" | "open" (affection in front of others),
  "orient": "straight" | "gay" | "lesbian" | "bi" | "pan" | "ace" | "" ("" unless the card says or clearly implies it),
  "tidy": 0-100 (how tidy they are, how reliably they do their chores), "skills": {only what they are actually good at, 1-10: cooking, music, writing, coding, study, fitness} (often one or two, can be {}), "status": "single" | "taken" (a partner outside the house) | "married" (to someone outside the house) | "" ("" unless the card says),
+ "job": what they do in life, a few words, from the card ("nursing student", "barista", "unemployed", "" when the card does not say),
+ "out": [0 to 3 regular times they are OUT of the house: {"what": "a few words (at classes, at work, at the gym, out with friends)", "days": "weekdays" | "weekends" | "every day" | [0-6, 0 = Monday], "from": hour, "to": hour (past midnight is fine)}] (from the card: a job or school takes them out on its days; someone who works from home or has no job: few or none),
  "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id, "needs": only when it needs a thing, one of watch (a TV), game (a console or a computer), game2 (playing with someone), work (a computer or a desk), music (an instrument), read (books), exercise, craft, bath}]}
 Rules for "acts": at most two may be about their main hobby or trait; the rest must be ordinary, varied things anyone does (on the phone, a nap, tidying up, a call with family, a snack, doing nothing in particular). Do not make every habit about one interest. Use the card for the times: a night owl goes to bed late, an early riser early. JSON only.`;
 }
@@ -183,7 +219,7 @@ export interface DayCtx {
     common: string[];               // the common rooms of this game
     kitchen?: string; dining?: string;
     dinner: boolean; dinnerAt: number;
-    out?: (h: number) => boolean;   // at work (or out for it) at that hour
+    out?: (h: number) => boolean | string;   // out of the house at that hour ([expanded] a string: what for)
     /** [expanded] where they can do something that needs a thing (their own room first); unset: things do not matter */
     can?: (a: string) => string[];
     /** [expanded] is there a thing for it in this room that they can use */
@@ -247,8 +283,10 @@ export function dayPlan(p: Profile, c: DayCtx): Slot[] {
     for (let h = 0; h < 24; h++) {
         const forced = ov[String(h)];
         let s: Slot;
-        if (forced === 'sleep' || (!forced && asleepAt(p, h, c.weekend, late))) s = { kind: 'sleep', loc: c.own, act: 'asleep', asleep: true };
-        else if (forced !== 'room' && forced !== 'common' && c.out?.(h)) s = { kind: 'out', loc: OUT_LOC, act: 'out of the house', asleep: false };
+        // [expanded] 0.2.1-14.3: a time out (a night shift, a night out) comes before their usual bedtime; set by hand, sleep wins
+        const away = forced !== 'room' && forced !== 'common' && forced !== 'sleep' ? c.out?.(h) : false;
+        if (forced === 'sleep' || (!forced && !away && asleepAt(p, h, c.weekend, late))) s = { kind: 'sleep', loc: c.own, act: 'asleep', asleep: true };
+        else if (away) s = { kind: 'out', loc: OUT_LOC, act: typeof away === 'string' ? away : 'out of the house', asleep: false };
         else if (!forced && c.dinner && h === c.dinnerAt && (c.dining || c.kitchen)) s = { kind: 'meal', loc: (c.dining || c.kitchen)!, act: 'having dinner with the house', asleep: false };
         else if (!forced && h === wake && c.kitchen && r('bf') < 0.6) s = { kind: 'meal', loc: c.kitchen, act: 'having breakfast', asleep: false };
         else if (!forced && h === 13 && c.kitchen && r('lunch') < 0.4) s = { kind: 'meal', loc: c.kitchen, act: 'having lunch', asleep: false };

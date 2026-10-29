@@ -5,7 +5,7 @@ import { isScenario, getWorld, styleOf, type WorldDef } from '../core/world.js';
 import { isWeekend } from './time.js';
 import { placeOn, extraRooms, isOuting } from './places.js';
 import { whereNow, OUT } from './people.js';
-import { homeJobOf, onShift, npcOut } from './hometime.js';
+import { homeJobOf, onShift, npcOut, SHIFTS, homeJobsLine } from './hometime.js';
 import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
@@ -25,11 +25,12 @@ export const ownRoom = (r: Resident) => ((r as any).homeWith === '__you' ? 'home
 const pick = (list: { id: string }[], re: RegExp) => list.find(p => re.test(p.id))?.id;
 
 export function ctxFor(g: Save, w: WorldDef, r: Resident, day: number): P.DayCtx {
-    const rooms = commonRooms(g, w); const lx = P.lifexOf(G(g)); const j = homeJobOf(r);
+    const rooms = commonRooms(g, w); const lx = P.lifexOf(G(g)); migrateJob(g, r); const j = homeJobOf(r);
     return {
         avatar: r.avatar, day, weekend: isWeekend(day), own: ownRoom(r), common: rooms.map(x => x.id),
         kitchen: pick(rooms, /kitchen/), dining: pick(rooms, /dining/), dinner: lx.dinner, dinnerAt: lx.dinnerAt,
-        out: (h) => npcOut(g) && !dayOff.some(f => f(g, day)) /* [expanded] 0.2.1-12: the golden week */ && onShift(j, day * 1440 + h * 60),
+        // [expanded] 0.2.1-14.3: out of the house by their profile (the old shift, from a save before it, still counts)
+        out: (h) => npcOut(g) && !dayOff.some(f => f(g, day)) /* [expanded] 0.2.1-12: the golden week */ && (onShift(j, day * 1440 + h * 60) ? (j.name ? `at work (${j.name})` : 'at work') : P.outAt(lx.profiles[r.avatar], day, h) || false),
         // [expanded] 0.2.0.7: where their things are (a modern Home with fixtures): their own room, the house's rooms
         ...(furnished(g, w) ? {
             can: (a: string) => FU.roomsFor(g as any, a as FU.Afford, r.avatar, ownRoom(r)).filter(x => x === ownRoom(r) || !x.startsWith('home:')),
@@ -116,6 +117,26 @@ export function phoneLines(g: Save, w: WorldDef, present: Resident[]): string[] 
     for (const f of phoneNotes) out.push(...f(g, w, present));
     out.push(...textedLines(g, present));
     return out;
+}
+/** [expanded] 0.2.1-14.3: the job and shift written in This Home (upstream's) move into the profile, once. */
+export function migrateJob(g: Save, r: Resident) {
+    const j = (r as any).homeJob; const p = P.lifexOf(G(g)).profiles[r.avatar]; if (!j || !p) return;
+    if (j.name && !p.job) p.job = String(j.name);
+    const s = SHIFTS.find(x => x.id === j.shift && x.from !== undefined);
+    if (s) p.out = [...(p.out ?? []), { what: 'at work', days: j.days === 'all' ? P.EVERY : j.days === 'weekends' ? P.WEEKEND : P.WEEKDAYS, from: s.from!, to: s.to! }].slice(0, 4);
+    delete (r as any).homeJob;
+}
+/** [expanded] 0.2.1-14.3: for the AI: what each of them does in life, and when they are out for it. */
+export function jobsLine(g: Save): string {
+    const lx = P.lifexOf(G(g));
+    // someone with no profile keeps upstream's line (their job and shift from This Home, in an older save)
+    const old = homeJobsLine({ cast: Object.fromEntries(Object.entries(g.cast).filter(([a]) => !lx.profiles[a])) });
+    const list = (Object.values(g.cast) as Resident[]).filter(r => r.met && lx.profiles[r.avatar]).map(r => {
+        const p = lx.profiles[r.avatar];
+        const job = p?.job || ''; const out = (p?.out ?? []).map(P.outText);
+        return job || out.length ? `${r.name}${job ? `: ${job}` : ''}${out.length ? `${job ? ';' : ':'} out ${out.join(', ')}` : ''}` : '';
+    }).filter(Boolean);
+    return [list.length ? `What the housemates do: ${list.join('. ')}.` : '', old].filter(Boolean).join(' ');
 }
 /** For the scene: what the people here are doing (their moment: at the door, woken up, a plan of their own…). */
 export function lifeLines(g: Save, w: WorldDef, present: Resident[]): string[] {

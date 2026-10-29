@@ -6,7 +6,8 @@ import { state, notify, esc, game, toast, saveGame, cfg, type Save } from '../co
 import { DIFFICULTIES, difficultyOf } from '../sim/bills.js';
 import { isCustom, getWorld, activeStatuses, gameMode, GAME_MODES, systemOn, isScenario, homeNeedsOn, type WorldDef } from '../core/world.js';
 import { dressHtml } from './dressui.js';
-import { homeJobOf, SHIFTS, DAYS } from '../sim/hometime.js';
+import { homeJobOf } from '../sim/hometime.js';
+import { lifexOf } from '../sim/profile.js';   // [expanded]
 import { homeSettingsHtml } from './homeui.js';
 import { placeOn, extraRooms } from '../sim/places.js';   // [expanded]
 import { memoryTabHtml } from './memoryui.js';   // [expanded] 0.2.1-14
@@ -48,11 +49,7 @@ function personForm(g: Save, w: WorldDef): string {
     const bond = social(g).bond[r.avatar] ?? 0;
     const leisure = w.places.filter(p => (p.tags ?? []).some(t => ['leisure', 'food', 'shop'].includes(t)));
     return `<header class="mu-wc-head"><img src="${esc(thumb(r.avatar))}" alt=""><div><h3 data-notr>${esc(r.name)}</h3><small>${esc(homeAddress(w, r.home))}</small></div></header>
-        ${isScenario(w) ? (() => { const j = homeJobOf(r); const timed = !!SHIFTS.find(x => x.id === j.shift && x.from !== undefined);
-            // Home: no ready-made jobs; write what they do, and when they are out for it (the bedroom is in the Bedrooms tab)
-            return `<label class="mu-field"><span>What they do (optional)</span><input type="text" maxlength="60" placeholder="nurse, barista, student…" value="${esc(j.name ?? '')}" data-input="home-job" data-who="${esc(r.avatar)}" data-focus="wcjob"></label>
-            <div class="mu-row2"><label class="mu-field"><span>When they are out for it</span><select data-input="home-shift" data-who="${esc(r.avatar)}">${SHIFTS.map(x => opt(x.id, x.name, x.id === (j.shift ?? ''))).join('')}</select></label>
-                ${timed ? `<label class="mu-field"><span>Days</span><select data-input="home-days" data-who="${esc(r.avatar)}">${DAYS.map(([v, l]) => opt(v, l, (j.days ?? 'weekdays') === v)).join('')}</select></label>` : ''}</div>`; })()
+        ${isScenario(w) ? `<p class="mu-muted">What they do and when they are out of the house: their Day and habits, below.</p>` /* [expanded] 0.2.1-14.3: was upstream's job and shift */
         : `<label class="mu-field"><span>Job</span><select data-input="wc-job">${opt('', 'No job', !r.occupation)}${w.occupations.map(o => opt(o.id, `${o.name} · ${placeOf(g, w, o.place)?.name ?? ''}`, r.occupation === o.id)).join('')}</select></label>
         <label class="mu-field"><span>Lives in</span><select data-input="wc-zone">${w.homes.zones.map(z => opt(z.id, `${z.name} (${w.homes.kinds[z.kind]?.name ?? z.kind})`, r.home.zone === z.id)).join('')}</select></label>`}
         <label class="mu-check"><input type="checkbox" data-input="wc-met" ${r.met ? 'checked' : ''}><span>You know them<small>They show up by name, in People and in Messages.</small></span></label>
@@ -106,7 +103,7 @@ function tabPeople(g: Save, w: WorldDef): string {
             <div class="mu-wc-row is-you"><img src="${esc(personaThumb())}" alt=""><span><b data-notr>${esc(personaName())}</b><small>You · ${esc(homeAddress(w, g.player.home))}</small></span></div>
             ${ordered.map(([k, rs]) => `<h5 class="mu-wc-addr">${k === mine ? `${icon('home')} ` : ''}${esc(homeAddress(w, rs[0].home))}${k === mine ? ' · with you' : ''}</h5>
                 ${rs.map(r => `<button class="mu-wc-row ${WC.who === r.avatar ? 'is-on' : ''}" data-act="wc-who" data-who="${esc(r.avatar)}"><img src="${esc(thumb(r.avatar))}" alt="">
-                <span><b data-notr>${esc(r.name)}</b><small>${esc(isScenario(w) ? homeJobOf(r).name || '' : w.occupations.find(o => o.id === r.occupation)?.name ?? 'No job')}</small></span></button>`).join('')}`).join('')}
+                <span><b data-notr>${esc(r.name)}</b><small>${esc(isScenario(w) ? (lifexOf(g as any).profiles[r.avatar]?.job || homeJobOf(r).name || '') /* [expanded] */ : w.occupations.find(o => o.id === r.occupation)?.name ?? 'No job')}</small></span></button>`).join('')}`).join('')}
         </aside>
         <section class="mu-wc-form" data-keep="wc-form">${personForm(g, w)}</section>
     </div>${WC.adding ? addPicker(g) : ''}`;
@@ -180,7 +177,7 @@ function tabRules(g: Save, w: WorldDef): string {
         `<label class="mu-field slider"><span>${label} · ${v}${unit}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-input="wc-cfg" data-k="${esc(key)}"></label>`;
     const live = (c.clock ?? 'action') === 'live';
     return `<section class="mu-wc-sec"><h4>${esc(w.name)}</h4><p>${esc(w.description)}</p><p class="mu-muted">Game mode: <b>${GAME_MODES.find(m => m.id === gameMode(w))!.name}</b> (change it in the world creator).</p></section>
-        ${isScenario(w) ? `<section class="mu-wc-sec">${homeSettingsHtml(g)}</section>${dressHtml(g, w)}${systemOn(w, 'romance') ? `<section class="mu-wc-sec"><h4>Love</h4><label class="mu-check"><input type="checkbox" data-input="wc-poly" ${c.poly ? 'checked' : ''}><span>Open relationships</span></label></section>` : ''}<section class="mu-wc-sec"><h4>Rooms</h4>${list([...w.places.filter(p => placeOn(g, w, p.id) && !(p as any).link), ...extraRooms(g)].map(p => p.name)) /* [expanded] 14.2: the rooms this game has (on, and added), not every room the world knows */}<p class="mu-muted">Which rooms the house has: This Home → The house.</p></section>` : `
+        ${isScenario(w) ? `<section class="mu-wc-sec">${homeSettingsHtml(g)}</section>${dressHtml(g, w)}<section class="mu-wc-sec"><h4>Rooms</h4>${list([...w.places.filter(p => placeOn(g, w, p.id) && !(p as any).link), ...extraRooms(g)].map(p => p.name)) /* [expanded] 14.2: the rooms this game has (on, and added), not every room the world knows */}<p class="mu-muted">Which rooms the house has: This Home → The house.</p></section>` : `
         <section class="mu-wc-sec"><h4>Time</h4>
             <div class="mu-heropick is-start">
                 <button class="mu-herocard ${live ? '' : 'is-on'}" data-act="wc-clock" data-v="action"><b>Only with actions</b><p>The clock moves only when you do something: eat, drink, sleep, work, travel, or let time pass. Talking does not spend time.</p></button>

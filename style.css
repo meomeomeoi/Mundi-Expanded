@@ -2161,6 +2161,12 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-mem-person .mu-row { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
 #mundi-root .mu-mem-person .mu-row select { flex: 0 0 auto; width: auto; max-width: 40%; }
 #mundi-root .mu-mem-person .mu-row button { flex: none; }
+/* 0.2.1-14.3: a profile's times out of the house */
+#mundi-root .mu-lp-out { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .04); margin-bottom: 4px; }
+#mundi-root .mu-lp-out input[type="text"] { flex: 1 1 160px; min-width: 0; }
+#mundi-root .mu-lp-out select { width: auto; }
+#mundi-root .mu-lp-days { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+#mundi-root .mu-lp-days .mu-chip { padding: 3px 7px; font-size: 11.5px; min-height: 0; }
 /* [expanded] 0.2.1-12: your own life (the mini-games, the Me app) */
 #mundi-root .mu-own-pick, #mundi-root .mu-og { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 60; }   /* a dialog next to its veil is placed by its own class (as the doors' are) */
 #mundi-root .mu-own-pick { display: grid; gap: 10px; width: min(460px, calc(100vw - 24px)); }

@@ -10,7 +10,7 @@ import * as M from './money.js';
 
 const G = (g: Save) => g as unknown as M.GLike;
 export const moneyOnIn = (g: Save | null | undefined, w: WorldDef | null | undefined) => !!g && isScenario(w) && M.moneyOn(G(g));
-const hasJob = (g: Save) => (a: string) => { const j = homeJobOf(g.cast[a]); return !!(j.name?.trim() || (j.shift && j.shift !== 'off')); };
+const hasJob = (g: Save) => (a: string) => { const j = homeJobOf(g.cast[a]); const p = (g as any).lifex?.profiles?.[a]; return !!(j.name?.trim() || (j.shift && j.shift !== 'off') || (p?.job && !/unemploy|no job|jobless|безработ/i.test(p.job)) || p?.out?.some((b: any) => /work|shift|работ/i.test(b.what))); };   // [expanded] 14.3: the profile's job
 
 // Each week: the housemates chip in, the bills are paid.
 onDay.push((g, w) => (moneyOnIn(g, w) ? M.week(G(g), g.day, hasJob(g)) : []));

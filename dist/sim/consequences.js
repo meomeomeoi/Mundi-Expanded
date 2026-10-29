@@ -11,7 +11,7 @@ import { saveGame, toast } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { personaName } from '../st/bridge.js';
 import { onDay } from './hooks.js';
-import { partnersOf, foundOut } from './romance.js';
+import { partnersOf, foundOut, polyHouseOn } from './romance.js';
 import { bondsOf, applyChange, addTrust, valueOf, YOU } from './bonds.js';
 import { knowOf } from './knows.js';
 import { LOVE } from './secrets.js';
@@ -37,8 +37,8 @@ export function react(g, it, who) {
         }
         return;
     }
-    if (it.love)
-        for (const p of it.parts) {
+    if (it.love && !polyHouseOn(g))
+        for (const p of it.parts) { // [expanded] 14.3: open in the house: not cheating
             if (!loversOf(g, who).includes(p))
                 continue;
             const other = it.parts.find(x => x !== p);

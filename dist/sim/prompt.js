@@ -1,6 +1,5 @@
 // What the AI knows about the scene right now. Injected as an extension prompt before every reply, so it works
 // with SillyTavern's normal generation (and with any preset). The world's lore lives in its lorebook instead.
-import { homeJobsLine } from './hometime.js';
 import { dressLine } from './dress.js';
 import { approvalLine, couplesLine, rumorLines, activeWorldLore } from './living.js';
 import './longlife.js'; // people's lives over the weeks (runs by itself, day by day)
@@ -57,7 +56,7 @@ import { bondsPromptLines } from './bondsnight.js'; // [expanded]
 import { stockPromptLines } from './stocknight.js'; // [expanded]
 import { moneyPromptLines } from './moneynight.js'; // [expanded]
 import { activityLines } from './activityrun.js'; // [expanded]
-import { lifeLines, houseLines, oocLines, phoneLines } from './lifeday.js'; // [expanded]
+import { lifeLines, houseLines, oocLines, phoneLines, jobsLine } from './lifeday.js'; // [expanded]
 import { memLines } from './memrun.js'; // [expanded] 0.2.1-14.2
 import { roomPromptLines } from './furnishrun.js'; // [expanded]
 import './letters.js';
@@ -129,7 +128,7 @@ export function scenarioLines(g, w) {
     const out = Object.values(g.cast ?? {}).filter((r) => whereNow(g, w, r) === OUT).map((r) => r.name);
     const premise = scenarioPremise(g, w);
     return [`Home: everything happens in and around this one house; when someone goes out (work, errands, nights out) it is off-screen and only told afterwards.${premise ? ` Premise: ${premise}` : ''}`,
-        ...(out.length ? [`Out of the house right now (not in any scene): ${out.join(', ')}.`] : []), homeJobsLine(g), dressLine(g, w), houseLine(g, w)].filter(Boolean);
+        ...(out.length ? [`Out of the house right now (not in any scene): ${out.join(', ')}.`] : []), jobsLine(g) /* [expanded] 0.2.1-14.3: from the profiles */, dressLine(g, w), houseLine(g, w)].filter(Boolean);
 }
 export function sceneBlocks() {
     const g = game();

@@ -9,7 +9,7 @@ import { advance } from './time.js';
 import * as M from './money.js';
 const G = (g) => g;
 export const moneyOnIn = (g, w) => !!g && isScenario(w) && M.moneyOn(G(g));
-const hasJob = (g) => (a) => { const j = homeJobOf(g.cast[a]); return !!(j.name?.trim() || (j.shift && j.shift !== 'off')); };
+const hasJob = (g) => (a) => { const j = homeJobOf(g.cast[a]); const p = g.lifex?.profiles?.[a]; return !!(j.name?.trim() || (j.shift && j.shift !== 'off') || (p?.job && !/unemploy|no job|jobless|безработ/i.test(p.job)) || p?.out?.some((b) => /work|shift|работ/i.test(b.what))); }; // [expanded] 14.3: the profile's job
 // Each week: the housemates chip in, the bills are paid.
 onDay.push((g, w) => (moneyOnIn(g, w) ? M.week(G(g), g.day, hasJob(g)) : []));
 export function moneyPromptLines(g, w, present) {

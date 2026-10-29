@@ -15,6 +15,22 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14.3 (0.2.1-14.3) · 2026-10-30
+
+- **Out of the house, in the profile**: "What they do in life" (told to the AI) and up to four times out of the house:
+  what for, which days (any of Mon–Sun), from and to (past midnight is fine). Made from the card with the rest of the
+  profile (or the quick guess: a student is at classes on weekdays, a worker at work, a party lover out on Friday
+  and Saturday nights), editable in People → their Day and habits. A time out comes before their usual bedtime (a
+  night shift, a night out); hours set by hand still win.
+- **"The housemates leave the house" works again**: before, the profiles had no "out" at all and only a shift from
+  This Home's table sent someone out, so with "Their own routine" (the default) nobody ever left. That table is gone;
+  a job and shift from an older save move into the profile on their own. Someone with no profile still follows
+  upstream's routine and line.
+- **Open relationships, two switches** (People → Settings, with flirting and partners staying the night; gone from
+  This Home): for you (upstream's, as before) and in the house: someone with a partner may start dating someone else
+  too, and finding out is not cheating. "Taken" or "married" in a profile (someone outside the house) still holds.
+- **Minutes per message**: 2, 5, 10 or 15 (This Home → World); upstream had 5, fixed.
+
 ## Mundi Expanded 14.2 (0.2.1-14.2) · 2026-10-30
 
 - **Token budget**: upstream's slider stopped at 2000 tokens; now 500 to 8000, with "no limit" at the far right

@@ -75,6 +75,8 @@ export function readiness(g, avatar, name, k) {
 }
 // Open relationships (World → Rules): no jealousy, several partners at once, and everyone knows it.
 export const polyOn = (g) => !!cfg(g).poly;
+/** [expanded] 0.2.1-14.3: open relationships among the housemates too (no cheating, more than one partner) */
+export const polyHouseOn = (g) => !!cfg(g).polyHouse;
 export const partnersOf = (g) => Object.entries(R(g)).filter(([, r]) => r.status !== 'none').map(([a]) => a);
 // A new romance while you are with someone else: unless relationships are open, each partner who learns of it is hurt.
 function jealousy(g, avatar, name) {

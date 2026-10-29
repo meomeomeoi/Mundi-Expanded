@@ -24,6 +24,7 @@ import { nightTogether } from './nights.js';
 import { ownRoom } from './lifeday.js';
 import { addBond } from './social.js';
 import { LOVE } from './secrets.js';
+import { polyHouseOn } from './romance.js';
 import { bondsOf, YOU, factK, parseFound, parseTalked, parseShift, parseSmall, shiftOk, setStatus, statusOf, valueOf, syncTies, drift, bondsLines, nightPrompt, parseNight, applyChange, personalityOf, looksAnswered, NIGHT_SYSTEM } from './bonds.js';
 const G = (g) => g;
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
@@ -187,7 +188,7 @@ export async function bondsNight(g, w, day, range) {
             nightTogether(g, w, nt.who, room, nt.secret || nt.who.some(a => a !== YOU && !!b.hide?.[a]));
         }
     const sh = shiftDue ? parseShift(raw, findName) : null;
-    if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: flirtOn(gl) ? b.romance ?? 'story' : 'off', lovers: (a) => loversOf(g, a), taken: (a) => ['taken', 'married'].includes(profileOf(g, a)?.status ?? ''),
+    if (sh && sh.a !== YOU && sh.b !== YOU && shiftOk(gl, sh, { romance: flirtOn(gl) ? b.romance ?? 'story' : 'off', lovers: (a) => (polyHouseOn(g) ? [] : loversOf(g, a)) /* [expanded] 14.3: open in the house */, taken: (a) => ['taken', 'married'].includes(profileOf(g, a)?.status ?? ''),
         spark: mutualFor(g, sh.a, sh.b) })) {
         const v = valueOf(gl, sh.a, sh.b);
         const type = sh.kind === 'friends' ? (v >= 70 ? 'bestfriend' : 'friend') : sh.kind === 'enemies' ? (v > -60 ? 'rival' : 'enemy') : sh.kind;

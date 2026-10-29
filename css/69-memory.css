@@ -20,3 +20,9 @@
 #mundi-root .mu-mem-person .mu-row { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
 #mundi-root .mu-mem-person .mu-row select { flex: 0 0 auto; width: auto; max-width: 40%; }
 #mundi-root .mu-mem-person .mu-row button { flex: none; }
+/* 0.2.1-14.3: a profile's times out of the house */
+#mundi-root .mu-lp-out { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .04); margin-bottom: 4px; }
+#mundi-root .mu-lp-out input[type="text"] { flex: 1 1 160px; min-width: 0; }
+#mundi-root .mu-lp-out select { width: auto; }
+#mundi-root .mu-lp-days { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+#mundi-root .mu-lp-days .mu-chip { padding: 3px 7px; font-size: 11.5px; min-height: 0; }
