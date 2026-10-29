@@ -3,7 +3,7 @@
 // by the mechanics model: mostly muffled sounds and scraps of words, never graphic. You may be caught, and so may they.
 import { nowAbs, saveGame, toast } from '../core/store.js';
 import { isScenario } from '../core/world.js';
-import { personaName } from '../st/bridge.js';
+import { personaName, chat } from '../st/bridge.js';
 import { onHour } from './hooks.js';
 import { presentNotes } from './lifehooks.js';
 import { presentAt, whereNow } from './people.js';
@@ -33,7 +33,6 @@ export function neighbours(g, w, room) {
     const f = floorsOn(w) ? floorOf(g, w, room) : '';
     return Object.values(g.cast).filter(r => { const at = whereNow(g, w, r); return at !== room && at.startsWith('home:') && (!f || floorOf(g, w, at) === f); });
 }
-/* ---------- you, at a door ---------- */
 const LX = (g) => (g.listenx ??= {});
 export const LISTEN_SYSTEM = 'You describe what a character hears through a closed door in an interactive fiction (a role-play between consenting adults). Mostly muffled sounds and scraps of words; never graphic; nothing you are not given. Plain prose only.';
 /** The prompt: who is inside, what they are doing, what is going on between them. */
@@ -80,6 +79,25 @@ export function heard(g, w, loc, text) {
 }
 // the next scene knows what you just heard (half an hour)
 presentNotes.push((g) => { const h = LX(g).heard; return h && nowAbs(g) - h.at <= 30 ? [`{{user}} has just listened at a closed door and heard: ${h.text}`] : []; });
+/* ---------- what came through the door (0.2.1-13) ---------- */
+/** A few scraps of what was said in a room in the last hour (quoted speech first), as heard through a door. */
+export function scrapsFrom(g, loc, now) {
+    const lines = chat().filter((m) => m?.extra?.mundi_loc === loc && now - (Number(m.extra.mundi_at) || 0) <= 60 && !m.is_system).slice(-6);
+    const out = [];
+    for (const m of lines.reverse()) {
+        const t = String(m.mes ?? '').replace(/<[^>]+>/g, ' ');
+        const q = [...t.matchAll(/["“«]([^"”»]{6,})["”»]/g)].map(x => x[1]);
+        const src = q.length ? q : t.replace(/\*[^*]*\*/g, ' ').split(/[.!?…]+/).map(x => x.trim()).filter(x => x.length >= 6);
+        const pick = src[Math.floor(H(`${now}|${out.length}|${m.send_date ?? ''}`) * src.length)];
+        if (pick)
+            out.push(pick.split(/\s+/).slice(0, 7).join(' ') + (pick.split(/\s+/).length > 7 ? '…' : ''));
+        if (out.length >= 2)
+            break;
+    }
+    return out;
+}
+/** Who here overheard a scene (at this place, in this time) and what they caught. */
+export const overheard = (g, loc, from, to) => (LX(g).over ?? []).filter(o => o.loc === loc && o.at >= from - 30 && o.at <= to + 60);
 /* ---------- keeping an eye on someone ---------- */
 export function watch(g, who) { LX(g).watch = { who, until: nowAbs(g) + 180 }; saveGame(); }
 export const watching = (g) => { const x = LX(g).watch; return x && x.until > nowAbs(g) ? x : null; };
@@ -138,6 +156,9 @@ onHour.push((g, w) => {
         for (const x of with_)
             if (hide[x.avatar])
                 learn({ parts: [YOU, x.avatar], pub: 'private', know: hide[x.avatar].know, day: hide[x.avatar].day }, r.avatar, { lvl: 'knows', how: 'saw', day: g.day, ver: `listened at ${N(g, YOU)}'s door while ${x.name} was inside` }, hide[x.avatar]);
+        // 0.2.1-13: what they caught (scraps of the last things said in your room): they know that much, no more
+        (lx.over ??= []).push({ who: r.avatar, loc: 'home:player', at: now, scraps: scrapsFrom(g, 'home:player', now) });
+        lx.over = lx.over.filter(o => now - o.at < 1440);
         if (g.nightsx?.now?.loc === 'home:player')
             applyChange(G(g), [r.avatar, ...with_.map(x => x.avatar)].slice(0, 3), 0, `${r.name} heard ${N(g, YOU)} and ${list(with_.map(x => x.name))} through the door.`, 'offscreen', { pub: 'private', seen: [r.avatar] });
         if (H(`${now}|${r.avatar}|youhear`) < 0.3) {

@@ -3,7 +3,7 @@
 // by the mechanics model: mostly muffled sounds and scraps of words, never graphic. You may be caught, and so may they.
 import { nowAbs, saveGame, toast, type Save, type Resident } from '../core/store.js';
 import { isScenario, type WorldDef } from '../core/world.js';
-import { personaName } from '../st/bridge.js';
+import { personaName, chat } from '../st/bridge.js';
 import { onHour } from './hooks.js';
 import { presentNotes } from './lifehooks.js';
 import { presentAt, whereNow } from './people.js';
@@ -36,7 +36,8 @@ export function neighbours(g: Save, w: WorldDef, room: string): Resident[] {
 
 /* ---------- you, at a door ---------- */
 
-const LX = (g: Save) => ((g as any).listenx ??= {}) as { heard?: { loc: string; text: string; at: number }; tries?: Record<string, number>; on?: Record<string, number>; caught?: Record<string, number>; watch?: { who: string; until: number } };
+export interface Overheard { who: string; loc: string; at: number; scraps: string[] }
+const LX = (g: Save) => ((g as any).listenx ??= {}) as { over?: Overheard[]; heard?: { loc: string; text: string; at: number }; tries?: Record<string, number>; on?: Record<string, number>; caught?: Record<string, number>; watch?: { who: string; until: number } };
 export const LISTEN_SYSTEM = 'You describe what a character hears through a closed door in an interactive fiction (a role-play between consenting adults). Mostly muffled sounds and scraps of words; never graphic; nothing you are not given. Plain prose only.';
 /** The prompt: who is inside, what they are doing, what is going on between them. */
 export function listenPrompt(g: Save, w: WorldDef, loc: string): string {
@@ -75,6 +76,25 @@ export function heard(g: Save, w: WorldDef, loc: string, text: string): { text: 
 }
 // the next scene knows what you just heard (half an hour)
 presentNotes.push((g) => { const h = LX(g).heard; return h && nowAbs(g) - h.at <= 30 ? [`{{user}} has just listened at a closed door and heard: ${h.text}`] : []; });
+
+/* ---------- what came through the door (0.2.1-13) ---------- */
+
+/** A few scraps of what was said in a room in the last hour (quoted speech first), as heard through a door. */
+export function scrapsFrom(g: Save, loc: string, now: number): string[] {
+    const lines = chat().filter((m: any) => m?.extra?.mundi_loc === loc && now - (Number(m.extra.mundi_at) || 0) <= 60 && !m.is_system).slice(-6);
+    const out: string[] = [];
+    for (const m of lines.reverse()) {
+        const t = String(m.mes ?? '').replace(/<[^>]+>/g, ' ');
+        const q = [...t.matchAll(/["“«]([^"”»]{6,})["”»]/g)].map(x => x[1]);
+        const src = q.length ? q : t.replace(/\*[^*]*\*/g, ' ').split(/[.!?…]+/).map(x => x.trim()).filter(x => x.length >= 6);
+        const pick = src[Math.floor(H(`${now}|${out.length}|${m.send_date ?? ''}`) * src.length)];
+        if (pick) out.push(pick.split(/\s+/).slice(0, 7).join(' ') + (pick.split(/\s+/).length > 7 ? '…' : ''));
+        if (out.length >= 2) break;
+    }
+    return out;
+}
+/** Who here overheard a scene (at this place, in this time) and what they caught. */
+export const overheard = (g: Save, loc: string, from: number, to: number) => (LX(g).over ?? []).filter(o => o.loc === loc && o.at >= from - 30 && o.at <= to + 60);
 
 /* ---------- keeping an eye on someone ---------- */
 
@@ -115,6 +135,9 @@ onHour.push((g, w) => {
         // they learn what you keep to yourselves in there
         const hide = bondsOf(G(g)).hide ?? {};
         for (const x of with_) if (hide[x.avatar]) learn({ parts: [YOU, x.avatar], pub: 'private', know: hide[x.avatar].know, day: hide[x.avatar].day }, r.avatar, { lvl: 'knows', how: 'saw', day: g.day, ver: `listened at ${N(g, YOU)}'s door while ${x.name} was inside` }, hide[x.avatar]);
+        // 0.2.1-13: what they caught (scraps of the last things said in your room): they know that much, no more
+        (lx.over ??= []).push({ who: r.avatar, loc: 'home:player', at: now, scraps: scrapsFrom(g, 'home:player', now) });
+        lx.over = lx.over.filter(o => now - o.at < 1440);
         if ((g as any).nightsx?.now?.loc === 'home:player') applyChange(G(g), [r.avatar, ...with_.map(x => x.avatar)].slice(0, 3), 0, `${r.name} heard ${N(g, YOU)} and ${list(with_.map(x => x.name))} through the door.`, 'offscreen', { pub: 'private', seen: [r.avatar] });
         if (H(`${now}|${r.avatar}|youhear`) < 0.3) {
             (lx.caught ??= {})[r.avatar] = g.day; openTalk(g, YOU, r.avatar, `${r.name} listening at your door`);

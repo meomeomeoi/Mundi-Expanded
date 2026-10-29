@@ -2239,6 +2239,35 @@ body.mundi-open #toast-container { display: none !important; }
 /* 0.2.1-12.3: Go out: who would not come now (and why) */
 #mundi-root .mu-out-people .mu-chip.is-no { opacity: .5; filter: grayscale(.7); cursor: not-allowed; }
 #mundi-root .mu-out-people .mu-chip.is-no small { display: block; font-size: 10px; opacity: .85; line-height: 1.1; }
+/* [expanded] 0.2.1-13: the log in scenes, and Previously */
+#mundi-root .mu-dlg-prev { position: absolute; top: 8px; right: 44px; z-index: 2; width: 30px; height: 30px; padding: 0; opacity: .5; }
+#mundi-root .mu-dlg-prev:hover, #mundi-root .mu-dlg-prev:focus-visible { opacity: 1; }
+#mundi-root .mu-dlg-prev svg { width: 17px; height: 17px; }
+#mundi-root .mu-sc { margin: 0 0 4px; }
+#mundi-root .mu-sc-head { display: flex !important; align-items: center; gap: 8px; width: 100%; min-height: 0; padding: 5px 10px !important; border-radius: 9px !important; text-align: left;
+    background: rgba(255, 255, 255, .05) !important; border: 1px solid rgba(255, 255, 255, .08) !important; color: inherit; font-size: 12.5px; font-weight: 600; opacity: .82; cursor: pointer; box-shadow: none !important; }
+#mundi-root .mu-sc-head:hover { opacity: 1; background: rgba(255, 255, 255, .09) !important; }
+#mundi-root .mu-sc-head > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mundi-root .mu-sc-head > small { flex: none; opacity: .65; font-weight: 500; }
+#mundi-root .mu-sc-arr { font-style: normal; width: 10px; opacity: .7; }
+#mundi-root .mu-sc.is-open { padding-bottom: 6px; border-bottom: 1px dashed rgba(255, 255, 255, .14); margin-bottom: 8px; }
+#mundi-root .mu-sc.is-open > .mu-sc-head { margin-bottom: 6px; }
+#mundi-root .mu-sc.is-open .mu-line { opacity: .86; }
+#mundi-root .mu-sc-now { display: flex; align-items: center; gap: 10px; margin: 8px 0 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; opacity: .6; }
+#mundi-root .mu-sc-now::before, #mundi-root .mu-sc-now::after { content: ""; flex: 1 1 0; height: 1px; background: currentColor; opacity: .35; }
+#mundi-root .mu-sc-mark { margin: 4px 0; text-align: center; font-size: 11px; font-style: italic; opacity: .55; }
+#mundi-root .mu-sc-mark.is-aside { opacity: .45; }
+#mundi-root .mu-prev { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 60; width: min(820px, calc(100vw - 32px)); max-height: calc(100vh - 64px);
+    display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; padding: 16px 18px; }
+#mundi-root .mu-prev header { display: flex; align-items: center; justify-content: space-between; }
+#mundi-root .mu-prev header h3 { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+#mundi-root .mu-prev-body { overflow: auto; min-height: 0; display: grid; gap: 6px; align-content: start; padding-right: 4px; }
+#mundi-root .mu-prev-day > .mu-sc-head { font-size: 13.5px; opacity: 1; background: rgba(255, 255, 255, .08) !important; }
+#mundi-root .mu-prev-day.is-open > .mu-sc-head { margin-bottom: 6px; }
+#mundi-root .mu-prev-day .mu-sc { margin-left: 14px; }
+#mundi-root .mu-line.is-past { margin: 6px 0; }
+/* the eye and Previously sit in the log's top corner: the first line keeps clear of them */
+#mundi-root .mu-log > .mu-sc:first-child > .mu-sc-head, #mundi-root .mu-log > .mu-sc-now:first-child { width: calc(100% - 76px); }
 /* [expanded] 0.2.0.7: your portrait, bottom left (src/ui/youpic.ts). Above the box's left corner; beside the box when
    the screen is wide enough; at the bottom when the box is hidden. The frame follows the house's era. */
 #mundi-root .mu-yp { position: absolute; z-index: 13; left: 12px; bottom: calc(min(44vh, 440px) + 22px); height: min(26vh, 250px); aspect-ratio: 3 / 4; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; pointer-events: none; transition: bottom .25s ease, height .25s ease; }

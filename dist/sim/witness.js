@@ -18,7 +18,7 @@ import { sawTogether } from './secretsrun.js';
 import { tellLines, hearNews } from './gossiprun.js';
 import { consequenceLines } from './consequences.js';
 import { loveLines } from './lovenight.js';
-import './listen.js'; // [expanded] 0.2.0.9: listening (its hooks)
+import { overheard } from './listen.js'; // [expanded] 0.2.0.9: listening (its hooks); 0.2.1-13: what came through the door
 const G = (g) => g;
 const hm = (m) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const list = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
@@ -66,15 +66,19 @@ export function witnessLines(g, w, present) {
     const st = stretches(dayStart(g)).filter(s => s.spoke.length || s.here.length);
     const out = [];
     const name = (a) => g.cast[a]?.name ?? a;
-    for (const s of st.slice(0, -1).slice(-6)) { // the stretch going on now is this scene
-        const missing = present.filter(a => !s.here.includes(a));
-        if (!missing.length)
+    for (const s of st.slice(0, -1).slice(-10)) { // the stretch going on now is this scene
+        const all = present.filter(a => !s.here.includes(a));
+        if (!all.length)
             continue;
         const room = placeOf(g, w, s.loc)?.name ?? (s.loc.startsWith('home:') ? 'a bedroom' : s.loc);
         const there = s.here.length ? `only ${list([...s.here.map(name), '{{user}}'])} were there` : '{{user}} was there alone';
-        out.push(`Earlier today (${hm(s.from)}${s.to > s.from ? `–${hm(s.to)}` : ''}, ${room.toLowerCase()}): ${there}. ${list(missing.map(name))} did not hear that and ${missing.length > 1 ? 'know' : 'knows'} nothing of it unless told.`);
+        // 0.2.1-13: someone listening at the door caught a little of it: that much, no more
+        const ears = overheard(g, s.loc, s.from, s.to).filter(o => all.includes(o.who));
+        const missing = all.filter(a => !ears.some(o => o.who === a));
+        const caught = ears.map(o => `${name(o.who)} listened at the door and caught only scraps${o.scraps.length ? `: ${o.scraps.map(x => `"${x}"`).join(', ')}` : ''}; nothing more.`).join(' ');
+        out.push(`Earlier today (${hm(s.from)}${s.to > s.from ? `–${hm(s.to)}` : ''}, ${room.toLowerCase()}): ${there}.${missing.length ? ` ${list(missing.map(name))} did not hear that and ${missing.length > 1 ? 'know' : 'knows'} nothing of it unless told.` : ''}${caught ? ` ${caught}` : ''}`);
     }
-    return out.slice(-4);
+    return out.slice(-6);
 }
 /** How private this moment is: alone behind a closed door, alone in a common room, or a crowd. */
 export function privacyLine(g, w, present) {

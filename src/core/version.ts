@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-12.4';
+export const VERSION = '0.2.1-13';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,12 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-13', fork: true, title: 'Scenes', items: [
+        ['chat', 'The dialogue log in scenes: a new place, an hour\'s pause or an almost new company starts one; someone coming in or leaving is a mark inside; a word next door is an aside, not a new scene. The earlier scenes of the day fold to one line (where, when, who): a click opens one.'],
+        ['book', 'Previously (the book in the log\'s corner): the days before, scene by scene. They stay hidden from the AI; this is for you.'],
+        ['lock', 'What the AI reads of today: the scenes none of the people here were in are left out of the prompt (the chat itself is untouched; they come back when one of those people is with you). People, Settings: "What they were there for" (new), Strict, or Everything (as before).'],
+        ['eye', 'Someone listening at your door now knows the scraps they caught, and the scene says so (no more "did not hear" for them).'],
+    ] },
     { v: '0.2.1-12.4', fork: true, title: 'Standing still', items: [
         ['image', 'Fixed: whoever spoke slid half a place sideways onto the next person (the step-up lost the centring). Now only the picture lifts a few pixels; the places stay put.'],
         ['moon', 'Go out goes by each person\'s own bedtime, not 23:00: someone going to bed within two hours says no unless close to you (a night owl still comes at 1 a.m.).'],

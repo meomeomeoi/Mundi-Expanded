@@ -225,6 +225,10 @@ import { youPicHtml, youAuto, youLabels } from './youpic.js';
 import { beatsHtml, beatWanted, showBeat, personaText, clearBeat } from './beats.js'; // [expanded] 0.2.0.10
 import { parseBeat } from '../sim/exprs.js';
 import { onCall } from '../sim/calls.js'; // [expanded] 0.2.0.7: your portrait
+import { foldedLog, prevButton, prevHtml } from './scenelog.js'; // [expanded] 0.2.1-13
+// [expanded] a line of an earlier day, for Previously (SillyTavern's hide made it a system line: shown plainly)
+const pastLine = (i) => { const m = chat()[i]; if (!m)
+    return ''; const who = m.extra?.mundi_narrator ? tr('Narrator') : m.is_user ? (m.name || me()) : m.name; return `<div class="mu-line is-past ${m.is_user ? 'is-user' : ''}"><div class="mu-line-body"><div class="mu-line-head"><b>${esc(who)}</b></div><div class="mu-line-text mes_text">${lineText(m, i)}</div></div></div>`; };
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
 function lineHtml(m, i, last, lastChar) {
@@ -257,6 +261,12 @@ function logHtml() {
             lastChar = i;
             break;
         }
+    // [expanded] 0.2.1-13: a Home's day in scenes (the earlier ones folded)
+    if (g && state.view === 'scene') {
+        const f = foldedLog(visitStart(g), i => isFiller(list[i]) ? '' : lineHtml(list[i], i, i === list.length - 1, lastChar), LOG_SIZE);
+        if (f)
+            return f;
+    }
     let out = '';
     for (let i = from; i < list.length; i++)
         if (!isFiller(list[i]))
@@ -309,11 +319,11 @@ export function sceneHtml() {
         const src = steady(r.avatar, spriteFor(r.avatar, ex[r.avatar] ?? null));
         return `<figure class="mu-sprite ${isWith(g, r.avatar) ? 'is-with' : ''} ${RAD.who === r.avatar ? 'is-menu' : ''} ${speaking === r.avatar ? 'is-speaking' : ''} ${onCall(g, r.avatar) ? 'is-call' : ''}" style="--i:${k};${sv.get(r.avatar)}" title="${esc(r.met ? r.name : 'Someone')}" data-act="spr-menu" data-who="${esc(r.avatar)}">${src ? `<img src="${esc(src)}" alt="" style="${cropOf(src)}">` : `<span class="is-avatar mu-zoomable"><img src="${esc(avatarUrl(r.avatar))}" alt="" draggable="false"></span>`}<figcaption>${esc(r.met ? r.name : 'Someone')}${doingOf(r) /* [expanded] 0.2.0.11 */}</figcaption>${reactionOf(r.avatar) /* [expanded] */}${radialHtml(r.avatar, r)}</figure>`;
     }).join('');
-    return `<div class="mu-scene">
+    return `<div class="mu-scene">${prevHtml(pastLine) /* [expanded] */}
         <div class="mu-scene-bg" data-morph-skip data-keep="scene-bg" data-place="${esc(g.player.loc)}" style="${background(g, w)}"></div>
         <div class="mu-sprites ${speaking ? 'has-speaker' : ''}">${sprites}</div>
         ${dlgShowBtn()}
-        <section class="mu-dialog">${dlgHideBtn()}
+        <section class="mu-dialog">${dlgHideBtn()}${prevButton() /* [expanded] */}
             <div class="mu-log" data-keep="log" data-bottom>${logHtml()}</div>
             <div class="mu-composer">
                 ${beatsHtml() /* [expanded] */}${modesHtml()}
@@ -395,12 +405,12 @@ export function chatHtml() {
     const locked = String(ctx().chatMetadata?.custom_background ?? '');
     const bg = locked || (bgEl ? (bgEl.style.backgroundImage || getComputedStyle(bgEl).backgroundImage) : 'none');
     const group = !currentCharacter();
-    return `<div class="mu-scene is-chat">
+    return `<div class="mu-scene is-chat">${prevHtml(pastLine) /* [expanded] */}
         <div class="mu-scene-bg" data-morph-skip data-keep="scene-bg" data-place="chat" style="${bg && bg !== 'none' ? `background-image:${esc(bg)};background-size:cover;background-position:center` : ''}"></div>
         <div class="mu-sprites">${sprites}</div>
         ${dlgShowBtn()}
         ${group ? `<nav class="mu-people" aria-label="People here">${cast.map(a => `<span class="mu-person"><img src="${esc(thumb(a))}" alt=""><b data-notr>${esc(charOf(a)?.name ?? '')}</b>${cast.length > 1 ? `<button class="mu-ghost" data-act="sc-remove" data-avatar="${esc(a)}" title="Remove from the scene">${icon('x')}</button>` : ''}</span>`).join('')}</nav>` : ''}
-        <section class="mu-dialog">${dlgHideBtn()}
+        <section class="mu-dialog">${dlgHideBtn()}${prevButton() /* [expanded] */}
             <div class="mu-log" data-keep="log" data-bottom>${logHtml()}</div>
             <div class="mu-composer">
                 ${modesHtml()}

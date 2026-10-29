@@ -252,6 +252,22 @@ Next, discussed:
   reactions…), and give the interests without a skill (Fashion, Nature, Movies, Nightlife, Travel) something; the
   traits' tooltips list what each does.
 
+## 14. Scenes (0.2.1-13, done)
+
+A Home's day is one long chat (upstream's choice); the dialogue log now shows it in scenes: a new one for a new place,
+a long pause (an hour) or an almost new company; someone coming or going is a mark inside; a line or two next door is
+an aside. Earlier scenes fold to one line; "Previously" (the log's corner) shows the days before. The AI no longer
+reads today's scenes none of the people here were in (SillyTavern's generate interceptor, on a copy: the chat is
+untouched); a setting keeps upstream's way. Listening at your door: they know the scraps they caught, no more.
+
+Next, discussed:
+- **Memory, with a dial for detail**: today the past lives on as the diary (the last two days), facts, relationships,
+  what everyone knows and open threads; a detail nobody turned into a fact (an allergy, a promise said in passing) is
+  gone in a couple of days. Make it settable: how many diary days the AI reads (1–7), how much the night reader writes
+  down (key moments only / ordinary detail / everything worth a line), personal notes each character keeps about you
+  (small facts "for later", editable in the memory book), and how long episodes take to fade. Each with its cost in
+  tokens shown beside it.
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for

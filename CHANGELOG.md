@@ -15,6 +15,24 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 13 (0.2.1-13) · 2026-10-30 · Scenes
+
+- **The log in scenes** (a Home): the day is still one chat (upstream: walking between rooms is one conversation),
+  but the log shows it in scenes. A new scene: another place, an hour without a word in the same place, or an almost
+  new company (fewer than half stayed). Someone coming in or leaving is a small mark inside the scene; a line or two
+  said next door before coming straight back (within 15 minutes) is an aside. Earlier scenes of the day fold to one
+  line ("20:00–20:40 · Your room · Maya · 12 lines"); a click opens one. Uses the stamps every line has carried since
+  0.2.0.8 (who was there, where, when).
+- **Previously**: a book button in the log's corner opens the days before, day by day and scene by scene. The lines
+  are SillyTavern's hidden ones (upstream hides each day from the AI when you sleep): shown, never sent.
+- **What the AI reads of today**: before each reply SillyTavern hands the extension the lines it will send (its
+  generate interceptor, declared in the manifest); the scenes none of the people here were in are taken out of that
+  copy. The chat is untouched, so they come back as soon as one of those people is with you; the prompt still says
+  that the scene happened and who was there, and the night reader still reads the whole day. People → Settings:
+  "What they were there for" (default), "Strict" (your scenes alone too), "Everything" (as before).
+- **Listening at your door**: whoever listened keeps the scraps they caught; the scene says what they heard instead
+  of "did not hear that".
+
 ## Mundi Expanded 12.4 (0.2.1-12.4) · 2026-10-29
 
 - **Sprites stay in their places**: since 12.2 the one speaking lost upstream's centring (-50%) when it stepped up, so

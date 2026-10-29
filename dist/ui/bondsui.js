@@ -21,6 +21,7 @@ import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
 import * as L from '../sim/love.js';
 import { WALLS, wallsOf } from '../sim/listen.js';
+import { CTX_MODES, ctxMode, setCtxMode } from '../sim/scenectx.js';
 import * as NI from '../sim/nights.js';
 import { gossipOf } from '../sim/gossiprun.js';
 const roomLimit = (g) => Number(g.furnishx?.limit ?? 15);
@@ -288,6 +289,9 @@ export function bondsSettingsHtml() {
         <b>The walls</b>
         <div class="mu-bd-seg">${WALLS.map(([id, label]) => `<button class="${wallsOf(g) === id ? 'is-on' : ''}" data-act="bd-walls" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">What is heard through them: a fight, a night together, someone listening at a door (yours too: rarely, a nosy one).</small>
+        <b>What the AI reads of today</b>
+        <div class="mu-bd-seg">${CTX_MODES.map(([id, label]) => `<button class="${ctxMode(g) === id ? 'is-on' : ''}" data-act="bd-ctx" data-v="${id}">${label}</button>`).join('')}</div>
+        <small class="mu-muted">${CTX_MODES.find(x => x[0] === ctxMode(g))[2]}</small>
         <b>How the house talks</b>
         <div class="mu-bd-seg">${MOODS.map(([id, label]) => `<button class="${gossipOf(g).mood === id ? 'is-on' : ''}" data-act="bd-mood" data-v="${id}">${label}</button>`).join('')}</div>
         <div class="mu-bd-seg">${[3, 6, 10].map(n => `<button class="${gossipOf(g).max === n ? 'is-on' : ''}" data-act="bd-gmax" data-v="${n}">${n} at once</button>`).join('')}</div>
@@ -399,6 +403,8 @@ Object.assign(ACT, {
         refreshPrompt();
         notify();
     },
+    'bd-ctx': (el) => { const g = game(); if (!g)
+        return; setCtxMode(g, el.dataset.v || 'shared'); saveGame(); notify(); }, // [expanded] 0.2.1-13
     'bd-walls': (el) => { const g = game(); if (!g)
         return; bondsOf(G(g)).walls = el.dataset.v || 'normal'; saveGame(); notify(); },
     'bd-shifts': (el) => { const g = game(); if (!g)

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import * as O from '../dist/sim/own.js';
 import * as B from '../dist/sim/battery.js';
+import * as S from '../dist/sim/scenes.js';
 import { wholeSentences } from '../dist/sim/jsonfix.js';
 let n = 0; const t = (name, f) => { f(); n++; };
 t('levels and experience', () => {
@@ -63,5 +64,30 @@ t('a cut-off reply ends at a whole sentence', () => {
     assert.equal(wholeSentences('You hear a laugh. Then a voice says "no way". Then some'), 'You hear a laugh. Then a voice says "no way".');
     assert.equal(wholeSentences('All fine.'), 'All fine.');
     assert.equal(wholeSentences('Short then a very long tail without any end at all here'), 'Short then a very long tail without any end at all here');
+});
+t('the day in scenes', () => {
+    let i = 0; const E = (loc, here, at) => ({ i: i++, loc, here, at });
+    const day = [
+        E('living', ['f', 'm', 'l'], 720), E('living', ['f', 'm', 'l'], 725), E('living', ['f', 'm', 'l', 'k'], 730),   // Kathie comes in
+        E('hall', [], 732), E('living', ['f', 'm', 'l', 'k'], 734),                       // a word in the hall: an aside
+        E('cinema', ['f', 'm'], 960), E('cinema', ['f', 'm'], 1000),
+        { i: i++, loc: null, here: [], at: 0 },                                             // a reply not stamped yet
+        E('cinema', ['f', 'm'], 1150),                                                     // two and a half hours later
+        E('home:player', ['m'], 1200), E('home:player', ['m'], 1210),
+        E('living', ['f', 'm', 'l', 'k'], 1260), E('living', ['x', 'y', 'k'], 1270),       // almost everyone new
+    ];
+    const sc = S.cutScenes(day);
+    assert.deepEqual(sc.map(s => s.loc), ['living', 'cinema', 'cinema', 'home:player', 'living', 'living']);
+    assert.equal(sc[0].lines.length, 5); assert.deepEqual(sc[0].marks.map(m => m.came), [['k']]); assert.equal(sc[0].aside[3], 'hall');
+    assert.equal(sc[1].lines.length, 3, 'the unstamped reply stays in its scene');
+    // what the people here could have heard
+    const now = ['f'];
+    const gone = S.unheard(sc, now, 'shared');
+    assert.ok(!gone.has(0) && !gone.has(5), 'Finn was in the living room and at the cinema');
+    assert.ok(gone.has(9) && gone.has(10), 'not in your room with Maya');
+    assert.ok(!gone.has(12), 'the scene going on now');
+    assert.equal(S.unheard(sc, now, 'all').size, 0); assert.equal(S.unheard(sc, [], 'strict').size, 0, 'alone: nothing to hide');
+    i = 0; const solo = S.cutScenes([E('kitchen', [], 600), E('living', ['f'], 700)]);
+    assert.ok(!S.unheard(solo, ['f'], 'shared').has(0)); assert.ok(S.unheard(solo, ['f'], 'strict').has(0));
 });
 console.log(`own: ${n} tests passed`);
