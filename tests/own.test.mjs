@@ -64,5 +64,4 @@ t('a cut-off reply ends at a whole sentence', () => {
     assert.equal(wholeSentences('All fine.'), 'All fine.');
     assert.equal(wholeSentences('Short then a very long tail without any end at all here'), 'Short then a very long tail without any end at all here');
 });
-t('late night for going out', () => { assert.ok(O.lateHour(23 * 60 + 30)); assert.ok(O.lateHour(3 * 60)); assert.ok(!O.lateHour(20 * 60)); });
 console.log(`own: ${n} tests passed`);

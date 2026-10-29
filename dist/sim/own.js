@@ -191,5 +191,3 @@ export function pickTheme(recent, roll) {
     return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))];
 }
 export const rememberTheme = (recent, t) => [...recent.filter(x => x !== t), t].slice(-CROSS_RECENT);
-/** Too late to go out with just anyone (after 23:00, before 6). */
-export const lateHour = (minutes) => { const h = Math.floor(minutes / 60); return h >= 23 || h < 6; };

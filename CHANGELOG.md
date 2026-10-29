@@ -15,14 +15,22 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 12.4 (0.2.1-12.4) · 2026-10-29
+
+- **Sprites stay in their places**: since 12.2 the one speaking lost upstream's centring (-50%) when it stepped up, so
+  it slid half a place to the right, onto the next person, and back when someone else spoke. The lift (and the hop
+  on a new face, and the phone-call look) now moves the picture inside, never the place.
+- **Go out by their own bedtime**: instead of a fixed 23:00, someone who would be asleep within two hours (by their
+  own schedule) says no unless they are your partner or close to you (50+). A night owl still comes out at 1 a.m.
+
 ## Mundi Expanded 12.3 (0.2.1-12.3) · 2026-10-29
 
 - **Get-togethers at home**: saying yes to a housemate's movie night (games, cooking together, or a plan of theirs at
   home) makes a get-together in that room, not a one-to-one meet-up. The panel names the host and everyone in the
   room; nobody joins your party or follows you; it ends when you leave the room, when its time is up, or with
   "Call it a night" (everyone wraps up; any of them may answer).
-- **Go out asks first**: someone asleep, someone you have not met or barely know, or, after 23:00, anyone but your
-  partner and the people close to you (50+) will not come along. Their chip is greyed with the reason.
+- **Go out asks first**: someone asleep, or someone you have not met or barely know, will not come along. Their chip
+  is greyed with the reason.
 - **Phone battery**: full in the morning, about 5% an hour while you are awake (some 20% left at 23:00), charges while
   you sleep, never under 5%. Orange at 30%, red at 15%.
 - **Listening at a door**: the prompt now has who is inside (from their cards) and how they get along; more room for

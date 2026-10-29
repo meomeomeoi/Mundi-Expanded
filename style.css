@@ -2064,7 +2064,8 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-call.is-on { top: 12px; min-width: 220px; padding: 6px 8px 6px 6px; } #mundi-root .mu-call.is-on img { width: 34px; height: 34px; } #mundi-root .mu-call.is-on button { width: 34px; height: 34px; }
 #mundi-root .mu-call-bar { left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #2fbf63, #8ae0a8); }
 /* on the line: the caller's picture in a phone frame, at the side */
-#mundi-root .mu-sprite.is-call { scale: .62; translate: 0 -18%; filter: drop-shadow(0 0 0 transparent); }
+#mundi-root .mu-sprite.is-call { scale: .62; filter: drop-shadow(0 0 0 transparent); }
+#mundi-root .mu-sprite.is-call > img { translate: 0 -18%; }
 #mundi-root .mu-sprite.is-call > img { border-radius: 26px; border: 6px solid #15171d; background: radial-gradient(circle at 50% 30%, #3b4a6b, #151b2a); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); padding-top: 18px; }
 
 /* [expanded] 0.2.0.10: things to do together (a film, a match, rock-paper-scissors, a coin) */
@@ -2130,10 +2131,13 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-sprites .mu-sprite > img { transform-origin: 50% 100%; will-change: scale; backface-visibility: hidden; animation: mu-breathe 5.2s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -1.7s); }
 @keyframes mu-breathe { 0%, 100% { scale: 1 1; } 50% { scale: 1.002 1.006; } }   /* scale, not transform: transform holds the width setting */
 #mundi-root[data-breathe="off"] .mu-sprites .mu-sprite > img { animation: none; will-change: auto; }
-#mundi-root .mu-sprites .mu-sprite { transition: translate .35s ease, scale .35s ease, filter .45s ease; }
-#mundi-root .mu-sprites.has-speaker .mu-sprite.is-speaking { translate: 0 -4px; z-index: 3; }
+/* 12.4: the sprite itself keeps upstream's translate (-50% 0: it centres it on its place); lifts and hops go on the
+   picture inside, so the speaker never slides half a place sideways onto the next one */
+#mundi-root .mu-sprites .mu-sprite { transition: left .35s ease, scale .35s ease, filter .45s ease; }
+#mundi-root .mu-sprites .mu-sprite > img { transition: translate .35s ease; }
+#mundi-root .mu-sprites.has-speaker .mu-sprite.is-speaking > img { translate: 0 -4px; }
 #mundi-root .mu-sprites.has-speaker .mu-sprite:not(.is-speaking) { filter: brightness(.88) saturate(.94); }
-#mundi-root .mu-sprite.is-hop { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
+#mundi-root .mu-sprites .mu-sprite.is-hop > img { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes mu-hop { 0% { translate: 0 0; } 35% { translate: 0 -10px; } 100% { translate: 0 0; } }   /* translate, not transform: transform holds the height setting */
 /* [expanded] 0.2.1-12: your own life (the mini-games, the Me app) */
 #mundi-root .mu-own-pick, #mundi-root .mu-og { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 60; }   /* a dialog next to its veil is placed by its own class (as the doors' are) */

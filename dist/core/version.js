@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-12.3';
+export const VERSION = '0.2.1-12.4';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,9 +10,13 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-12.4', fork: true, title: 'Standing still', items: [
+            ['image', 'Fixed: whoever spoke slid half a place sideways onto the next person (the step-up lost the centring). Now only the picture lifts a few pixels; the places stay put.'],
+            ['moon', 'Go out goes by each person\'s own bedtime, not 23:00: someone going to bed within two hours says no unless close to you (a night owl still comes at 1 a.m.).'],
+        ] },
     { v: '0.2.1-12.3', fork: true, title: 'Movie nights for everyone', items: [
             ['users', 'An invitation to a movie night (or games, or cooking) at home is a get-together in that room, not a date: the panel shows the host and everyone there, nobody follows you around, and leaving the room or "Call it a night" ends it.'],
-            ['map', 'Go out: someone asleep, a stranger, or (after 23:00) someone not close to you will not come along; the picker says why.'],
+            ['map', 'Go out: someone asleep or a stranger will not come along; the picker says why.'],
             ['phone', 'The phone battery runs down through the day (about a fifth left by 23:00) and charges while you sleep; never below 5%.'],
             ['eye', 'Listening at a door: the model knows who is inside and how they get along, has room to answer, and a cut-off answer ends at a whole sentence.'],
             ['star', 'Crossword themes come from a list of 50 and do not repeat for a while.'],
