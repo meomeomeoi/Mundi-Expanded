@@ -27,7 +27,8 @@ const clear = () => { cancelAnimationFrame(GV.raf); GV.timers.forEach(t => clear
 const later = (f: () => void, ms: number) => { GV.timers.push(setTimeout(f, ms)); };
 const say = (t: string) => { if (!t) return; GV.bubble = t; GV.bubbleAt = Date.now(); notify(); later(() => { if (Date.now() - GV.bubbleAt >= 3900) { GV.bubble = ''; notify(); } }, 4000); };
 async function ask(prompt: string, n: number): Promise<any> {
-    try { const { bgAsk } = await import('../sim/regulator.js'); return looseJson(await bgAsk(prompt, n, 'You write the content of small games for a cozy slice-of-life story. Fiction; answer with JSON only.')); } catch { return null; }
+    // at most 40 seconds: then the game goes on with its own content (or says it could not start)
+    try { const { bgAsk } = await import('../sim/regulator.js'); const raw = await Promise.race([bgAsk(prompt, n, 'You write the content of small games for a cozy slice-of-life story. Fiction; answer with JSON only.'), new Promise<string>(r => setTimeout(() => r(''), 40000))]); return raw ? looseJson(raw) : null; } catch { return null; }
 }
 
 /* ---------- the choice: play it, or just do it ---------- */
@@ -42,7 +43,7 @@ export function ownHtml(): string {
     const ppl = presentAt(g, w, g.player.loc).filter(r => r.met);
     const s = p.skill; const L = lvl(g, s);
     const games = R.ocfg(g).games;
-    return `<div class="mu-dlg-veil"></div><div class="mu-panel mu-dlg mu-glassdlg mu-own-pick" role="dialog">
+    return `<div class="mu-dlg-veil" data-act="og-veil"></div><div class="mu-panel mu-dlg mu-glassdlg mu-own-pick" role="dialog">
         <h3>${esc(p.a.icon ?? '')} ${esc(p.a.label)}</h3>
         <small class="mu-muted">${p.a.minutes} min${s ? ` · ${O.SKILLS[s].name} ${L}/10 (${O.LEVEL_WORDS[L]})` : ''}</small>
         ${WITH.includes(p.game) && ppl.length ? `<div class="mu-chips"><span class="mu-muted">With:</span><button class="mu-chip ${!p.with ? 'is-on' : ''}" data-act="og-with" data-who="">Alone</button>${ppl.map(r => `<button class="mu-chip ${p.with === r.avatar ? 'is-on' : ''}" data-act="og-with" data-who="${esc(r.avatar)}"><img src="${esc(thumb(r.avatar))}" alt="">${esc(r.name)}</button>`).join('')}</div>` : ''}
@@ -414,6 +415,7 @@ function endWork(g: Save, kind: 'writing' | 'coding') {
 Object.assign(ACT, {
     'og-with': (el) => { if (R.OWN.pending) { R.OWN.pending.with = el.dataset.who ?? ''; notify(); } },
     'og-cancel': () => { R.OWN.pending = null; closeGame(); notify(); },
+    'og-veil': (el, e) => { if (e?.target !== el) return; R.OWN.pending = null; closeGame(); notify(); },   // a click beside the choice: never mind
     'og-auto': () => { closeGame(); void R.finish(null); },
     'og-play': () => { const c = ctxW(); if (c) void start(c.g, c.w); },
     'og-quit': () => { R.OWN.pending = null; closeGame(); notify(); },
@@ -444,6 +446,7 @@ Object.assign(INPUT, {
 });
 // keys: the guitar (A S D), the heat (space), Enter for answers
 document.addEventListener?.('keydown', (e) => {
+    if (e.key === 'Escape' && R.OWN.pending && (!GV.game || GV.phase !== 'play')) { R.OWN.pending = null; closeGame(); notify(); return; }   // Esc: never mind (not in the middle of a game)
     if (!GV.game || GV.phase !== 'play') return;
     const tag = (e.target as HTMLElement)?.tagName;
     if (GV.game === 'guitar' && tag !== 'INPUT') { const l = { KeyA: 0, KeyS: 1, KeyD: 2, KeyJ: 0, KeyK: 1, KeyL: 2 }[e.code]; if (l !== undefined) { e.preventDefault(); strum(l); } }

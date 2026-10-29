@@ -1,9 +1,10 @@
 /* [expanded] 0.2.1-12: your own life (the mini-games, the Me app) */
-#mundi-root .mu-own-pick { display: grid; gap: 10px; width: min(460px, calc(100% - 24px)); }
+#mundi-root .mu-own-pick, #mundi-root .mu-og { position: fixed; left: 50%; top: 50%; translate: -50% -50%; z-index: 60; }   /* a dialog next to its veil is placed by its own class (as the doors' are) */
+#mundi-root .mu-own-pick { display: grid; gap: 10px; width: min(460px, calc(100vw - 24px)); }
 #mundi-root .mu-own-pick h3 { margin: 0; }
 #mundi-root .mu-own-pick .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 #mundi-root .mu-own-pick .mu-chip img, #mundi-root .mu-meapp .mu-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; }
-#mundi-root .mu-og { display: grid; gap: 10px; width: min(620px, calc(100% - 20px)); max-height: calc(100% - 40px); overflow: auto; }
+#mundi-root .mu-og { display: grid; gap: 10px; width: min(620px, calc(100vw - 20px)); max-height: calc(100vh - 40px); overflow: auto; }
 #mundi-root .mu-og p { margin: 0; }
 #mundi-root .mu-og-head { display: flex; align-items: center; gap: 10px; }
 #mundi-root .mu-og-head > b { flex: 1; }
