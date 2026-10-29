@@ -10,7 +10,7 @@ import { charOf, chatLore } from '../st/bridge.js';
 import { eraPromptLine } from './era.js';
 import * as P from './profile.js';
 import * as FU from './furnish.js';   // [expanded] 0.2.0.7
-import { houseNotes, presentNotes, phoneNotes, planMods } from './lifehooks.js';
+import { houseNotes, presentNotes, phoneNotes, planMods, dayOff } from './lifehooks.js';
 import { textedLines } from './livelog.js';
 import { bondsOf, pairKey } from './bonds.js';
 
@@ -29,7 +29,7 @@ export function ctxFor(g: Save, w: WorldDef, r: Resident, day: number): P.DayCtx
     return {
         avatar: r.avatar, day, weekend: isWeekend(day), own: ownRoom(r), common: rooms.map(x => x.id),
         kitchen: pick(rooms, /kitchen/), dining: pick(rooms, /dining/), dinner: lx.dinner, dinnerAt: lx.dinnerAt,
-        out: (h) => npcOut(g) && onShift(j, day * 1440 + h * 60),
+        out: (h) => npcOut(g) && !dayOff.some(f => f(g, day)) /* [expanded] 0.2.1-12: the golden week */ && onShift(j, day * 1440 + h * 60),
         // [expanded] 0.2.0.7: where their things are (a modern Home with fixtures): their own room, the house's rooms
         ...(furnished(g, w) ? {
             can: (a: string) => FU.roomsFor(g as any, a as FU.Afford, r.avatar, ownRoom(r)).filter(x => x === ownRoom(r) || !x.startsWith('home:')),

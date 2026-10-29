@@ -20,7 +20,7 @@ import { PL } from './plans.js';
 import { OD } from './outing.js';
 
 /** The Calendar's tab (Home only). */
-export const CAL = { tab: 'plans' as 'plans' | 'visits' };
+export const CAL = { tab: 'plans' as 'plans' | 'visits' | 'week' };   // [expanded] 0.2.1-12: the week
 // The visit being prepared; the picker of people from outside (for a visit or the party); the background picker.
 const GV = { sel: [] as string[] };
 const GP = { for: '' as '' | 'visit' | 'party' | 'outing' | 'partyEdit' };
@@ -38,7 +38,7 @@ const chosen = (g: Save, list: string[], del: string) => list.length ? `<div cla
 export function calendarTabs(w: WorldDef): string {
     if (!isScenario(w)) return '';
     return `<div class="mu-chips mu-cal-tabs"><button class="mu-chip ${CAL.tab === 'plans' ? 'is-on' : ''}" data-act="cal-tab" data-v="plans">${icon('calendar')}<span>Calendar</span></button>
-        <button class="mu-chip ${CAL.tab === 'visits' ? 'is-on' : ''}" data-act="cal-tab" data-v="visits">${icon('users')}<span>Visits</span></button></div>`;
+        <button class="mu-chip ${CAL.tab === 'visits' ? 'is-on' : ''}" data-act="cal-tab" data-v="visits">${icon('users')}<span>Visits</span></button><button class="mu-chip ${CAL.tab === 'week' ? 'is-on' : ''}" data-act="cal-tab" data-v="week">${icon('star')}<span>Week</span></button></div>`;
 }
 
 // Where they sleep, as a choice on each guest's row: the sofa, your bedroom, or a housemate's.
@@ -157,7 +157,7 @@ export function guestButtons(g: Save, avatar: string): string[] {
 const gw = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? { g, w } : null; };
 const after = async () => { saveGame(); await syncScene(); refreshPrompt(); notify(); };
 Object.assign(ACT, {
-    'cal-tab': (el) => { CAL.tab = el.dataset.v === 'visits' ? 'visits' : 'plans'; notify(); },
+    'cal-tab': (el) => { CAL.tab = el.dataset.v === 'visits' ? 'visits' : el.dataset.v === 'week' ? 'week' : 'plans'; notify(); },
     'gv-del': (el) => { GV.sel = GV.sel.filter(a => a !== el.dataset.who); notify(); },
     'gv-go': () => {
         const c = gw(); if (!c || !GV.sel.length) return;

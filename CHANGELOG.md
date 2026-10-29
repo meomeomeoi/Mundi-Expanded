@@ -15,6 +15,48 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 12 (0.2.1-12) · 2026-10-29
+
+Your own life: time spent alone that comes back to the others. Settings are in the new Me app (Settings tab).
+
+- **Mini-games.** The things you do on your own ask first: play it, or just do it (by your skill and a little luck),
+  and with whom. The game is code; the mechanics model only writes the content, one call a session, with a built-in
+  set when the call fails.
+  - **Cooking** (the kitchen's Cook): a dish invented from what is in the fridge and pantry, three choices with one right
+    answer and two moments on the heat; the leftovers get the dish's name; whoever cooks with you says what they think.
+  - **The guitar** (with a guitar in the room): a three-string rhythm game (A S D or tap), with plucked strings you hear;
+    the house hears it too ("it sounded rough", "beautiful").
+  - **Cleaning** (Tidy up, and the chores): scrub the dirt, put things away, against the clock; a helper is faster.
+  - **A crossword** (anywhere at home): six words on a theme; with someone, they know some answers (or are not in the
+    mood to help), and when you are stuck they may say "Oh, I know this one!". All decided in the one call.
+  - **Work and study** (at a desk or a computer): quick tasks against the clock while the house distracts you (more when
+    it is loud: streaming, music, people in the room).
+  - **Programming**: find the line with the bug, then pick the design for the next part. **Writing**: three candidate
+    lines a moment, or write your own. Both are works that grow session by session (a short story or a small tool in 3,
+    a novella or an app in 6, a novel or a big project in 10). How good the offered ideas are is rolled from your skill
+    (better and, rarely, brilliant ones come with skill); what you pick adds up, and the finished work gets its verdict
+    (a masterpiece is rare even at level 7–9). Let someone read it (the scene is told what they think); a nosy one may
+    read it without asking.
+- **Skills**: cooking, guitar, writing, programming, studying, work, fitness; 1–10, slowly (Settings: slow, normal,
+  fast), more for a game played well, an average amount for just doing it. Set where you start in the Me app (the
+  persona's traits are already in; "Read my persona" asks the model once). The scene is told what you are good at,
+  and your traits (Mundi's Proficiency, Personality, Interests: in Home they reached nothing before).
+- **Characters' skills and tidiness** are now part of their profiles (made with the profile, guessed from the card
+  otherwise; the guess now also reads Russian cards: `\b` in JavaScript only knew Latin letters).
+- **Chores** (Gentle by default; Off; Serious): a weekly rota of the dishes, the trash, the common rooms and the
+  bathroom, round everyone (you too); the others do theirs by how tidy they are (more likely after a reminder from
+  their menu; twice is nagging). The kitchen, the living room and the bathroom get messy with use, and the scene sees
+  it. Doing someone's chore is a favour. Serious: someone tidy complains (a quarrel at night, or annoyed with you), and
+  the group chat talks about it.
+- **The calendar** (Calendar → Week, and the Me app): birthdays (from the card, or a day of the year; the house knows on
+  the day; forget a close one's and they are hurt), what each one has coming up this week (an exam, an interview, a
+  date, a trip: nervous before, and the outcome after, to ask about), the house's evenings (Game night on Fridays,
+  Sunday dinner: the house plans them and someone asks you along; each can be turned off), New Year in the middle of
+  winter, and the golden week (the first days of summer: nobody works or studies). A season lasts 14 days or a month.
+- **While you were away**: coming home after an hour and a half or more, or in the morning, up to three hints of what
+  happened (a tense pair, leftovers in the fridge, the mess, someone back from their interview, a busy house chat), not
+  more often than every four hours.
+
 ## Mundi Expanded 11.1 (0.2.1-11.1) · 2026-10-29
 
 Mundi 0.2.1 merged in (its notes are below, under Mundi 0.2.1), and new version numbers.

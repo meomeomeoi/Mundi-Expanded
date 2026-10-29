@@ -14,7 +14,7 @@
 import { nowAbs, saveGame, notify, game, settings, state, type Save, type Resident } from '../core/store.js';
 import { isScenario, type WorldDef } from '../core/world.js';
 import { onHour, onDay } from './hooks.js';
-import { presentNotes, afterSync, roomMinutes } from './lifehooks.js';
+import { presentNotes, afterSync, roomMinutes, talkHooks } from './lifehooks.js';
 import { presentAt, whereNow, OUT } from './people.js';
 import { slotAt, ownRoom, commonRooms, cardText } from './lifeday.js';
 import { catOf } from './furnish.js';
@@ -85,6 +85,7 @@ function houseHooks(g: Save, who: string[]): { t: string; tone?: T.Tone; private
     }
     for (const x of ((g as any).furnishx?.items ?? []) as any[]) if (!x.decor && g.day - (x.day ?? -99) <= 2 && x.via !== 'start') out.push({ t: `the new ${String(x.name).toLowerCase()} in the house` });
     for (const t of talksOf(g)) if (who.includes(t.a) && who.includes(t.b)) out.push({ t: `${t.about} (they still have not talked it out)`, tone: 'argue' });
+    for (const f of talkHooks) for (const h of f(g, who)) out.push({ t: h.t, ...(h.tone && h.tone in T.TONES ? { tone: h.tone as T.Tone } : {}) });   // 0.2.1-12: events, chores, your projects
     return out;
 }
 export interface Topic { topic: string; src: T.Source; tone?: T.Tone; hint?: T.Tone[]; id?: string; private?: boolean; thread?: string }
@@ -325,7 +326,7 @@ function seek(g: Save, w: WorldDef, x: TalkX, c: Required<TalkCfg>, mine: Set<st
 async function texted(g: Save, w: WorldDef, r: Resident, note: string) {
     const { textFrom } = await import('./social.js'); const t = await textFrom(g, w, r.avatar, `${note}. One short message.`, 'Hey, where are you?');
     const s = social(g); s.unread[r.avatar] = (s.unread[r.avatar] ?? 0) + 1;
-    try { const { pushPeek } = await import('../ui/peek.js'); pushPeek({ title: r.name, text: t, who: r.avatar, app: 'chat' }); } catch { /* no screen */ }
+    try { const { pushPeek } = await import('../ui/peek.js'); pushPeek({ title: r.name, text: t, who: r.avatar, app: 'thread' }); } catch { /* no screen */ }
     saveGame(); notify();
 }
 
@@ -373,7 +374,7 @@ function invites(g: Save, w: WorldDef, x: TalkX, c: Required<TalkCfg>): string[]
     }
     return [];
 }
-function peek(title: string, text: string, who?: string) { void import('../ui/peek.js').then(m => m.pushPeek({ title, text, ...(who ? { who } : {}), app: 'chat' })).catch(() => { /* tests */ }); }
+function peek(title: string, text: string, who?: string) { void import('../ui/peek.js').then(m => m.pushPeek({ title, text, ...(who ? { who, app: 'thread' } : { app: 'plans' }) })).catch(() => { /* tests */ }); }
 /** You answer an invitation: yes makes it a plan (with the activity); no is fine, once in a while. */
 export async function answerInvite(g: Save, w: WorldDef, id: string, yes: boolean): Promise<string> {
     const x = talkOf(g); const i = x.inv.find(z => z.id === id); const r = i && g.cast[i.avatar]; if (!i || !r || i.state !== 'open') return '';

@@ -1,0 +1,74 @@
+/* [expanded] 0.2.1-12: your own life (the mini-games, the Me app) */
+#mundi-root .mu-own-pick { display: grid; gap: 10px; width: min(460px, calc(100% - 24px)); }
+#mundi-root .mu-own-pick h3 { margin: 0; }
+#mundi-root .mu-own-pick .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+#mundi-root .mu-own-pick .mu-chip img, #mundi-root .mu-me .mu-chip img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; }
+#mundi-root .mu-og { display: grid; gap: 10px; width: min(620px, calc(100% - 20px)); max-height: calc(100% - 40px); overflow: auto; }
+#mundi-root .mu-og p { margin: 0; }
+#mundi-root .mu-og-head { display: flex; align-items: center; gap: 10px; }
+#mundi-root .mu-og-head > b { flex: 1; }
+#mundi-root .mu-og-partner { position: relative; display: flex; align-items: center; }
+#mundi-root .mu-og-partner img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, .5); }
+#mundi-root .mu-og-partner q { position: absolute; right: 48px; top: 50%; transform: translateY(-50%); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; padding: 6px 10px; border-radius: 12px; background: #fff; color: #222; font-size: 12.5px; quotes: none; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); animation: mu-pop .3s cubic-bezier(.2, 1.6, .5, 1); }
+#mundi-root .mu-og-load { text-align: center; padding: 30px 0; }
+#mundi-root .mu-og-done { display: grid; gap: 12px; justify-items: center; text-align: center; padding: 10px 0; }
+#mundi-root .mu-og-opts { display: grid; gap: 6px; }
+#mundi-root .mu-og .mu-og-opts button { justify-content: flex-start; text-align: left; padding: 10px 12px; border-radius: 12px; line-height: 1.35; font-weight: 500; transition: background .2s, transform .1s; }
+#mundi-root .mu-og-opts button:hover { transform: translateX(3px); }
+#mundi-root .mu-og .mu-og-opts button.is-right { background: rgba(63, 191, 127, .45) !important; opacity: 1; }
+#mundi-root .mu-og .mu-og-opts button.is-wrong { background: rgba(229, 72, 77, .45) !important; opacity: 1; }
+#mundi-root .mu-og .mu-og-opts.is-text button { font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: 400; }
+#mundi-root .mu-og-page { margin: 0; padding: 10px 14px; border-left: 3px solid rgba(255, 255, 255, .35); font-family: Georgia, serif; font-style: italic; opacity: .9; max-height: 120px; overflow: auto; }
+#mundi-root .mu-og-own, #mundi-root .mu-og-ansrow { display: flex; gap: 6px; } #mundi-root .mu-og-own input, #mundi-root .mu-og-ansrow input { flex: 1; }
+/* the guitar */
+#mundi-root .mu-og-lanes { position: relative; height: 280px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; border-radius: 14px; overflow: hidden; background: linear-gradient(#1a1c24, #2a2016); }
+#mundi-root .mu-og .mu-og-lane { position: relative; height: 100%; border: 0; border-radius: 0; background: transparent !important; box-shadow: none !important; padding: 0; }
+#mundi-root .mu-og-lane i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: linear-gradient(#c9b48a, #8a7550); }
+#mundi-root .mu-og-lane.is-hit i { animation: mu-string .25s ease-out; }
+@keyframes mu-string { 0% { box-shadow: 0 0 14px 4px #ffd27a; width: 4px; } 100% { box-shadow: none; } }
+#mundi-root .mu-og-line { position: absolute; left: 0; right: 0; bottom: 22px; height: 3px; background: rgba(255, 210, 122, .6); pointer-events: none; }
+#mundi-root .mu-og-note { position: absolute; top: 0; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; pointer-events: none; opacity: 0; box-shadow: 0 0 10px rgba(0, 0, 0, .4); transition: opacity .15s; }
+#mundi-root .mu-og-note.l0 { left: calc(100% / 6); background: radial-gradient(circle at 35% 35%, #ffd6e0, #e0577a); }
+#mundi-root .mu-og-note.l1 { left: 50%; background: radial-gradient(circle at 35% 35%, #d6f3ff, #3a9be0); }
+#mundi-root .mu-og-note.l2 { left: calc(500% / 6); background: radial-gradient(circle at 35% 35%, #e6ffd6, #4fb34a); }
+#mundi-root .mu-og-note.is-miss { filter: grayscale(1); }
+/* cleaning */
+#mundi-root .mu-og-surface { position: relative; height: 260px; border-radius: 14px; overflow: hidden; background: repeating-linear-gradient(45deg, #e9e2d6 0 22px, #e2dacb 22px 44px); touch-action: none; cursor: grab; }
+#mundi-root .mu-og-surface.is-dishes { background: radial-gradient(circle, #f4f6f8 0 30%, #dde3e8 31% 33%, #c9d3db 34%) center / 150px 150px, #b8c6d1; }
+#mundi-root .mu-og-surface.is-bath { background: repeating-linear-gradient(0deg, #dff1f5 0 38px, #c6e0e6 38px 40px), #dff1f5; }
+#mundi-root .mu-og-spot { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(110, 82, 42, .85), rgba(110, 82, 42, .35) 60%, transparent 70%); pointer-events: none; }
+#mundi-root .mu-og .mu-og-thing { position: absolute; width: auto; height: auto; min-width: 0; font-size: 28px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; backdrop-filter: none !important; cursor: pointer; transition: transform .35s ease-in, opacity .35s; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+#mundi-root .mu-og .mu-og-thing.is-away { transform: translate(40vw, 40vh) scale(.2); opacity: 0; pointer-events: none; }
+#mundi-root .mu-og-box { position: absolute; right: 8px; bottom: 6px; font-size: 36px; pointer-events: none; }
+/* the crossword */
+#mundi-root .mu-og-cross { display: grid; gap: 8px; }
+#mundi-root .mu-og-cw { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; align-items: center; }
+#mundi-root .mu-og-cw small { grid-column: 1 / -1; opacity: .85; } #mundi-root .mu-og-cw small i { opacity: .6; }
+#mundi-root .mu-og-boxes { display: flex; gap: 3px; }
+#mundi-root .mu-og-boxes b { width: 24px; height: 28px; display: grid; place-items: center; border-radius: 5px; background: rgba(255, 255, 255, .92); color: #222; font-family: monospace; font-size: 15px; }
+#mundi-root .mu-og-cw.is-got .mu-og-boxes b { background: #bdf0cf; }
+#mundi-root .mu-og-cw input { width: 110px; text-transform: uppercase; font-family: monospace; }
+/* work and study */
+#mundi-root .mu-og-task { position: relative; min-height: 150px; display: grid; gap: 10px; align-content: center; justify-items: center; }
+#mundi-root .mu-og-q { font-size: 26px; font-weight: 600; letter-spacing: .04em; }
+#mundi-root .mu-og-odd { display: flex; gap: 8px; } #mundi-root .mu-og-odd button { font-size: 26px; width: 48px; height: 48px; padding: 0; border-radius: 12px; }
+#mundi-root .mu-og .mu-og-pop { position: absolute; border: 0 !important; background: #ffe36e !important; color: #3a2a00 !important; left: calc(12% + var(--i) * 9%); top: calc(38% + var(--i) * 12%); z-index: 2; padding: 10px 14px; border-radius: 12px; background: #ffe36e; color: #3a2a00; font-weight: 600; box-shadow: 0 8px 20px rgba(0, 0, 0, .35); animation: mu-pop .25s ease-out; transform: rotate(calc((var(--i) - 1) * 3deg)); }
+/* coding */
+#mundi-root .mu-og-src { margin: 0; padding: 8px 8px 8px 34px; border-radius: 10px; background: #14161c; font-size: 12.5px; counter-reset: none; }
+#mundi-root .mu-og-src li::marker { color: #6b7280; }
+#mundi-root .mu-og .mu-og-src button { display: block; box-shadow: none !important; width: 100%; text-align: left; padding: 2px 6px; border: 0; border-radius: 4px; background: transparent; color: #d7dae0; }
+#mundi-root .mu-og-src button:hover { background: rgba(255, 255, 255, .08); }
+#mundi-root .mu-og-src button.is-right { background: rgba(63, 191, 127, .35); } #mundi-root .mu-og-src button.is-wrong { background: rgba(229, 72, 77, .35); }
+#mundi-root .mu-og-src code { white-space: pre; font-family: ui-monospace, Menlo, Consolas, monospace; }
+#mundi-root .mu-og-setup { display: grid; gap: 10px; } #mundi-root .mu-og-setup .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* the Me app */
+#mundi-root .mu-me-skill { display: grid; grid-template-columns: minmax(110px, auto) 1fr auto; gap: 8px; align-items: center; margin: 4px 0; }
+#mundi-root .mu-me-skill small { grid-column: 3; } #mundi-root .mu-me-skill input[type=range] { width: 100%; }
+#mundi-root .mu-me-chore { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(127, 127, 127, .15); }
+#mundi-root .mu-me-chore img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-me-chore > span:last-child { display: grid; } #mundi-root .mu-me-chore small { opacity: .7; }
+#mundi-root .mu-me-chore.is-you b::after { content: ' · you'; color: var(--mu-accent, #7fd3ff); font-weight: 400; }
+#mundi-root .mu-me-day { display: grid; gap: 4px; padding: 6px 0; border-bottom: 1px solid rgba(127, 127, 127, .15); }
+#mundi-root .mu-me-day > span { display: flex; gap: 6px; align-items: center; font-size: 13px; } #mundi-root .mu-me-day img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+#mundi-root .mu-me-text { max-height: 220px; overflow: auto; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, .1); font-family: Georgia, serif; font-size: 13.5px; }
+#mundi-root .mu-me-work .mu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

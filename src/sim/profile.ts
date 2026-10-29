@@ -42,6 +42,8 @@ export interface Profile {
     orient?: Orient; status?: RelStatus;
     /** [expanded] 0.2.0.9: gender ('' : unknown) and how they are with affection in front of others */
     gender?: '' | 'f' | 'm' | 'nb'; pda?: 'shy' | 'normal' | 'open';
+    /** [expanded] 0.2.1-12: what they are good at (cooking, music, writing, coding, study, fitness: 1–10) and how tidy they are (0–100) */
+    skills?: Record<string, number>; tidy?: number;
     src?: 'gen' | 'rules' | 'hand';
     ov?: { wd?: Record<string, Kind>; we?: Record<string, Kind> };   // hours set by hand
 }
@@ -89,12 +91,16 @@ export function cleanProfile(x: any, rooms: string[] = [], src: Profile['src'] =
         ...(x?.discreet !== undefined ? { discreet: clamp(x.discreet, 0, 100, 50) } : {}), ...(x?.nosy !== undefined ? { nosy: clamp(x.nosy, 0, 100, 50) } : {}),
         ...(['f', 'm', 'nb'].includes(x?.gender) ? { gender: x.gender } : {}), ...(['shy', 'normal', 'open'].includes(x?.pda) ? { pda: x.pda } : {}),
         ...(ORIENTS.some(o => o[0] && o[0] === x?.orient) ? { orient: x.orient } : {}), ...(STATUSES.some(o => o[0] && o[0] === x?.status) ? { status: x.status } : {}),
+        ...(x?.tidy !== undefined ? { tidy: clamp(x.tidy, 0, 100, 50) } : {}),
+        ...(x?.skills && typeof x.skills === 'object' ? { skills: Object.fromEntries(Object.entries(x.skills).filter(([k]) => SKILL_IDS.includes(k)).map(([k, v]) => [k, clamp(v, 0, 10, 0)]).filter(([, v]) => (v as number) > 0)) } : {}),
     };
 }
 
 /* ---------- a guess from the card, with no model ---------- */
 
-const KEY: [RegExp, Partial<Profile> & { add?: Act[] }][] = [
+/** [expanded] 0.2.1-12: the skills a profile can have (sim/own.ts has the rest). */
+export const SKILL_IDS = ['cooking', 'music', 'writing', 'coding', 'study', 'fitness'];
+const KEY0: [RegExp, Partial<Profile> & { add?: Act[] }][] = [
     [/\b(gam(er|ing)|video ?games?|streamer|геймер|игр)/i, { add: [{ text: 'playing video games', where: 'room' }] }],
     [/\b(night owl|nocturnal|insomnia|stays up|hikikomori|neet|ночн|сова|бессонн|хикк)/i, { bed: 3, wake: 11 }],
     [/\b(early riser|morning person|disciplined|athlete|runner|nurse|жаворон|спортсмен)/i, { bed: 22, wake: 6 }],
@@ -113,15 +119,29 @@ const KEY: [RegExp, Partial<Profile> & { add?: Act[] }][] = [
     [/\b(gossip|chatterbox|talkative|blabbermouth|(can'?t|cannot) keep a secret|сплетн|болтлив|болтушк)/i, { discreet: 20, nosy: 75 }],
     [/\b(curious|nosy|observant|snoop|perceptive|любопытн|наблюдательн|проницательн)/i, { nosy: 80 }],
     [/\b(oblivious|absent-?minded|dense|airhead|рассеянн|невнимательн)/i, { nosy: 20 }],
+    // [expanded] 0.2.1-12: what they are good at, and how tidy
+    [/\b(chef|cook|bak(e|er|ing)|повар|готов|пекар)/i, { skills: { cooking: 6 } }],
+    [/\b(musician|guitar|piano|singer|band|музыкант|гитар|пианист|певиц|певец)/i, { skills: { music: 6 } }],
+    [/\b(writer|author|poet|novelist|journalist|писател|поэт|журналист)/i, { skills: { writing: 6 } }],
+    [/\b(programmer|developer|coder|hacker|engineer|software|программист|разработчик|хакер|айтишник)/i, { skills: { coding: 6 } }],
+    [/\b(student|nerd|bookworm|smart|genius|студент|ботан|умн)/i, { skills: { study: 5 } }],
+    [/\b(athlete|gym|fitness|runner|sport|спортсмен|фитнес|качал)/i, { skills: { fitness: 6 } }],
+    [/\b(neat|tidy|clean freak|organi[sz]ed|perfectionist|аккуратн|чистюл|педант)/i, { tidy: 85 }],
+    [/\b(messy|slob|lazy|chaotic|неряш|нерях|ленив|бардак|хаотичн)/i, { tidy: 20 }],
     [/\blesbian|лесбиянк/i, { orient: 'lesbian' }], [/\bgay\b|гей\b/i, { orient: 'gay' }], [/\bbi(sexual)?\b|бисексуал/i, { orient: 'bi' }],
     [/\bpansexual|пансексуал/i, { orient: 'pan' }], [/\basexual|асексуал/i, { orient: 'ace' }],
     [/\b(married|husband|wife|замужем|женат)/i, { status: 'married' }], [/\b(boyfriend|girlfriend|парень|девушка)\b/i, { status: 'taken' }],
 ];
+// [expanded] 0.2.1-12: \b in a JavaScript regex only knows Latin letters, so "\bповар" never matched a Russian card;
+// the same rules with a word boundary that knows every alphabet
+const UB = '(?:(?<![\\p{L}\\d_])(?=[\\p{L}\\d_])|(?<=[\\p{L}\\d_])(?![\\p{L}\\d_]))';
+const KEY: [RegExp, Partial<Profile> & { add?: Act[] }][] = KEY0.map(([re, v]) => [new RegExp(re.source.split('\\b').join(UB), re.flags.includes('u') ? re.flags : `${re.flags}u`), v]);
 /** A rough profile from the card's description (when there is no model, or it failed). */
 export function guessProfile(text: string, rooms: string[]): Profile {
     const p: any = { bed: 23, wake: 8, weekend: 1, social: 50, rooms: [] as string[], acts: [] as Act[], ooc: '' };
     for (const [re, v] of KEY) if (re.test(text)) {
-        const { add, rooms: rs, ...rest } = v; Object.assign(p, rest);
+        const { add, rooms: rs, skills: sk, ...rest } = v as any; Object.assign(p, rest);
+        if (sk) p.skills = { ...(p.skills ?? {}), ...sk };
         if (rs) p.rooms.push(...rs); if (add) p.acts.push(...add);
     }
     p.acts.push({ text: 'scrolling on the phone', where: 'room' }, { text: 'listening to music', where: 'room' });
@@ -144,7 +164,8 @@ Write ${name}'s habits at home as JSON:
  "social": 0-100 (0 = keeps to their room, 100 = always where the others are), "rooms": [up to 3 room ids they like],
  "discreet": 0-100 (how well they keep a secret: 100 = a vault, 0 = tells everyone), "nosy": 0-100 (how much they notice and pry into others' business),
  "gender": "f" | "m" | "nb" | "" (from the card), "pda": "shy" | "normal" | "open" (affection in front of others),
- "orient": "straight" | "gay" | "lesbian" | "bi" | "pan" | "ace" | "" ("" unless the card says or clearly implies it), "status": "single" | "taken" (a partner outside the house) | "married" (to someone outside the house) | "" ("" unless the card says),
+ "orient": "straight" | "gay" | "lesbian" | "bi" | "pan" | "ace" | "" ("" unless the card says or clearly implies it),
+ "tidy": 0-100 (how tidy they are, how reliably they do their chores), "skills": {only what they are actually good at, 1-10: cooking, music, writing, coding, study, fitness} (often one or two, can be {}), "status": "single" | "taken" (a partner outside the house) | "married" (to someone outside the house) | "" ("" unless the card says),
  "acts": [4 to 6 things they do at home: {"text": "a few words", "where": "room" | "common" | a room id, "needs": only when it needs a thing, one of watch (a TV), game (a console or a computer), game2 (playing with someone), work (a computer or a desk), music (an instrument), read (books), exercise, craft, bath}]}
 Rules for "acts": at most two may be about their main hobby or trait; the rest must be ordinary, varied things anyone does (on the phone, a nap, tidying up, a call with family, a snack, doing nothing in particular). Do not make every habit about one interest. Use the card for the times: a night owl goes to bed late, an early riser early. JSON only.`;
 }

@@ -14,7 +14,7 @@
 import { nowAbs, saveGame, notify, game, settings, state } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { onHour, onDay } from './hooks.js';
-import { presentNotes, afterSync, roomMinutes } from './lifehooks.js';
+import { presentNotes, afterSync, roomMinutes, talkHooks } from './lifehooks.js';
 import { presentAt, whereNow, OUT } from './people.js';
 import { slotAt, ownRoom, commonRooms, cardText } from './lifeday.js';
 import { catOf } from './furnish.js';
@@ -79,6 +79,9 @@ function houseHooks(g, who) {
     for (const t of talksOf(g))
         if (who.includes(t.a) && who.includes(t.b))
             out.push({ t: `${t.about} (they still have not talked it out)`, tone: 'argue' });
+    for (const f of talkHooks)
+        for (const h of f(g, who))
+            out.push({ t: h.t, ...(h.tone && h.tone in T.TONES ? { tone: h.tone } : {}) }); // 0.2.1-12: events, chores, your projects
     return out;
 }
 /** Rolls a topic for these people ('__you' among them: talking with you). */
@@ -521,7 +524,7 @@ async function texted(g, w, r, note) {
     s.unread[r.avatar] = (s.unread[r.avatar] ?? 0) + 1;
     try {
         const { pushPeek } = await import('../ui/peek.js');
-        pushPeek({ title: r.name, text: t, who: r.avatar, app: 'chat' });
+        pushPeek({ title: r.name, text: t, who: r.avatar, app: 'thread' });
     }
     catch { /* no screen */ }
     saveGame();
@@ -598,7 +601,7 @@ function invites(g, w, x, c) {
     }
     return [];
 }
-function peek(title, text, who) { void import('../ui/peek.js').then(m => m.pushPeek({ title, text, ...(who ? { who } : {}), app: 'chat' })).catch(() => { }); }
+function peek(title, text, who) { void import('../ui/peek.js').then(m => m.pushPeek({ title, text, ...(who ? { who, app: 'thread' } : { app: 'plans' }) })).catch(() => { }); }
 /** You answer an invitation: yes makes it a plan (with the activity); no is fine, once in a while. */
 export async function answerInvite(g, w, id, yes) {
     const x = talkOf(g);

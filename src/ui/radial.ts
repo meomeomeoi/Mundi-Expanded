@@ -1,6 +1,7 @@
 // Click a character's sprite: a radial menu around them. On the right, what you can do with them (the same as their
 // card in "Here", except "Play as them"); on the left, the outfits they have (subfolders of their Expressions folder),
 // shown only when they have any.
+import { ringButtons } from '../sim/lifehooks.js';   // [expanded]
 import { esc, game, notify, state, toast, type Save, type Resident } from '../core/store.js';
 import { isScenario, getWorld, type WorldDef } from '../core/world.js';
 import { ACT } from './reg.js';
@@ -31,6 +32,7 @@ function actions(g: Save, w: WorldDef, r: Resident): string[] {
     out.push(solo ? `<button data-act="solo-off">${icon('users')}<span>Talk with everyone</span></button>` : btn('solo-on', r.avatar, 'chat', 'Talk only with them'));
     out.push(...buttonsIn(stayButton(r.avatar)), ...guestButtons(g, r.avatar), ...buttonsIn(romanceButtons(r.avatar)));
     if (isScenario(w)) out.push(btn('rd-watch', r.avatar, 'eye', 'Keep an eye on them'));   // [expanded] 0.2.0.9
+    if (isScenario(w)) for (const f of ringButtons) for (const b of f(g, w, r.avatar)) out.push(btn(b.act, r.avatar, b.icon, b.label));   // [expanded] 0.2.1-12
     out.push(btn('pc-open', r.avatar, 'user', 'Their card'));
     return out;
 }

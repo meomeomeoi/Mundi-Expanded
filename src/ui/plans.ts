@@ -1,3 +1,4 @@
+import { weekHtml } from './meapp.js';   // [expanded] 0.2.1-12
 import { festivalsHtml } from './lifeplus.js';
 import { cityEventsHtml, cityBadge } from './cityui.js';
 import { romanceButtons, relBar } from './relui.js';
@@ -139,6 +140,7 @@ export function calendarApp(g: Save, w: WorldDef, head: string): string {
     const s = social(g);
     const past = s.appts.filter(a => a.state === 'missed').slice(-3).reverse();
     if (isScenario(w) && CAL.tab === 'visits') return `${head}${visitsTab(g, w, calendarTabs(w))}`;
+    if (isScenario(w) && CAL.tab === 'week') return `${head}<div class="mu-ph-body">${calendarTabs(w)}${weekHtml(g) /* [expanded] 0.2.1-12 */}</div>`;
     return `${head}<div class="mu-ph-body">${calendarTabs(w)}
         ${s.with.length ? `<section><h4>With you</h4>${s.with.map(c => `<div class="mu-ph-job mu-plan-row"><img src="${esc(thumb(c.avatar))}" alt=""><span><b data-notr>${esc(g.cast[c.avatar]?.name ?? '')}</b>${isScenario(getWorld(g.world)!) ? '' : `<small>${esc(fmt('Until {0}', hm(c.until % 1440)))}</small>`}</span>
             <button class="mu-ghost" data-act="pc-bye" data-who="${esc(c.avatar)}">Say goodbye</button></div>`).join('')}</section>` : ''}

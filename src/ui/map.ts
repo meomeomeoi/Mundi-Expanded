@@ -553,6 +553,7 @@ Object.assign(ACT, {
         if (!a) return;
         if (!canAfford(g, a)) { toast('Not enough money.', 'info'); return; }
         { const why = stockBlock(g, w, a.id); if (why) { toast(why, 'info'); return; } }   // [expanded] the house's food
+        { const { takeover } = await import('../sim/lifehooks.js'); if (takeover.some(f => f(g, w, a))) return; }   // [expanded] 0.2.1-12: a mini-game first
         const tired = tooTired(g, w, Object.fromEntries(Object.entries(a.effects ?? {}).map(([k, v]) => [k, -v])), a.label.toLowerCase()); if (tired) { toast(tired, 'warn'); return; }
         if (isDoing()) return;
         actionSound(a.effects, a.id);

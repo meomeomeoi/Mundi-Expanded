@@ -233,6 +233,19 @@ Next, discussed: **Your own life** (0.2.0.12): things to do alone that come back
 and are heard through the walls, small built-in games whose content the model writes, chores with a rota and quarrels
 over them, a weekly calendar of the house: game night, birthdays), all with settings for how much.
 
+## 13. Your own life (0.2.1-12, done)
+
+Mini-games (cooking, guitar, cleaning, crossword, work and study, programming, writing; code runs the game, the model
+writes the content in one call), skills that grow slowly and are told to the scene, works that grow session by session
+with ideas rolled from your skill, chores with a rota and a mess, the house's calendar (birthdays, their events, the
+house's evenings, New Year, the golden week), "while you were away". Decided: just doing it is always possible; one
+call a session at most; everything has a setting.
+
+Next, discussed:
+- **Work and student life, deeper**: a job with its own days, a boss and promotions (not just a focus game and pay);
+  a student's courses, exams on the calendar and grades; both talked about in the house.
+- **Traits, light effects**: Charming, Athletic, Lazy… doing a little in the rules (not only in the prompt).
+
 ## Later (discussed, not designed yet)
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for

@@ -708,6 +708,11 @@ Object.assign(ACT, {
                 return;
             }
         } // [expanded] the house's food
+        {
+            const { takeover } = await import('../sim/lifehooks.js');
+            if (takeover.some(f => f(g, w, a)))
+                return;
+        } // [expanded] 0.2.1-12: a mini-game first
         const tired = tooTired(g, w, Object.fromEntries(Object.entries(a.effects ?? {}).map(([k, v]) => [k, -v])), a.label.toLowerCase());
         if (tired) {
             toast(tired, 'warn');

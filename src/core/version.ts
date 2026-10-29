@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-11.1';
+export const VERSION = '0.2.1-12';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -11,13 +11,20 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 export interface Release { v: string; title: string; items: [string, string][]; /** [expanded] a release of this fork (no upstream tour for it) */ fork?: boolean }
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
+    // [expanded] this fork's releases
+    { v: '0.2.1-12', fork: true, title: 'Your own life', items: [
+        ['star', 'Mini-games for what you do on your own: cooking (a dish from what is in the fridge, its choices and the heat), the guitar (a rhythm game you can hear), cleaning (scrub and put away), a crossword, work and study (focus, while the house is noisy), programming (find the bug, choose the design), writing (pick or write the lines). Or just do it.'],
+        ['user', 'Skills that grow (slowly, Settings), told to the scene: the guitar is heard through the walls, the meal is judged, the story can be read (or snooped). The traits picked for your persona now count in Home. A new app: Me.'],
+        ['users', 'Do it together: cook, play, clean or study with someone here; in a crossword they may know the answer (or not want to help).'],
+        ['home', 'Chores: a weekly rota for the dishes, the trash, the common rooms and the bathroom (you too). Undone, the mess shows; on Serious, someone tidy complains. Remind someone (their menu), but do not nag.'],
+        ['calendar', 'The house\'s calendar (Calendar → Week): birthdays (forget one, and it hurts), exams and interviews they talk about before and after, game night and Sunday dinner, New Year, a golden week off in early summer. Coming home or waking up: a few hints of what happened.'],
+    ] },
     { v: '0.2.1-11.1', fork: true, title: 'Mundi 0.2.1 inside', items: [
         ['bell', 'Everything from Mundi 0.2.1: visitors and the doorbell, guests from outside at parties, going out with anyone and on to another place, things to do that fit the room, needs if you want them, rain sounds, the dialog box on the left, sprites on either side.'],
         ['lock', 'Mundi 0.2.1\'s safety fixes: world files, cards and messages can no longer run code or press Mundi\'s buttons.'],
         ['chat', 'This world → AI context lists everything that calls the AI, each with its own switch.'],
         ['gear', 'New version numbers: the upstream Mundi version, then Expanded\'s own (0.2.1-11.1: Expanded 11.1 on Mundi 0.2.1).'],
     ] },
-    // [expanded] this fork's releases
     { v: '0.2.0.11', fork: true, title: 'Their move', items: [
         ['chat', 'Walk into a room and a conversation may already be going: two of them, three, or everyone, mostly about nothing in particular (their interests, the worst job they ever had, who would die first in a horror movie), now and then about the house\'s news. Listen, join in or walk past; they may pull you in, or fall silent when it is about you.'],
         ['users', 'They come to you: someone comes up with something on their mind (listen, or not now), comes looking for you, knocks on your door, texts when you are out, or invites you to a movie night this evening (the phone reminds you, and they notice if you do not show).'],

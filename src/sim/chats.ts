@@ -116,7 +116,7 @@ export function dayTalks(freq: Freq, roll: (k: string) => number): number[] {
     for (let i = 0; i < n * 4 && hours.length < n; i++) { const h = 9 + Math.floor(roll(`h${i}`) * 14); if (hours.every(x => Math.abs(x - h) >= 2)) hours.push(h); }
     return hours.sort((a, b) => a - b);
 }
-export interface News { kind: 'plan' | 'fight' | 'fridge' | 'errand' | 'money' | 'small'; who: string[]; text: string; weight: number }
+export interface News { kind: 'plan' | 'fight' | 'fridge' | 'errand' | 'money' | 'small' | 'other'; who: string[]; text: string; weight: number }
 /** What a conversation is about: the weightiest recent thing (a little luck among close ones). */
 export function pickNews(news: News[], roll: number): News | null {
     if (!news.length) return null;

@@ -52,6 +52,7 @@ export const DEFAULT_APPS = [
     { id: 'bonds', name: 'Relationships', icon: 'heart', color: '#e0577a', on: true, home: true }, // [expanded]
     { id: 'stock', name: 'Storage', icon: 'utensils', color: '#2bb3a3', on: true, home: true }, // [expanded]
     { id: 'money', name: 'Money', icon: 'wallet', color: '#3c9d4e', on: true, home: true }, // [expanded]
+    { id: 'me', name: 'Me', icon: 'user', color: '#8a5cf6', on: true, home: true }, // [expanded] 0.2.1-12
     { id: 'order', name: 'Shop online', icon: 'download', color: '#ff7a45', on: true, home: true }, // [expanded] 0.2.0.7
     { id: 'jobs', name: 'Jobs', icon: 'briefcase', color: '#0a84ff', on: true },
     { id: 'bank', name: 'Bank', icon: 'wallet', color: '#5e5ce6', on: true },

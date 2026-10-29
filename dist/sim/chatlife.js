@@ -2,6 +2,7 @@
 // conversations get their hours; at each, a topic from what happened (a plan that is over, a fight, the empty fridge,
 // money, or something light from someone's day) and who joins in; sometimes a call ("movie night at nine, who's
 // in?") whose answers are decided before the AI writes them, and that you can answer too.
+import * as HOOKS from './lifehooks.js'; // [expanded]
 import { nowAbs, notify, saveGame, toast } from '../core/store.js';
 import { isScenario } from '../core/world.js';
 import { onDay, onHour } from './hooks.js';
@@ -40,6 +41,12 @@ export function newsOf(g, w) {
         out.push({ kind: 'fridge', who: [], text: food === 'empty' ? 'The fridge and pantry are empty.' : 'Food is running low in the house.', weight: food === 'empty' ? 2 : 1 });
     if (g.house?.on && g.house?.tight)
         out.push({ kind: 'money', who: [], text: 'Money is tight in the house this week: the bills were not fully covered.', weight: 1.5 });
+    {
+        const { chatNews } = HOOKS;
+        for (const f of chatNews)
+            for (const n of f(g))
+                out.push({ kind: 'other', ...n });
+    } // [expanded] 0.2.1-12: chores…
     out.push({ kind: 'small', who: [], text: '', weight: 1.5 });
     return out;
 }
@@ -60,6 +67,8 @@ function topicFor(g, w, n, opener) {
         return `${n.text} Who is going shopping?`;
     if (n.kind === 'money')
         return n.text;
+    if (n.kind === 'other')
+        return `${n.text} ${n.who.includes(opener) ? `${name} answers for it, defensive or sorry` : `${name} brings it up`}`;
     const s = slotAt(g, w, g.cast[opener], nowAbs(g));
     return s && !s.asleep && s.kind !== 'out' ? `something light from their moment (${name} is ${s.act}): a passing thought, a small question to everyone, or a joke` : 'something light: a passing thought, a small question to everyone, or a joke';
 }
