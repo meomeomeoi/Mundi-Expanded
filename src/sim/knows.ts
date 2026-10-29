@@ -11,7 +11,7 @@
 
 export type Pub = 'public' | 'witnessed' | 'private';
 export type How = 'in' | 'house' | 'saw' | 'told' | 'heard';
-export interface Know { lvl: 'suspects' | 'knows'; how: How; day: number; /** who told them */ from?: string; /** the version they heard, when it differs */ ver?: string; /** how many mouths it went through */ hops?: number }
+export interface Know { lvl: 'suspects' | 'knows'; how: How; day: number; /** who told them */ from?: string; /** the version they heard, when it differs */ ver?: string; /** how many mouths it went through */ hops?: number; /** they promised to keep it */ promised?: boolean }
 /** Anything that can be known: who it is about, how public it is, who else knows. */
 export interface Knowable { parts: string[]; pub: Pub; know?: Record<string, Know>; day: number }
 

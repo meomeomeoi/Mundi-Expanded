@@ -20,6 +20,8 @@ import {
 } from '../sim/bonds.js';
 import { knowOf, tieK, howText } from '../sim/knows.js';   // [expanded] 0.2.0.8
 import { partnersOf } from '../sim/romance.js';
+import { MOODS } from '../sim/gossip.js';
+import { gossipOf } from '../sim/gossiprun.js';
 
 // sel: '' (the whole house), 'p:<id>' (a person; '__you' is the player) or 'e:<a>|<b>' (a pair)
 const BV = { sel: '', edit: '', draft: '', adding: false, addText: '', addWho: [] as string[] };
@@ -175,6 +177,7 @@ function pairPanel(g: Save, a: string, b: string): string {
         ${statusRow(g, a, b)}${secretRow(g, a, b)}
         <div class="mu-bd-val"><span><i class="mu-bd-dot" style="background:${COLOR[toneOf(p.v)]}"></i><b data-bd-word>${wordOf(p.v)}</b> <small data-bd-num>${p.v > 0 ? '+' : ''}${p.v}</small></span>
             ${canEdit(g) ? `<input type="range" min="-100" max="100" step="1" value="${p.v}" data-input="bd-val" data-k="${esc(pairKey(a, b))}" style="--c:${COLOR[toneOf(p.v)]}">` : `<span class="mu-bd-meter"><i style="left:${(p.v + 100) / 2}%;background:${COLOR[toneOf(p.v)]}"></i></span>`}</div>
+        ${(() => { const t = p.t ?? p.v; return p.t !== undefined && Math.abs(p.t - p.v) >= 10 ? `<small class="mu-muted">Trust: <b>${t >= 45 ? 'full' : t >= 15 ? 'some' : t > -15 ? 'little' : 'none'}</b> (${t > 0 ? '+' : ''}${t}), apart from how they get along.</small>` : ''; })()}
         ${facts(g, factsOfPair(G(g), a, b), false, 'No facts yet. What happens between them is written here at night.')}
         ${addForm(g, [a, b])}</section>`;
 }
@@ -222,6 +225,10 @@ export function bondsSettingsHtml(): string {
         <b>Life without you</b>
         <div class="mu-bd-seg">${LIVES.map(([id, label]) => `<button class="${id === b.life ? 'is-on' : ''}" data-act="bd-life" data-v="${id}">${label}</button>`).join('')}</div>
         <small class="mu-muted">${life[2]} Each night the day's scenes are also read for what changed between the people in them.</small>
+        <b>How the house talks</b>
+        <div class="mu-bd-seg">${MOODS.map(([id, label]) => `<button class="${gossipOf(g).mood === id ? 'is-on' : ''}" data-act="bd-mood" data-v="${id}">${label}</button>`).join('')}</div>
+        <div class="mu-bd-seg">${[3, 6, 10].map(n => `<button class="${gossipOf(g).max === n ? 'is-on' : ''}" data-act="bd-gmax" data-v="${n}">${n} at once</button>`).join('')}</div>
+        <small class="mu-muted">Who knows something tells the ones they spent the day with, by how juicy it is, how well they keep secrets, how loyal they are to the people it is about and how much they trust the listener. Only the juiciest few go around at once; a promise to keep it nearly stops it. You hear it from the ones close to you.</small>
         <label class="mu-check"><input type="checkbox" data-input="bd-money" ${(g as any).house?.on ? 'checked' : ''}><span>Money in this house</span></label>
         <small class="mu-muted">${(g as any).house?.on ? 'Your wallet and the house fund are in the Money app; groceries cost money, and you can take a job.' : 'Off: things are free, nobody works for money (as in Mundi\'s Home).'}</small>
         ${houseRulesHtml(g)}</section>${eraSettingsHtml(g)}${chatSettingsHtml(g)}`;
@@ -260,6 +267,8 @@ Object.assign(INPUT, {
     'bd-draft': (el) => { BV.draft = el.value; },
     'bd-addtext': (el) => { BV.addText = el.value; },
     'bd-money': (el) => { const g = game(); if (!g) return; enableMoney(g, !!el.checked); refreshPrompt(); notify(); },
+    'bd-mood': (el) => { const g = game(); if (!g) return; gossipOf(g).mood = (el.dataset.v as any) || 'usual'; saveGame(); notify(); },
+    'bd-gmax': (el) => { const g = game(); if (!g) return; gossipOf(g).max = Number(el.dataset.v) || 6; saveGame(); notify(); },
     'bd-truth': (el) => { const g = game(); if (!g) return; bondsOf(G(g)).truth = !!el.checked; saveGame(); notify(); },
     'bd-secret': (el) => {
         const g = game(); if (!g) return; const a = el.dataset.a!, b = el.dataset.b!; const on = !!el.checked;

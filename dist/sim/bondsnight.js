@@ -104,6 +104,9 @@ export async function bondsNight(g, w, day, range) {
             const k = tieK(t);
             secrets.push({ text: `${nm(t.a)} and ${nm(t.b)}: ${t.type}`, known: [t.a, t.b, ...Object.keys(t.know ?? {}).filter(x => t.know[x].lvl === 'knows')].map(nm), k, store: t });
         }
+    // recent things not everyone knows (fights, secrets of the week), for who found out and who promised
+    for (const f of b.facts.filter(x => x.kind === 'episode' && day - x.day <= 7 && factK(x).pub !== 'public').slice(-5))
+        secrets.push({ text: `${f.who.map(nm).join(' & ')}: ${f.text}`, known: [...f.who, ...Object.keys(f.know ?? {}).filter(x => f.know[x].lvl === 'knows')].map(nm), k: factK(f), store: f });
     for (const [a, h] of Object.entries(b.hide ?? {}))
         if (g.cast[a])
             secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know[x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
@@ -128,6 +131,11 @@ export async function bondsNight(g, w, day, range) {
         return YOU; const hit = people.filter(p => p.name.toLowerCase() === t || p.name.toLowerCase().split(/\s+/)[0] === t.split(/\s+/)[0]); return hit.length === 1 ? hit[0].avatar : null; };
     for (const f of parseFound(raw, findName, secrets.length))
         learn(secrets[f.i].k, f.who, { lvl: 'knows', how: 'saw', day }, secrets[f.i].store);
+    for (const f of parseFound(raw, findName, secrets.length, 'PROMISE')) {
+        const k = secrets[f.i].store.know?.[f.who];
+        if (k)
+            k.promised = true;
+    }
     // loud fights without you are heard through the walls by whoever is nosy enough
     for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
         const fact = b.facts.filter(f => f.kind === 'episode' && f.text === c.text).at(-1);

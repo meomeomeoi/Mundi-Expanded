@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as S from '../dist/sim/secrets.js';
 import * as K from '../dist/sim/knows.js';
 import * as B from '../dist/sim/bonds.js';
+import * as Go from '../dist/sim/gossip.js';
 
 let n = 0;
 const test = (name, fn) => { try { fn(); n++; } catch (e) { console.error(`FAIL ${name}\n`, e); process.exit(1); } };
@@ -35,6 +36,29 @@ test('noticing: asleep next door is rare, the same room is quick, a clue then kn
 test('the night reader: who found out a secret', () => {
     const find = (q) => ({ kathie: 'k', gleb: '__you' })[q.toLowerCase()] ?? null;
     assert.deepEqual(B.parseFound('SCENE\nFOUND | Kathie | 1\nFOUND | Gleb | #2\nFOUND | Nobody | 1\nFOUND | Kathie | 7', find, 2), [{ who: 'k', i: 0 }, { who: '__you', i: 1 }]);
+});
+
+test('gossip: who tells whom, loyalty, promises, limits, small things once', () => {
+    const base = { people: ['m', 'l', 'k', 's', '__you'], day: 10, mood: 'usual', max: 6, quiet: ['__you'],
+        discreet: (a) => (a === 'k' ? 10 : 90), liking: () => 0, trust: () => 60, together: () => 1, roll: () => 0.2 };
+    const love = { id: 't:m|l', parts: ['m', 'l'], pub: 'private', day: 9, juicy: 0.9, know: { k: { lvl: 'knows', how: 'saw', day: 9 } } };
+    const out = Go.spread({ ...base, news: [love] });
+    assert.equal(out.length, 1); assert.equal(out[0].from, 'k'); assert.ok(!['m', 'l'].includes(out[0].to), 'never told to the ones it is about');
+    assert.equal(out[0].know.how, 'told'); assert.equal(out[0].know.from, 'k');   // she saw it: first-hand
+    // a promise nearly stops it; a loyal friend of the couple rarely tells; a discreet one (90) neither
+    assert.equal(Go.spread({ ...base, news: [{ ...love, know: { k: { ...love.know.k, promised: true } } }] }).length, 0);
+    assert.equal(Go.spread({ ...base, liking: () => 60, news: [love] }).length, 0);
+    assert.equal(Go.spread({ ...base, mood: 'discreet', roll: () => 0.5, news: [love] }).length, 0);
+    // retold: second-hand, one more mouth
+    const heard = { ...love, know: { k: { lvl: 'knows', how: 'told', from: 'x', hops: 1, day: 9 } } };
+    assert.equal(Go.spread({ ...base, news: [heard] })[0].know.how, 'heard'); assert.equal(Go.spread({ ...base, news: [heard] })[0].know.hops, 2);
+    // cold news is not told; only the juiciest few go around
+    assert.equal(Go.spread({ ...base, day: 30, news: [love] }).length, 0);
+    const small = { id: 'f1', parts: ['s', 'l'], pub: 'witnessed', day: 10, juicy: 0.25, small: true, know: { k: { lvl: 'knows', how: 'told', day: 10 } } };
+    assert.deepEqual(Go.alive([small, love], 10, 1).map(n => n.id), ['t:m|l']);
+    assert.equal(Go.spread({ ...base, news: [small] }).length, 0, 'a small thing heard from someone stops there');
+    assert.ok(Go.spread({ ...base, perNight: 1, news: [love, { ...love, id: 'x2' }] }).length <= 1);
+    assert.equal(Go.garble('Masha & Leah: kissed', ['Masha'], ['Kathie'], 0.1), 'Kathie & Leah: kissed'); assert.equal(Go.garble('x', ['Masha'], ['Kathie'], 0.5), null);
 });
 
 console.log(`secrets: ${n} tests passed`);

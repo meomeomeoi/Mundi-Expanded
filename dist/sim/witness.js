@@ -13,6 +13,7 @@ import { partnersOf, romanceTier } from './romance.js';
 import { bondsOf, tieKnowLines, YOU } from './bonds.js';
 import { knowOf, knows, howText } from './knows.js';
 import { sawTogether } from './secretsrun.js';
+import { tellLines, hearNews } from './gossiprun.js';
 const G = (g) => g;
 const hm = (m) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const list = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
@@ -28,6 +29,8 @@ export function stamp(id) {
     const here = presentAt(g, w, g.player.loc).map(r => r.avatar);
     m.extra = { ...(m.extra ?? {}), mundi_here: here, mundi_loc: g.player.loc, mundi_at: nowAbs(g) };
     sawTogether(g, here, g.player.loc); // a secret couple together in a bedroom, in front of you
+    if (m.is_user)
+        hearNews(g, here); // someone with news for you, now that you are together
 }
 /** Today's lines in stretches of the same place and the same people (lines from before stamps belong to none). */
 export function stretches(from, to = chat().length) {
@@ -120,6 +123,6 @@ export function youLines(g, present) {
 export function knowsBlock(g, w, present) {
     if (!isScenario(w))
         return [];
-    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
+    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...tellLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
     return lines.length ? ['Who knows what (people act on what they know; what they do not know, they do not bring up):', ...lines] : [];
 }

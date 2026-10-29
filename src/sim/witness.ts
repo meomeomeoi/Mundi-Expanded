@@ -13,6 +13,7 @@ import { partnersOf, romanceTier } from './romance.js';
 import { bondsOf, tieKnowLines, YOU, type GLike } from './bonds.js';
 import { knowOf, knows, howText, type Knowable } from './knows.js';
 import { sawTogether } from './secretsrun.js';
+import { tellLines, hearNews } from './gossiprun.js';
 
 const G = (g: Save) => g as unknown as GLike;
 const hm = (m: number) => `${String(Math.floor((m % 1440) / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -25,6 +26,7 @@ export function stamp(id: number) {
     const here = presentAt(g, w, g.player.loc).map(r => r.avatar);
     m.extra = { ...(m.extra ?? {}), mundi_here: here, mundi_loc: g.player.loc, mundi_at: nowAbs(g) };
     sawTogether(g, here, g.player.loc);   // a secret couple together in a bedroom, in front of you
+    if (m.is_user) hearNews(g, here);   // someone with news for you, now that you are together
 }
 
 export interface Stretch { loc: string; here: string[]; from: number; to: number; spoke: string[]; start: number; end: number }
@@ -94,6 +96,6 @@ export function youLines(g: Save, present: string[]): string[] {
 /** The scene prompt's "Who knows what" block. */
 export function knowsBlock(g: Save, w: WorldDef, present: string[]): string[] {
     if (!isScenario(w)) return [];
-    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
+    const lines = [privacyLine(g, w, present), ...tieKnowLines(G(g), present), ...youLines(g, present), ...tellLines(g, present), ...witnessLines(g, w, present)].filter(Boolean);
     return lines.length ? ['Who knows what (people act on what they know; what they do not know, they do not bring up):', ...lines] : [];
 }

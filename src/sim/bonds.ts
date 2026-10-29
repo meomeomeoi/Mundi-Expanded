@@ -36,7 +36,7 @@ export const LIVES: [Life, string, string][] = [
     ['lively', 'Lively', 'Up to three moments a night, now and then a bigger one.'],
 ];
 
-export interface Pair { v: number; base: number; /** the tie's tone as last seen or written */ seen?: string; /** day of the last change */ changed?: number }
+export interface Pair { v: number; base: number; /** [expanded] 0.2.0.8: trust (unset: as the liking) */ t?: number; /** the tie's tone as last seen or written */ seen?: string; /** day of the last change */ changed?: number }
 export interface BondFact {
     id: string; who: string[]; text: string; kind: 'standing' | 'episode'; day: number;
     /** episodes: the step it moved the pair(s) by */ delta?: number; src: 'user' | 'scene' | 'offscreen';
@@ -45,7 +45,12 @@ export interface BondFact {
 }
 export interface Bonds { pairs: Record<string, Pair>; facts: BondFact[]; life: Life; seq: number; decayDay?: number; lastNight?: number; /** the player may change relationships in the app (off: look only) */ edit?: boolean;
     /** [expanded] 0.2.0.8: the app shows everything, not only what you know */ truth?: boolean;
-    /** your relationships kept secret (by avatar): who else knows */ hide?: Record<string, { day: number; know?: Record<string, Know> }> }
+    /** your relationships kept secret (by avatar): who else knows */ hide?: Record<string, { day: number; know?: Record<string, Know> }>;
+    /** how news travels: the house's mood, how many pieces at once, who has news for you, the last night it ran */
+    gossip?: { mood?: 'discreet' | 'usual' | 'gossips'; max?: number; tell?: Record<string, { news: string; text: string; day: number }>; last?: number } }
+/** [expanded] 0.2.0.8: trust between two characters (-100…100; unset: as much as they like each other). */
+export const trustOf = (g: GLike, a: string, b: string) => { const p = bondsOf(g).pairs[pairKey(a, b)]; return p ? p.t ?? p.v : 0; };
+export function addTrust(g: GLike, a: string, b: string, d: number) { const p = pairOf(g, a, b); p.t = clamp(Math.round((p.t ?? p.v) + d), -100, 100); }
 export interface TieLike { a: string; b: string; type: string; tone: string; /** [expanded] 0.2.0.8 */ secret?: boolean; know?: Record<string, Know>; day?: number }
 export interface CastLike { avatar: string; name: string }
 export interface GLike { day: number; cast: Record<string, CastLike>; living?: { ties?: TieLike[] }; bonds?: Bonds }
@@ -289,6 +294,8 @@ export function tieKnowLines(g: GLike, present: string[]): string[] {
     }
     return [...(house.length ? [`Known to everyone in the house: ${house.slice(0, 10).join('; ')}.`] : []), ...out.slice(0, 6)];
 }
+/** "Masha is dating Leah" (for the AI). */
+export const tieWord = (t: TieLike, name: (a: string) => string) => `${name(t.a)} is ${TIE_WORD[t.type] ?? `${t.type} of`} ${name(t.b)}`;
 const TIE_WORD: Record<string, string> = { parent: 'a parent of', child: 'a child of', sibling: 'a sibling of', spouse: 'married to', partner: 'the partner of', dating: 'dating', cousin: 'a cousin of', roommate: 'a roommate of', friend: 'a friend of', bestfriend: 'the best friend of', ally: 'an ally of', colleague: 'a colleague of', rival: 'a rival of', enemy: 'an enemy of', ex: 'the ex of', mentor: 'the mentor of', apprentice: 'the apprentice of' };
 
 /* ---------- the night: one AI call ---------- */
@@ -343,7 +350,7 @@ export function nightPrompt(g: GLike, n: NightInput): string {
             ? `What was said today:\n${n.convo}\n\nList what changed between these people (not with ${n.user}) because of today's scenes: only real moments that were in the conversation (a fight, a kindness, teasing that hurt, a shared laugh, help, a secret kept…). Step from -3 to +3. If nothing changed between them, write NONE.`
             : 'There were no scenes with two of them today: write NONE.',
         ...(scene && n.secrets?.length ? ['', `Secrets in the house (never reveal them yourself): ${n.secrets.map((x, i) => `${i + 1}. ${x.text} (known to: ${x.known.join(', ')})`).join(' ')}`,
-            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. Only what clearly happened in the scenes.`] : []),
+            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word, someone told), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. If someone who knows one promised in a scene to keep it to themselves: PROMISE | who promised | the secret's number. Only what clearly happened in the scenes.`] : []),
         '',
         'PART 2 — life in the house without ' + n.user + '.',
         n.life === 'off' ? 'Turned off: write NONE.' : `${off} It must fit who they are and how they get along now, and not repeat what happened lately.`,
@@ -410,10 +417,10 @@ export function parseNight(raw: string, people: CastLike[], life: Life): Parsed[
 }
 
 /** [expanded] 0.2.0.8: the night's "FOUND | who | number" lines: who found out which secret (indexes from 0). */
-export function parseFound(raw: string, find: (name: string) => string | null, count: number): { who: string; i: number }[] {
+export function parseFound(raw: string, find: (name: string) => string | null, count: number, kind = 'FOUND'): { who: string; i: number }[] {
     const out: { who: string; i: number }[] = [];
     for (const line of String(raw ?? '').split('\n')) {
-        const m = line.trim().replace(/^[-*•]\s*/, '').match(/^FOUND\s*\|\s*(.+?)\s*\|\s*#?(\d+)/i); if (!m) continue;
+        const m = line.trim().replace(/^[-*•]\s*/, '').match(new RegExp(`^${kind}\\s*\\|\\s*(.+?)\\s*\\|\\s*#?(\\d+)`, 'i')); if (!m) continue;
         const i = Number(m[2]) - 1; const who = find(m[1]);
         if (who && i >= 0 && i < count && !out.some(x => x.who === who && x.i === i)) out.push({ who, i });
     }

@@ -30,6 +30,9 @@ export const LIVES = [
     ['calm', 'Calm', 'Most nights nothing happens; at most one small everyday moment between two of them.'],
     ['lively', 'Lively', 'Up to three moments a night, now and then a bigger one.'],
 ];
+/** [expanded] 0.2.0.8: trust between two characters (-100…100; unset: as much as they like each other). */
+export const trustOf = (g, a, b) => { const p = bondsOf(g).pairs[pairKey(a, b)]; return p ? p.t ?? p.v : 0; };
+export function addTrust(g, a, b, d) { const p = pairOf(g, a, b); p.t = clamp(Math.round((p.t ?? p.v) + d), -100, 100); }
 /** The player in ties and facts (as upstream writes it). The player's own friendship and romance stay upstream's. */
 export const YOU = '__you';
 export const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
@@ -336,6 +339,8 @@ export function tieKnowLines(g, present) {
     }
     return [...(house.length ? [`Known to everyone in the house: ${house.slice(0, 10).join('; ')}.`] : []), ...out.slice(0, 6)];
 }
+/** "Masha is dating Leah" (for the AI). */
+export const tieWord = (t, name) => `${name(t.a)} is ${TIE_WORD[t.type] ?? `${t.type} of`} ${name(t.b)}`;
 const TIE_WORD = { parent: 'a parent of', child: 'a child of', sibling: 'a sibling of', spouse: 'married to', partner: 'the partner of', dating: 'dating', cousin: 'a cousin of', roommate: 'a roommate of', friend: 'a friend of', bestfriend: 'the best friend of', ally: 'an ally of', colleague: 'a colleague of', rival: 'a rival of', enemy: 'an enemy of', ex: 'the ex of', mentor: 'the mentor of', apprentice: 'the apprentice of' };
 /* ---------- the night: one AI call ---------- */
 // The "# Personality { … }" part of a card written with headed sections; otherwise the start of the description.
@@ -380,7 +385,7 @@ export function nightPrompt(g, n) {
             ? `What was said today:\n${n.convo}\n\nList what changed between these people (not with ${n.user}) because of today's scenes: only real moments that were in the conversation (a fight, a kindness, teasing that hurt, a shared laugh, help, a secret kept…). Step from -3 to +3. If nothing changed between them, write NONE.`
             : 'There were no scenes with two of them today: write NONE.',
         ...(scene && n.secrets?.length ? ['', `Secrets in the house (never reveal them yourself): ${n.secrets.map((x, i) => `${i + 1}. ${x.text} (known to: ${x.known.join(', ')})`).join(' ')}`,
-            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. Only what clearly happened in the scenes.`] : []),
+            `If today's scenes let someone else see or overhear one of them (a slip, a kiss seen, a careless word, someone told), add a line in the SCENE part: FOUND | who found out | the secret's number. ${n.user} counts too. If someone who knows one promised in a scene to keep it to themselves: PROMISE | who promised | the secret's number. Only what clearly happened in the scenes.`] : []),
         '',
         'PART 2 — life in the house without ' + n.user + '.',
         n.life === 'off' ? 'Turned off: write NONE.' : `${off} It must fit who they are and how they get along now, and not repeat what happened lately.`,
@@ -474,10 +479,10 @@ export function parseNight(raw, people, life) {
     return [...scene, ...off];
 }
 /** [expanded] 0.2.0.8: the night's "FOUND | who | number" lines: who found out which secret (indexes from 0). */
-export function parseFound(raw, find, count) {
+export function parseFound(raw, find, count, kind = 'FOUND') {
     const out = [];
     for (const line of String(raw ?? '').split('\n')) {
-        const m = line.trim().replace(/^[-*•]\s*/, '').match(/^FOUND\s*\|\s*(.+?)\s*\|\s*#?(\d+)/i);
+        const m = line.trim().replace(/^[-*•]\s*/, '').match(new RegExp(`^${kind}\\s*\\|\\s*(.+?)\\s*\\|\\s*#?(\\d+)`, 'i'));
         if (!m)
             continue;
         const i = Number(m[2]) - 1;

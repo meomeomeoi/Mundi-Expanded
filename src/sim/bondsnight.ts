@@ -70,6 +70,8 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     const nm = (a: string) => (a === YOU ? me : g.cast[a]?.name ?? a);
     const secrets: { text: string; known: string[]; k: Knowable; store: { know?: Record<string, Know> } }[] = [];
     for (const t of (gl.living?.ties ?? []) as TieLike[]) if (t.secret && (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b])) { const k = tieK(t); secrets.push({ text: `${nm(t.a)} and ${nm(t.b)}: ${t.type}`, known: [t.a, t.b, ...Object.keys(t.know ?? {}).filter(x => t.know![x].lvl === 'knows')].map(nm), k, store: t }); }
+    // recent things not everyone knows (fights, secrets of the week), for who found out and who promised
+    for (const f of b.facts.filter(x => x.kind === 'episode' && day - x.day <= 7 && factK(x).pub !== 'public').slice(-5)) secrets.push({ text: `${f.who.map(nm).join(' & ')}: ${f.text}`, known: [...f.who, ...Object.keys(f.know ?? {}).filter(x => f.know![x].lvl === 'knows')].map(nm), k: factK(f), store: f });
     for (const [a, h] of Object.entries(b.hide ?? {})) if (g.cast[a]) secrets.push({ text: `${me} and ${nm(a)} are together`, known: [me, nm(a), ...Object.keys(h.know ?? {}).filter(x => h.know![x].lvl === 'knows').map(nm)], k: { parts: [YOU, a], pub: 'private', know: h.know, day: h.day }, store: h });
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })) });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
@@ -87,6 +89,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     // [expanded] 0.2.0.8: secrets found out in today's scenes
     const findName = (q: string) => { const t = q.trim().toLowerCase(); if (t === me.toLowerCase() || t === '{{user}}' || t === 'the player') return YOU; const hit = people.filter(p => p.name.toLowerCase() === t || p.name.toLowerCase().split(/\s+/)[0] === t.split(/\s+/)[0]); return hit.length === 1 ? hit[0].avatar : null; };
     for (const f of parseFound(raw, findName, secrets.length)) learn(secrets[f.i].k, f.who, { lvl: 'knows', how: 'saw', day }, secrets[f.i].store);
+    for (const f of parseFound(raw, findName, secrets.length, 'PROMISE')) { const k = secrets[f.i].store.know?.[f.who]; if (k) k.promised = true; }
     // loud fights without you are heard through the walls by whoever is nosy enough
     for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
         const fact = b.facts.filter(f => f.kind === 'episode' && f.text === c.text).at(-1); if (!fact || factK(fact).pub === 'private') continue;
