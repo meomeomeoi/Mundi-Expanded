@@ -6,6 +6,7 @@ import { chat, quiet, personaName, ctx, translateTo } from '../st/bridge.js';
 import { facts, factText, placeName } from './facts.js';
 import { fmtClock as hm } from '../core/fmt.js';
 import { applyVerdict } from './romance.js';
+import { memCfgOf } from './memory.js'; // [expanded]
 export const diaryOn = () => settings().diaryOnSleep !== false;
 export const diaryEntries = (g) => (g.journalProse ??= {});
 const clean = (t) => String(t ?? '').replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
@@ -79,7 +80,7 @@ export function diaryShown(g, day) {
 // For the AI: the last entries (the story remembers the past days through them).
 export function diaryLines(g) {
     const e = diaryEntries(g);
-    const days = Object.keys(e).map(Number).filter(d => d < g.day).sort((a, b) => a - b).slice(-2);
+    const days = Object.keys(e).map(Number).filter(d => d < g.day).sort((a, b) => a - b).slice(-memCfgOf(g).diary); // [expanded] 0.2.1-14: how many days (Memory)
     if (!days.length)
         return [];
     const ago = (d) => (g.day - d === 1 ? 'yesterday' : `${g.day - d} days ago`);

@@ -15,6 +15,29 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14 (0.2.1-14) · 2026-10-30 · Memory
+
+- **Landmarks**: a new night pass (one AI call, after the relationships) weighs today's moments between you and each
+  person and the house's moments tonight: 1 passing, 2 nice or annoying, 3 it matters, 4 it changes something, 5
+  unforgettable. From the landmark weight (4 by default), or pinned by you, a moment is never forgotten and never
+  trimmed. Every few days (5 by default) a second call folds the new landmarks into "the story so far": you and each
+  person, and each person's own story in the house; the three previous versions are kept (undo). Pinned moments are
+  always sent word for word.
+- **Fading**: ordinary moments last by weight and a half-life (7 days by default; people here remember a bit longer)
+  instead of "the last two per pair". The relationships' lines use it for every pair.
+- **What they know**: small lasting facts the night notes ("studies computer security", "afraid of heights"); a new
+  fact may replace an old one. The scene gets what the people here know about you and about each other.
+- **Who they have become**: a step of change ("has started to trust you a little") is only ever added, never
+  rewritten. Brakes: only for someone who was in today's scenes, with something of weight 3+ since their last step,
+  some history first, and at most one step per person every 7 days (a dial).
+- **This Home → Memory**: presets (Light, Normal, Rich) and every dial: diary days the AI reads (1–7, was 2), the
+  landmark weight, the half-life, how often and how long the stories are, the brake; a token estimate; "Bring the
+  stories up to date now". Then, person by person, everything that is kept, to read, edit, pin, unpin, make a
+  landmark or delete, and to add your own steps and facts.
+- **Robust**: a refusal, an empty answer or a reply in the wrong form is never taken for "nothing happened": the
+  night shows "Try again" (memory and the stories separately); a story the reply leaves out is kept as it was. Names
+  the reply gets wrong, weights out of range and facts about oneself are dropped line by line.
+
 ## Mundi Expanded 13 (0.2.1-13) · 2026-10-30 · Scenes
 
 - **The log in scenes** (a Home): the day is still one chat (upstream: walking between rooms is one conversation),

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import * as O from '../dist/sim/own.js';
 import * as B from '../dist/sim/battery.js';
 import * as S from '../dist/sim/scenes.js';
+import * as MM from '../dist/sim/memory.js';
 import { wholeSentences } from '../dist/sim/jsonfix.js';
 let n = 0; const t = (name, f) => { f(); n++; };
 t('levels and experience', () => {
@@ -89,5 +90,27 @@ t('the day in scenes', () => {
     assert.equal(S.unheard(sc, now, 'all').size, 0); assert.equal(S.unheard(sc, [], 'strict').size, 0, 'alone: nothing to hide');
     i = 0; const solo = S.cutScenes([E('kitchen', [], 600), E('living', ['f'], 700)]);
     assert.ok(!S.unheard(solo, ['f'], 'shared').has(0)); assert.ok(S.unheard(solo, ['f'], 'strict').has(0));
+});
+t('memory: what lasts and what fades', () => {
+    const c = MM.DEFAULT;
+    assert.ok(MM.alive(1, 1, 7) < MM.SHOW, 'a passing moment is gone the next day');
+    assert.ok(MM.alive(3, 7, 7) >= MM.SHOW && MM.alive(3, 20, 7) < MM.SHOW, 'a 3 lasts a couple of weeks at most');
+    const fs = [{ day: 1, kind: 'episode', w: 5, text: 'first kiss' }, { day: 2, kind: 'episode', w: 1 }, { day: 9, kind: 'episode', w: 2 }, { day: 10, kind: 'episode', w: 1 }, { day: 3, kind: 'standing' }];
+    const live = MM.liveEpisodes(fs, 10, c);
+    assert.ok(live.some(f => f.text === 'first kiss'), 'a landmark stays'); assert.ok(!live.some(f => f.day === 2), 'old small things fade');
+    assert.ok(!MM.liveEpisodes(fs, 10, c, false, 4, f => f.w === 5).some(f => f.w === 5), 'folded into a story: not word for word');
+    assert.equal(MM.weightOf({ delta: -3 }), 4); assert.equal(MM.presetOf(MM.DEFAULT), 'normal'); assert.equal(MM.presetOf({ ...c, half: 9 }), 'custom');
+});
+t('memory: the night reply, even when messy', () => {
+    const find = (q) => ({ finn: 'f', maya: 'm', gleb: '__you' })[q.trim().toLowerCase()] ?? null;
+    const o = MM.parseMemNight('<think>hmm</think>\nHere:\n1. **MOMENT | Maya | 5 | she told him her secret**\nMOMENT | Bob | 3 | x\nMOMENT | Finn | 9 | too heavy\nRATE | #2 | 3\nKNOWS | Finn | Gleb | studies security | replaces K7\nCHANGE | Maya | trusts a little', find);
+    assert.deepEqual(o.moments, [{ who: 'm', w: 5, text: 'she told him her secret' }]);
+    assert.deepEqual(o.rates, [{ i: 1, w: 3 }]); assert.equal(o.knows[0].replaces, 'k7'); assert.equal(o.knows[0].about, '__you');
+    assert.equal(o.changes.length, 1); assert.ok(MM.answered(o));
+    assert.ok(!MM.answered(MM.parseMemNight("I can't help with that.", find)), 'a refusal is not an answer');
+    assert.ok(MM.answered(MM.parseMemNight('NONE', find)), 'NONE is');
+    const st = MM.parseStories('STORY | Maya | short\nSTORY | Maya | Gleb kept her secret, and she began to trust him.\nOWN | Finn | Finn has been restless since he lost his job at the arcade.', find);
+    assert.ok(st.pair.m && st.own.f && Object.keys(st.pair).length === 1);
+    assert.ok(MM.mayChange(undefined, 9, 7, true) && !MM.mayChange(5, 9, 7, true) && !MM.mayChange(1, 9, 7, false));
 });
 console.log(`own: ${n} tests passed`);

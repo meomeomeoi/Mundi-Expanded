@@ -7,6 +7,7 @@ import { chat, quiet, personaName, ctx, translateTo } from '../st/bridge.js';
 import { facts, factText, placeName } from './facts.js';
 import { fmtClock as hm } from '../core/fmt.js';
 import { applyVerdict, type Change } from './romance.js';
+import { memCfgOf } from './memory.js';   // [expanded]
 
 export const diaryOn = () => (settings() as any).diaryOnSleep !== false;
 export const diaryEntries = (g: Save): Record<string, string> => (((g as any).journalProse ??= {}) as Record<string, string>);
@@ -75,7 +76,7 @@ export function diaryShown(g: Save, day: number | string): string {
 // For the AI: the last entries (the story remembers the past days through them).
 export function diaryLines(g: Save): string[] {
     const e = diaryEntries(g);
-    const days = Object.keys(e).map(Number).filter(d => d < g.day).sort((a, b) => a - b).slice(-2);
+    const days = Object.keys(e).map(Number).filter(d => d < g.day).sort((a, b) => a - b).slice(-memCfgOf(g).diary);   // [expanded] 0.2.1-14: how many days (Memory)
     if (!days.length) return [];
     const ago = (d: number) => (g.day - d === 1 ? 'yesterday' : `${g.day - d} days ago`);
     return [`Earlier days, from {{user}}'s diary. These days are over: today is day ${g.day}. Whatever an entry calls "today", "tonight" or "later" already happened on that day (for continuity; the other characters only know what they saw or were told): ${days.map(d => `(day ${d}, ${ago(d)}) ${e[d]}`).join(' ')}`];

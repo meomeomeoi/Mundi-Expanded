@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-13';
+export const VERSION = '0.2.1-14';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,13 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-14', fork: true, title: 'Memory', items: [
+            ['star', 'Landmarks: the night weighs every moment (1 passing … 5 unforgettable). Heavy ones, and anything you pin, are never forgotten; every few days they are folded into "the story so far" (you and each person, and each person\'s own).'],
+            ['moon', 'Ordinary moments fade with time by how much they weighed (a half-life you set), instead of only the last two being kept.'],
+            ['users', 'What they know about each other (and about you): small lasting facts the night notes down, updated when they change.'],
+            ['heart', 'Who they have become: steps of change, only ever added, with brakes (something weighty behind it, some history first, at most one step every few days per person).'],
+            ['book', 'This Home → Memory: presets and every dial (diary days, landmark weight, fading, how often stories are rewritten and how long, the brake), a token estimate, and all of it to read, edit, pin or delete.'],
+        ] },
     { v: '0.2.1-13', fork: true, title: 'Scenes', items: [
             ['chat', 'The dialogue log in scenes: a new place, an hour\'s pause or an almost new company starts one; someone coming in or leaving is a mark inside; a word next door is an aside, not a new scene. The earlier scenes of the day fold to one line (where, when, who): a click opens one.'],
             ['book', 'Previously (the book in the log\'s corner): the days before, scene by scene. They stay hidden from the AI; this is for you.'],

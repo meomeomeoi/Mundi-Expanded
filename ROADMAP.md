@@ -260,13 +260,18 @@ an aside. Earlier scenes fold to one line; "Previously" (the log's corner) shows
 reads today's scenes none of the people here were in (SillyTavern's generate interceptor, on a copy: the chat is
 untouched); a setting keeps upstream's way. Listening at your door: they know the scraps they caught, no more.
 
-Next, discussed:
-- **Memory, with a dial for detail**: today the past lives on as the diary (the last two days), facts, relationships,
-  what everyone knows and open threads; a detail nobody turned into a fact (an allergy, a promise said in passing) is
-  gone in a couple of days. Make it settable: how many diary days the AI reads (1–7), how much the night reader writes
-  down (key moments only / ordinary detail / everything worth a line), personal notes each character keeps about you
-  (small facts "for later", editable in the memory book), and how long episodes take to fade. Each with its cost in
-  tokens shown beside it.
+## 15. Memory (0.2.1-14, done)
+
+Four layers, each with its own fate. Landmarks (the night's reader weighs every moment 1–5; at the threshold, or
+pinned by you: never forgotten), folded every few days into "the story so far" (you and each person; each person's
+own) with the last versions kept for undo. Ordinary moments fade by weight and a half-life. What they know about each
+other: small lasting facts, a new one may replace an old one. Who they have become: steps only ever added, with brakes
+(something weighty behind it, some history first, one step per person every few days). All of it readable and
+editable in This Home › Memory, with presets and a token estimate. A refusal or a wrong form is never "nothing
+happened": "Try again".
+
+Next, maybe: a token budget for the long memory (drop the oldest ordinary lines first when it is over); a weekly
+look back ("a week in the house") for the diary; memory for guests who come back.
 
 ## Later (discussed, not designed yet)
 

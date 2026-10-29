@@ -8,6 +8,7 @@ import { isCustom, getWorld, activeStatuses, gameMode, GAME_MODES, systemOn, isS
 import { dressHtml } from './dressui.js';
 import { homeJobOf, SHIFTS, DAYS } from '../sim/hometime.js';
 import { homeSettingsHtml } from './homeui.js';
+import { memoryTabHtml } from './memoryui.js';   // [expanded] 0.2.1-14
 import { ctx, thumb, characters, charOf, personaThumb, personaName, lorebooks, chatLore, bindChatLore, createLorebook } from '../st/bridge.js';
 import { homeAddress, placeOf } from '../sim/places.js';
 import { resident, homeSpot, takenHomes, syncScene, currentEntry, applyTie } from '../sim/game.js';
@@ -30,8 +31,8 @@ import { warningsBanner } from './warnings.js';
 import { ACT, INPUT } from './reg.js';
 import { profileHtml } from './profileui.js';   // [expanded]
 
-type Tab = 'people' | 'homes' | 'house' | 'needs' | 'save' | 'lore' | 'ai' | 'rules';
-const TABS: [Tab, string][] = [['people', 'People'], ['homes', 'Households'], ['house', 'The house'], ['needs', 'Needs'], ['save', "Author's Note"], ['lore', 'Lorebooks'], ['ai', 'AI context'], ['rules', 'World']];
+type Tab = 'people' | 'homes' | 'house' | 'needs' | 'memory' | 'save' | 'lore' | 'ai' | 'rules';   // [expanded] memory
+const TABS: [Tab, string][] = [['people', 'People'], ['homes', 'Households'], ['house', 'The house'], ['needs', 'Needs'], ['memory', 'Memory'], ['save', "Author's Note"], ['lore', 'Lorebooks'], ['ai', 'AI context'], ['rules', 'World']];
 const WC = { tab: 'people' as Tab, adv: false, who: '', adding: false, q: '', lq: '', back: 'map' as string };
 
 const opt = (v: string, label: string, sel: boolean) => `<option value="${esc(v)}" ${sel ? 'selected' : ''}>${esc(label)}</option>`;
@@ -202,13 +203,13 @@ function tabRules(g: Save, w: WorldDef): string {
 export function worldCfgHtml(): string {
     const g = game(); const w = g && getWorld(g.world);
     if (!g || !w) return '';
-    const body = WC.tab === 'people' ? tabPeople(g, w) : WC.tab === 'homes' ? tabHouseholds(g, w) : WC.tab === 'house' ? tabHouse(w) : WC.tab === 'needs' ? tabNeeds(g, w) : WC.tab === 'ai' ? tabAiContext() : WC.tab === 'save' ? tabSave() : WC.tab === 'lore' ? tabLore(g) : tabRules(g, w);
+    const body = WC.tab === 'people' ? tabPeople(g, w) : WC.tab === 'homes' ? tabHouseholds(g, w) : WC.tab === 'house' ? tabHouse(w) : WC.tab === 'needs' ? tabNeeds(g, w) : WC.tab === 'memory' ? memoryTabHtml(g, w) /* [expanded] 0.2.1-14 */ : WC.tab === 'ai' ? tabAiContext() : WC.tab === 'save' ? tabSave() : WC.tab === 'lore' ? tabLore(g) : tabRules(g, w);
     return `<div class="mu-settings mu-worldcfg">
         <div class="mu-subhead"><button data-act="wc-back" data-sfx="back">← Back</button><h2>${isScenario(w) ? 'This Home' : 'This world'}</h2><small data-notr>${esc(currentEntry()?.title ?? w.name)}</small>
             <label class="mu-switch-row"><span>Advanced</span><span class="mu-xswitch"><input type="checkbox" class="mu-toggle" data-input="wc-adv" ${WC.adv ? 'checked' : ''}><i></i></span></label></div>
         ${warningsBanner()}
         <div class="mu-settings-layout">
-            <nav class="mu-tabs">${TABS.filter(([id]) => (id !== 'house' && id !== 'needs') || isScenario(w)).map(([id, l]) => `<button class="${WC.tab === id ? 'is-on' : ''}" data-act="wc-tab" data-tab="${esc(id)}">${isScenario(w) && id === 'rules' ? 'Home' : isScenario(w) && id === 'homes' ? 'Bedrooms' : l}</button>`).join('')}</nav>
+            <nav class="mu-tabs">${TABS.filter(([id]) => (id !== 'house' && id !== 'needs' && id !== 'memory') || isScenario(w)).map(([id, l]) => `<button class="${WC.tab === id ? 'is-on' : ''}" data-act="wc-tab" data-tab="${esc(id)}">${isScenario(w) && id === 'rules' ? 'Home' : isScenario(w) && id === 'homes' ? 'Bedrooms' : l}</button>`).join('')}</nav>
             <div class="mu-settings-body mu-panel" data-keep="worldcfg">${body}</div>
         </div></div>`;
 }

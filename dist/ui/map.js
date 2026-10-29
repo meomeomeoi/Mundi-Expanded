@@ -613,6 +613,30 @@ async function nightBonds(g, w, day, range) {
     catch (e) {
         toast(`The house's things could not be updated tonight (${String(e?.message ?? e)}).`, 'warn');
     }
+    // [expanded] 0.2.1-14: the long memory (after the relationships: it weighs tonight's moments too), then, every
+    // few days, the stories so far. Each with "Try again" when the model will not answer in the form.
+    const { memNight, memFold, foldDue } = await import('../sim/memrun.js');
+    const night = async () => { const n = await memNight(g, w, day, range); refreshPrompt(); if (n.length)
+        toast(`Remembered: ${n.slice(0, 3).join(' · ')}`, 'info', { ms: 9000 }); };
+    const fold = async () => { const n = await memFold(g, w, day); if (n) {
+        refreshPrompt();
+        toast(`The stories so far were brought up to date (${n}).`, 'info');
+    } };
+    try {
+        await night();
+    }
+    catch (e) {
+        const { failNotice } = await import('./retry.js');
+        failNotice('memory', `Memory could not be updated tonight (${String(e?.message ?? e).slice(0, 120)}).`, night);
+    }
+    if (foldDue(g, day))
+        try {
+            await fold();
+        }
+        catch (e) {
+            const { failNotice } = await import('./retry.js');
+            failNotice('memfold', `The stories so far could not be rewritten (${String(e?.message ?? e).slice(0, 120)}). They will be tried again next night.`, fold);
+        }
 }
 // After a shift: time has passed; a short transition shows how it went.
 export async function finishWork(msgs, jobName) {

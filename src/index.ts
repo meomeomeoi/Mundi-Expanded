@@ -36,7 +36,8 @@ import './ui/newgame.js';
 import './ui/settings.js';
 import './ui/map.js';
 import './ui/tools.js';
-import './sim/scenectx.js';   // [expanded] 0.2.1-13: the generate interceptor (scenes the people here were not in)
+import './sim/scenectx.js';
+import './sim/memrun.js';   // [expanded] 0.2.1-14: the long memory (its scene lines)   // [expanded] 0.2.1-13: the generate interceptor (scenes the people here were not in)
 
 function addLauncher() {
     const menu = document.getElementById('extensionsMenu');

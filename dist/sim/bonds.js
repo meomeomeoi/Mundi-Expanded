@@ -45,6 +45,13 @@ export const pairsIn = (who) => {
 };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 import { knowOf, knows, unaware, tieK, howText, NEWSY } from './knows.js';
+import { liveEpisodes, isLandmark, memCfgOf } from './memory.js'; // [expanded] 0.2.1-14
+/** [expanded] 0.2.1-14: a landmark already told by a story the AI reads now (the story of someone here). Pinned: never. */
+export function foldedHere(f, here) {
+    if (f.kind === 'standing' || !f.foldedIn?.length)
+        return false;
+    return f.who.includes(YOU) ? f.who.some(a => a !== YOU && here.includes(a) && f.foldedIn.includes(`you|${a}`)) : f.who.some(a => here.includes(a) && f.foldedIn.includes(`own|${a}`));
+}
 /** [expanded] 0.2.0.8: a fact as something known (standing facts are public unless set otherwise; episodes witnessed). */
 export const factK = (f) => ({ parts: f.who, pub: f.pub ?? (f.kind === 'standing' ? 'public' : 'witnessed'), know: f.know, day: f.day });
 export function bondsOf(g) {
@@ -151,16 +158,18 @@ export function addFact(g, who, text, kind = 'standing', src = 'user', delta, k)
             (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: g.day };
     b.facts.push(f);
     // [expanded] 0.2.0.8: at most `keep` episodes per pair (or trio): the oldest go first
+    // [expanded] 0.2.1-14: landmarks are never trimmed (only you delete them)
+    const lm = (x) => isLandmark(x, memCfgOf(g));
     {
         const key = [...people].sort().join('|');
-        const mine = b.facts.filter(x => x.kind === 'episode' && [...x.who].sort().join('|') === key);
+        const mine = b.facts.filter(x => x.kind === 'episode' && !lm(x) && [...x.who].sort().join('|') === key);
         if (mine.length > (b.keep ?? 12)) {
             const drop = new Set(mine.slice(0, mine.length - (b.keep ?? 12)).map(x => x.id));
             b.facts = b.facts.filter(x => !drop.has(x.id));
         }
     }
     // only episodes are trimmed (oldest first); standing facts are the player's and are never dropped
-    const eps = b.facts.filter(x => x.kind === 'episode');
+    const eps = b.facts.filter(x => x.kind === 'episode' && !lm(x));
     if (eps.length > MAX_EPISODES) {
         const drop = new Set(eps.slice(0, eps.length - MAX_EPISODES).map(x => x.id));
         b.facts = b.facts.filter(x => !drop.has(x.id));
@@ -221,7 +230,7 @@ const fmtFact = (f) => (f.kind === 'standing' ? f.text : `(day ${f.day}) ${f.tex
 // [expanded] 0.2.0.8: who knows what. A fact not everyone here knows says so ("Kathie does not know"); what someone
 // here knows about people who are not here (a fight they saw, a secret they were told) is told as theirs; the last
 // thing between someone here and someone who is not, for a few days.
-const FRESH_DAYS = 3, KNOWN_DAYS = 10;
+const KNOWN_DAYS = 10;
 export function bondsLines(g, present, budget = PROMPT_CHARS) {
     syncTies(g);
     const here = present.filter(a => g.cast[a]);
@@ -250,12 +259,15 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
         return ` (${secret ? 'a secret: ' : ''}${un.length === by.length && by.length > 1 ? 'the others here do not know' : `${list(un.map(name))} ${un.length > 1 ? 'do' : 'does'} not know`})`;
     };
     const fmt = (f) => `${fmtFact(f)}${tag(f)}`;
+    // [expanded] 0.2.1-14: an episode lasts as long as it weighs; landmarks stay (unless a story here holds them)
+    const mc = memCfgOf(g);
+    const live = (fs, near, max = 4) => liveEpisodes(fs, g.day, mc, near, max, f => foldedHere(f, here));
     // 1) both here: how they get along, what their relationship is, what happened lately
     for (const [a, b] of pairsIn(here)) {
         const p = pairOf(g, a, b);
         const fs = factsOfPair(g, a, b).filter(f => !used.has(f.id));
         const standing = fs.filter(f => f.kind === 'standing');
-        const recent = fs.filter(f => f.kind === 'episode').slice(-2);
+        const recent = live(fs, true); // [expanded] 0.2.1-14: landmarks and what is still fresh, not just the last two
         if (p.v === 0 && !standing.length && !recent.length)
             continue;
         const parts = [...standing, ...recent].map(fmt);
@@ -270,7 +282,9 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
         const fs = factsOfPair(g, YOU, a).filter(f => !used.has(f.id) && f.who.every(x => x === YOU || here.includes(x)));
         if (!fs.length)
             continue;
-        const shown = [...fs.filter(f => f.kind === 'standing'), ...fs.filter(f => f.kind === 'episode').slice(-2)];
+        const shown = [...fs.filter(f => f.kind === 'standing'), ...live(fs, true)];
+        if (!shown.length)
+            continue;
         if (!push(`{{user}} & ${name(a)}: ${shown.map(fmt).join(' ')}`))
             break;
         shown.forEach(f => used.add(f.id));
@@ -282,7 +296,7 @@ export function bondsLines(g, present, budget = PROMPT_CHARS) {
                 break;
             const fs = factsOfPair(g, a, b).filter(f => !used.has(f.id));
             const standing = fs.filter(f => f.kind === 'standing');
-            const last = fs.filter(f => f.kind === 'episode' && g.day - f.day <= FRESH_DAYS).slice(-1);
+            const last = live(fs, false, 2);
             if (!standing.length && !last.length)
                 continue;
             if (!push(`${name(a)} about ${name(b)} (not here): ${wordOf(valueOf(g, a, b))}. ${[...standing, ...last].map(fmt).join(' ')}`))
