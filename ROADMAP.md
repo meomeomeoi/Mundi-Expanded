@@ -123,7 +123,7 @@ blocks for the house, notes and texts, the phone skins redrawn.
 - **Your portrait**: your sprite in the lower left corner, emotions picked by you (or always neutral, or by the
   expressions call), outfits like the characters', a frame in the era's style.
 
-## 8. Relationships 2.0: who knows what (0.2.0.8, designed)
+## 8. Relationships 2.0: who knows what (0.2.0.8, done)
 
 Today the AI hears about a pair only when one of the two is in the scene, and in a Home the day's lines stay in the
 chat until you sleep, so the model has read conversations the people here never heard. This release gives every fact

@@ -1,5 +1,45 @@
 # Changelog
 
+## Mundi Expanded 0.2.0.8 · 2026-10-29
+
+Relationships 2.0: who knows what. Rules decide everything; the AI only words it, and no new calls are made (the
+night call grows a little).
+
+- **Knowledge.** Every fact and status has a publicity (public, witnessed, private) and the people who know it: in it,
+  the house, saw it, told by someone, heard it second- or third-hand (maybe garbled), or only suspects. Family,
+  couples, exes and standing facts are known to the house; what happened between two, to whoever saw it.
+- **In the scene**: a "Who knows what" block: how private the moment is (alone behind a closed door, a crowd), what
+  the house knows about couples and family who are not here, secrets and who here does not know them (kept in front of
+  them), what someone here knows about people who are not here, your own secret relationships, earlier conversations
+  today the people here were not at (each line now keeps who was in the room), news someone has for you, unfinished
+  business, small secrets. "Between them" says who here does not know a fact, and the last thing between someone here
+  and someone who is not.
+- **The night reader** sees who was in the room before each stretch of the day and says who else saw a moment (or
+  that it was kept between them), who found out a secret in a scene and who told them, who promised to keep one, who
+  talked it out.
+- **Secrets come out**: secret couples meet late in one of their rooms (in their plans, at the quietest hour); whoever
+  is at home may notice by how close they are, how nosy, and how careful the two are. One clue is a suspicion, a second
+  is knowing; you notice things too. A bedroom with both of them in it is seeing it; bad fights are heard through the
+  walls. Closed bedrooms on the map are dimmed with only "someone is inside".
+- **News travels** each night to the ones they spent the day with or share a group chat with: juiciness, freshness,
+  discretion, loyalty to the people it is about, trust in the listener, the house's mood (discreet / usual /
+  gossips); never to the ones it is about; promises nearly stop it; only the juiciest few at once (3 / 6 / 10). You
+  hear it in a scene from someone close to you, when the people it is about are not there. Out in town with a secret
+  partner, now and then someone sees you. Trust as its own value between characters.
+- **Consequences**: finding out a partner is seeing someone: a big drop with both and unfinished business that does
+  not drift away until it is talked out. Your new romance while you are with someone starts as a secret, and
+  upstream's jealousy fires when a partner finds out (or when you stop keeping it). "You knew and said nothing"; less
+  trust in whoever talked, and in you if you told; a small thing done to someone, found out. A steady secret couple
+  may tell the house.
+- **Bigger changes without you** (friends, enemies, dating, breaking up): on their night only (rare / every few weeks /
+  often), only with a reason, checked by the rules (how they get along, partners in and outside the house); romance
+  off / from the story / may grow. **Small secrets** (borrowed, broke, ate it, lost the job) go around once.
+- **Profiles**: keeps a secret, notices and pries, orientation, relationship status.
+- **Relationships app**: what you know, and where from; secrets you keep (and theirs, when editing); Show the truth.
+  Night notices only tell what you know.
+- **Limits**: news going around at once, facts kept per pair, things a room takes.
+- Tests: bonds 24, secrets 5, profile 14.
+
 ## Mundi Expanded 0.2.0.7 · 2026-10-29
 
 Rooms and their things: what stands in each room, what it lets people do, and how the house gets more.

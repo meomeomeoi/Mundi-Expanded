@@ -1,7 +1,7 @@
 // The version of Mundi (the same as manifest.json: a test checks it) and what each version brought.
 // [expanded] Mundi Expanded numbers its releases on top of the upstream version: 0.2.0.N is the Nth release of this
 // fork based on Mundi 0.2.0 (after merging upstream 0.3.0 it becomes 0.3.0.1). `newer` compares any number of parts.
-export const VERSION = '0.2.0.7';
+export const VERSION = '0.2.0.8';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('.').slice(0, 3).join('.');
 
@@ -9,6 +9,13 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.0.8', fork: true, title: 'Who knows what', items: [
+        ['eye', 'Everything between the people in the house now has the ones who know it. The story is told who here does not know (they keep a secret in front of them), what someone here knows about people who are not, and which earlier conversations they were not at. Alone behind a closed door, nobody overhears.'],
+        ['heart', 'Secrets: a couple may keep it to themselves (and so can you). They meet late in one of their rooms; whoever is up may notice: a suspicion first, then knowing. Closed bedrooms on the map only show that someone is inside.'],
+        ['chat', 'News travels: from those who know to the ones they spent the day with, by how juicy it is, how well they keep secrets and whom they are loyal to. A promise nearly stops it; third-hand, the story comes out wrong. Those close to you bring it to you.'],
+        ['users', 'Finding out has consequences: jealousy (yours too, when your partner finds out), "you knew and said nothing", less trust in whoever talked, unfinished business that does not fade until it is talked out. Now and then, with a reason, they become friends, fall out, break up or start seeing each other.'],
+        ['user', 'Relationships shows what you know, and how ("you saw it", "Kathie told you", "you suspect"); Show the truth for everything. Profiles: keeps a secret, notices things, orientation, status.'],
+    ] },
     { v: '0.2.0.7', fork: true, title: 'Rooms and their things', items: [
         ['home', 'Every room has its things now: a TV in the living room, a guitar and a PC in someone\'s bedroom, a coffee machine in the kitchen. The scene knows what is in the room, and what you can do here follows (no TV, no movie night). Bedrooms are furnished from who lives there; edit anything in Storage → Furniture.'],
         ['users', 'They do what they like where the thing is: the gamer stays in with the PC, the social ones take the console to the living room. Homebodies still keep to their room now and then.'],
