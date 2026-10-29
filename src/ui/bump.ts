@@ -3,7 +3,7 @@
 import { feel } from '../sim/life.js';
 import { markMet } from '../sim/game.js';
 import { state, notify, esc, game, saveGame, nowAbs, type Save } from '../core/store.js';
-import { getWorld, type WorldDef } from '../core/world.js';
+import { getWorld, isScenario, type WorldDef } from '../core/world.js';
 import { tr } from '../core/tr.js';
 import { residents, whereNow, presentAt, stayHere } from '../sim/people.js';
 import { playerHomeId, placeOf } from '../sim/places.js';
@@ -22,6 +22,9 @@ const TALK_MINUTES = 60;
 // who like this place.
 export function maybeBump(g: Save, w: WorldDef) {
     if (g.player.loc === playerHomeId || BUMP.who || Math.random() > CHANCE) return;
+    // [expanded] 0.2.1-12: not in a Home (every room but your bedroom counted as "out", and the one you "ran into" was
+    // anywhere in the house); people coming in are real there (Their move). Settings → Their move turns it back on.
+    if (isScenario(w) && (g as any).talkx?.cfg?.bump !== true) return;
     const now = nowAbs(g);
     const here = new Set(presentAt(g, w, g.player.loc).map(r => r.avatar));
     const free = residents(g).filter(r => !here.has(r.avatar) && !isWith(g, r.avatar) && !isWorking(w, r, now) && whereNow(g, w, r) !== playerHomeId);

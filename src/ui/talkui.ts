@@ -86,6 +86,7 @@ export function talkSettingsHtml(g: Save): string {
         ${TOG('battery', c.battery, 'Social battery', c.battery ? 'Company tires them (introverts sooner, close people later); when they have had enough, they go to their room. Hidden; Show the truth says where it stands.' : 'Off: they never tire of company.')}
         ${TOG('doing', c.doing, 'What they are doing, under their names', 'Reading, headphones on, making tea…')}
         ${TOG('move', c.move, 'Walking to another room takes a minute', 'Two to another floor.')}
+        ${TOG('bump', c.bump, 'Running into someone (Mundi\'s)', c.bump ? 'After something you do outside your bedroom, now and then a card: someone free in the house "runs into you" there (they come only if you stop to talk).' : 'Off in a Home: people who come in are the real ones (above). On: Mundi\'s chance encounters, as in its open worlds.')}
         ${TOG('fog', c.fog, 'Fog on the map', c.fog ? 'The map shows only the room you are in; elsewhere, faded, where you last saw everyone (for three hours).' : 'Off: the map shows where everyone is.')}
         <button class="mu-ghost" data-act="tk-topics">${icon('list')}<span>Everyday topics (${T.HOOKS.length - tc.off.length + tc.mine.length})</span></button>
         ${TV.topics ? topicsHtml() : ''}</section>`;
