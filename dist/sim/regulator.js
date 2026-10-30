@@ -19,6 +19,10 @@ export const regCfg = () => {
     r.expr ??= 'st';
     r.joinCards ??= false;
     r.think ??= 'min';
+    if (r.scene !== 'each' && r.scene !== 'scene')
+        r.scene = 'auto';
+    if (!(Number(r.beatMax) >= 2 && Number(r.beatMax) <= 5))
+        r.beatMax = 3; // [expanded] 0.2.1-15
     if (!r.stats || r.stats.day !== today())
         r.stats = { day: today(), calls: 0, tin: 0, tout: 0, fails: 0 };
     return r;

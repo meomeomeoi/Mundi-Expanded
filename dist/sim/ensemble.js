@@ -13,6 +13,9 @@ export const SCENE_FILE = 'mundi_scene';
 export const SCENE_AVATAR = `${SCENE_FILE}.png`;
 export const SCENE_NAME = 'Mundi Scene';
 export const NARRATION = 'narration';
+/** The director's avatar (SillyTavern may number the file) and its lines, before they are cut into people's lines. */
+export const isSceneAvatar = (a) => /^mundi_scene(_?\d+)?\.png$/i.test(String(a ?? ''));
+export const isSceneMessage = (m) => !!m && !m.is_user && !m.is_system && (isSceneAvatar(m.original_avatar) || m.name === SCENE_NAME);
 const NARR = /^(narration|narrator|scene|mundi scene|the narrator)$/i;
 const USER = (user) => (s) => { const q = s.trim().toLowerCase(); return q === user.trim().toLowerCase() || q === '{{user}}' || q === 'user'; };
 const first = (s) => s.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
