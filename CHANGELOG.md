@@ -1,5 +1,39 @@
 # Changelog
 
+## Mundi Expanded 15 (0.2.1-15) · Who speaks
+
+SillyTavern's group turn rolls a die per person against the talkativeness on their card, and each one who is picked
+answers once, in a call of their own, seeing those before them but never answered by them. This release changes who
+speaks and how, without leaving group chats (saves, who said what, sprites, voices and memory all depend on them).
+
+- **One reply for the room.** In a scene with two or more people (Home games), the line you send is read first: who is
+  spoken to, who is in the middle of the talk, who is worn out. A call by name ("Finn, did you eat my yogurt?")
+  is answered by Finn alone; two or more named, or a direction for the story, by the room; anything else is decided by
+  the mechanics model (one short call, four seconds at most) or, without one, by a score (spoken to, in the talk,
+  talkative, worn out). A private word gets one person, the others left out.
+- **The room answers together**: one call writes a beat of two to three parts (settings: two to five) as several
+  people, who answer, interrupt and tease each other, with a short narrator line when the moment needs one. The reply is
+  cut into ordinary lines, each with its own author, before translation, voices or the journal see it. It ends at the
+  first natural pause. Cheaper and faster than one call each (the scene's prompt and the people's cards go once).
+- **Let them go on**: the forward button after such a reply writes the next beat with nothing from you (a little time
+  passes). Swipe and regenerate redo the whole beat from the same plan, and every version is kept (‹ 2/3 ›). Streaming
+  shows the people's lines as they come.
+- **Overheard conversations in beats**: a conversation you walk in on has a length (a light chat two or three beats, an
+  argument or a heart-to-heart three to five), a plan and an ending (settles, splits, patches up, drifts, or someone
+  storms off to their room), and is heard a beat of two to four lines at a time: **Keep listening** writes the next (two
+  game minutes later), or, if you turn it on, it goes on by itself, slowly, while you stand there with an empty box. It
+  may turn on the way (rarely; more in a spicy house). From the second beat each beat has a chance that they notice you
+  (more if they are nosy): they fall silent (when it is about you or private), pull you in, or lower their voices once.
+  Someone leaving the room ends it. Passing by: the AI knows where it was going.
+- **Joining by writing**: writing in the message box while you stand by a conversation joins it. No fixed penalty for
+  cutting in: the AI is told it is a private talk, if it is, and they react as they would.
+- **Settings**: Settings → Game → Group scenes (Auto, Scene reply, or One reply each: SillyTavern's own order, as before)
+  and the most parts in a reply. People → Settings: overheard conversations by themselves (off, slowly, normally) and who
+  writes their words (the mechanics or the main model).
+- A card "Mundi Scene" is made in SillyTavern the first time (a muted member of each game's group, never picked by
+  SillyTavern itself); no list of Mundi shows it. Known limit: in SillyTavern's own chat (not Mundi's), swiping one line
+  of a beat writes just that person's answer again.
+
 ## Unreleased · The house in 3D (alpha)
 
 An early, extra view of the house; the game itself does not depend on it. Marked "alpha" in the game.

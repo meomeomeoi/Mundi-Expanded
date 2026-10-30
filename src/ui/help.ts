@@ -25,6 +25,8 @@ const homeTopics = (w: WorldDef): Topic[] => {
         items: [
             ['Say, Do, Story, See', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something.'],
             ['@ someone', 'Type @ and pick a name: only that person answers your line.'],
+            ['Several people here', 'Call someone by name and they answer; talk to the room and the room answers together, in one reply. The forward button then says "Let them go on": the next bit, with nothing from you. Swipe and regenerate redo the whole bit.'],
+            ['Overheard talk', 'Walking in on a conversation: Listen, then Keep listening for the next few lines (or Join in, or write something). The longer you stay, the likelier they notice you.'],
             ['Buttons on a line', 'Edit, delete, regenerate, continue, or let the AI write your line.'],
             ['Bonds grow as you talk', 'Being kind brings people closer. How fast depends on the difficulty you chose (Easy is quicker, Hard is slower).'],
         ] },

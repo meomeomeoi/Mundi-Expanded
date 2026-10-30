@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-14.5';
+export const VERSION = '0.2.1-15';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,12 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15', fork: true, title: 'Who speaks', items: [
+            ['users', 'With two or more people in the room, the line you send is read first: who is spoken to, who is in the middle of the talk, who is worn out. One person called by name answers alone; a line to the room is answered by the room in one reply, so they answer, interrupt and tease each other, and every part is its own line (sprites, voices, memory work as always). One call instead of one per person.'],
+            ['forward', '"Let them go on" (the forward button after a reply for the room) writes the next beat with nothing from you. Swipe and regenerate redo the whole beat; each version is kept.'],
+            ['speaker', 'A conversation you walk in on runs in beats of two to four lines, with a length and an ending of its own: Keep listening for the next beat (or let it go on by itself, slowly: an option). The longer you stand there, the likelier they notice you: they fall silent, pull you in, or lower their voices. A quarrel may end with someone storming off to their room. Writing in the message box joins them: whether they mind is up to the scene.'],
+            ['gear', 'Settings → Game: Group scenes (Auto, Scene reply, or SillyTavern\'s one reply each, as before) and the most parts in a reply for the room. People → Settings: overheard conversations by themselves, and who writes their words.'],
+        ] },
     { v: '0.2.1-14.5', fork: true, title: 'Upkeep is not a scene', items: [
             ['chat', 'Eating, drinking and washing no longer make the AI write a reply of their own each time (needs make you do them every day). The scene is told in a line; cooking, music, sport, games and the like are narrated as before.'],
             ['gear', 'Narrate what you do right away: Everything, What matters (default) or Nothing (AI context). Your old on/off choice carries over.'],
