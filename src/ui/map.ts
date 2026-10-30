@@ -1,5 +1,6 @@
 // The world map: full screen, zoom and drag, a pin for every place. Hovering a pin opens a small card next to it
 // (what the place is, who is there; at your own place, what you can do). Clicking a pin goes there.
+import { GAME_OF } from '../sim/ownrun.js';   // [expanded] 0.2.1-14.5
 import { doorFlow, sleepAttr } from './doors.js';   // [expanded]
 import { lex, appRef } from '../core/lexicon.js';
 import { safeUrl, setHtml } from '../core/safe.js';
@@ -580,11 +581,15 @@ Object.assign(ACT, {
             toast(`${gradeName(roll.grade)} — ${roll.text}`, roll.grade.includes('success') ? 'success' : 'warn');
             // the AI only tells the story of the result the engine decided
             if (state.view === 'scene') setPrompt('mundi_roll', `[Just now {{user}} tried to ${a.label.toLowerCase()}: ${gradeName(roll.grade).toLowerCase()}. ${roll.text} Narrate it in that light if it comes up.]`);
-            narrateNow(a.label);
+            narrateNow(a.label, false);
         } else {
             toast(`${a.name}: done.`, 'success');
-            if (state.view === 'scene') setPrompt('mundi_roll', `[Just now {{user}} chose to ${a.label.toLowerCase()}. Narrate how it goes, in the scene.]`);
-            narrateNow(a.label);
+            // [expanded] 0.2.1-14.5: eating, drinking, washing: the day's upkeep is not a scene (told in a line, no reply of its own)
+            const routine = isRoutine(a);
+            if (state.view === 'scene') setPrompt('mundi_roll', routine && narrateMode() !== 'all'
+                ? `[A moment ago {{user}} ${a.label.toLowerCase()}: part of the day, nothing to narrate. Mention it only if it comes up (someone asks for a bite, a remark in passing).]`
+                : `[Just now {{user}} chose to ${a.label.toLowerCase()}. Narrate how it goes, in the scene.]`);
+            narrateNow(a.label, routine);
         }
         maybeBump(g, w);
         notify();
@@ -595,7 +600,13 @@ Object.assign(ACT, {
 
 // "The AI narrates what you do right away" (Settings → Game, on by default): the action goes into the chat as what you
 // do, so the AI answers with how it goes (the hint above tells it the result).
-function narrateNow(label: string) {
-    if (state.view !== 'scene' || state.generating || UI().narrateActions === false) return;
+/** [expanded] 0.2.1-14.5: what the AI narrates of the things you do: everything, only what matters (default), nothing. */
+export const narrateMode = (): 'all' | 'matter' | 'none' => { const m = (UI() as any).narrateMode; return m === 'all' || m === 'matter' || m === 'none' ? m : UI().narrateActions === false ? 'none' : 'matter'; };
+/** Upkeep: it only restores hunger, thirst or being clean, with no skill, roll, game or outing (a meal, a shower, a glass of water). */
+export const isRoutine = (a: { id: string; roll?: unknown; outing?: boolean; hobby?: string; effects: Record<string, number> }) =>
+    !a.roll && !a.outing && !a.hobby && !GAME_OF[a.id] && ['hunger', 'thirst', 'hygiene'].some(k => (a.effects[k] ?? 0) > 0);
+function narrateNow(label: string, routine = false) {
+    const m = narrateMode();
+    if (state.view !== 'scene' || state.generating || m === 'none' || (routine && m === 'matter')) return;
     sendCanned(`*${label.charAt(0).toLowerCase()}${label.slice(1)}*`);
 }

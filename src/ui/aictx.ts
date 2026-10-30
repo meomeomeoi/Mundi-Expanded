@@ -1,6 +1,7 @@
 // "AI context": what Mundi sends to the AI with every reply, block by block. Each block can be switched off, a token
 // budget drops the least important blocks first, and the count shows how much of the model's context it takes.
 // The texts are yours to change: each block's own text, the scene's rules, and instructions of your own.
+import { narrateMode } from './map.js';   // [expanded] 0.2.1-14.5
 import { esc, notify, saveSettings, game, settings, UI } from '../core/store.js';
 import { feedPrefs } from '../sim/feed.js';
 import { getWorld } from '../core/world.js';
@@ -94,6 +95,7 @@ Object.assign(INPUT, {
     'aic-text': (el) => { const pc = promptCfg(); const v = (el as unknown as HTMLTextAreaElement).value; if (v.trim()) pc.text[el.dataset.id!] = v; else delete pc.text[el.dataset.id!]; saveSettings(); refreshPrompt(); },
     'aic-rules': (el) => { promptCfg().rules = (el as unknown as HTMLTextAreaElement).value; saveSettings(); refreshPrompt(); },
     'aic-extra': (el) => { promptCfg().extra = (el as unknown as HTMLTextAreaElement).value; saveSettings(); refreshPrompt(); },
+    'aic-narrate': (el) => { (UI() as any).narrateMode = el.dataset.v; saveSettings(); notify(); },   // [expanded] 0.2.1-14.5
     'aic-budget': (el) => {
         promptCfg().budget = BUDGETS[Number(el.value)] ?? 0;   // [expanded]
         saveSettings(); refreshPrompt(); notify();
@@ -107,7 +109,9 @@ function aiCallsHtml(): string {
     return `<section class="mu-wc-sec mu-aic">
             <h4>AI calls</h4>
             <p class="mu-muted">Besides the replies to your messages, these are the times Mundi asks the AI for something. Turn off what you don't want (it applies to all your games).</p>
-            ${chk('ui-bool', UI().narrateActions !== false, 'Narrate what you do right away', 'Things to do in a scene (a shower, cooking…): the AI answers with how it goes. One reply each time.', 'narrateActions')}
+            <div class="mu-field"><span>Narrate what you do right away</span>
+                <div class="mu-bd-seg">${([['all', 'Everything'], ['matter', 'What matters'], ['none', 'Nothing']] as const).map(([id, l]) => `<button class="${narrateMode() === id ? 'is-on' : ''}" data-act="aic-narrate" data-v="${id}">${l}</button>`).join('')}</div>
+                <small class="mu-muted">Things to do in a scene: the AI answers with how it goes, one reply each time. "What matters": cooking, music, sport, games and the like; eating, drinking and washing (the day's upkeep) only go into the scene as a line, with no reply of their own.</small></div>
             ${chk('set-diary', st.diaryOnSleep !== false, 'Write the day in the diary when you sleep', 'One call per night: the day becomes a short first-person entry, and the story remembers past days through it.')}
             ${chk('ui-bool', UI().aiTexts !== false, 'Characters write their own texts', 'Answers to your invitations, being stood up, asking your advice, letters from far away. Off: short ready-made replies.', 'aiTexts')}
             <label class="mu-field"><span>Who posts on Chirp</span><select data-input="set-feed">${([['button', 'Only when you tap "New posts"'], ['open', 'New posts each time you open the app'], ['auto', 'The characters, on their own as time passes'], ['react', 'Only you post; they reply']] as const).map(([v, l]) => `<option value="${v}" ${fp.mode === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>

@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-14.4';
+export const VERSION = '0.2.1-14.5';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,10 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-14.5', fork: true, title: 'Upkeep is not a scene', items: [
+            ['chat', 'Eating, drinking and washing no longer make the AI write a reply of their own each time (needs make you do them every day). The scene is told in a line; cooking, music, sport, games and the like are narrated as before.'],
+            ['gear', 'Narrate what you do right away: Everything, What matters (default) or Nothing (AI context). Your old on/off choice carries over.'],
+        ] },
     { v: '0.2.1-14.4', fork: true, title: 'Walk past means walk past', items: [
             ['chat', 'Walking past a conversation and staying in the room (to eat, say): the next replies are about what you do; their talk goes on in the background instead of being written out.'],
         ] },

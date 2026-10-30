@@ -15,6 +15,16 @@ An early, extra view of the house; the game itself does not depend on it. Marked
 - Not yet: walking in 3D does not move you in the game; open rooms do not hear each other; no touch controls. See the
   roadmap (section 10).
 
+## Mundi Expanded 14.5 (0.2.1-14.5) · 2026-10-30
+
+- **Upkeep is not a scene**: upstream sends every action from the menu into the chat as your line, so each meal,
+  glass of water or shower got its own reply (several a day with needs on). Now an action that only restores hunger,
+  thirst or being clean, with no roll, skill, mini-game or outing, goes into the scene as one line ("a moment ago you
+  had a meal: nothing to narrate, mention it only if it comes up") and the AI does not answer it by itself.
+- **The setting is three-way** (AI context): Everything (as before), What matters (default), Nothing. Your old
+  on/off choice carries over (off became Nothing). Cooking, music, sport, games, outings and anything with a roll are
+  narrated as before.
+
 ## Mundi Expanded 14.4 (0.2.1-14.4) · 2026-10-30
 
 - **Walk past**: the scene used to be told only "{{user}} did not join them", so the next reply (to eating, to anything
