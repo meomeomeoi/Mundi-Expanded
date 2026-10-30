@@ -194,6 +194,7 @@ function background(g: Save, w: WorldDef) {
 import { giftButton, giftHtml, withGift } from './giftui.js';   // [expanded]
 import { togetherButton, togetherHtml, reactionOf } from './together.js';   // [expanded] 0.2.0.10
 import { doingOf } from './talkui.js';   // [expanded] 0.2.0.11
+import { joinTyping } from '../sim/talkrun.js';   // [expanded] 0.2.1-15
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM, type ExprWho } from '../sim/exprs.js';   // [expanded]
 import { applyMoves, movePlaces } from '../sim/goes.js';   // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
@@ -605,6 +606,7 @@ Object.assign(ACT, {
         const g0 = game(); const w0 = g0 && getWorld(g0.world);
         // alone: nobody is called into the scene; the hidden narrator describes the place, the time and the feelings
         if (g0 && w0 && !presentAt(g0, w0, g0.player.loc).length && !scenarioOpen()) { state.composer = ''; await soloNarrate(g0, w0, text); return; }
+        await joinTyping();   // [expanded] 0.2.1-15: writing while you stand by a conversation you overheard: you have joined it
         // RPG: an attempt to persuade, lie, threaten… is judged by the AI and decided by the dice before anyone answers
         if (g0 && w0 && isRpg(w0) && !scenarioOpen()) {
             const force = CHECK.on; CHECK.on = false;
