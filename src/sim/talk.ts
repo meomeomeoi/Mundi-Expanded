@@ -289,9 +289,19 @@ export function pickHook(list: { h: Hook; id: string }[], used: string[], rng: R
 /* ---------- the call that puts it into words ---------- */
 
 export const TALK_SYSTEM = 'You write short snatches of everyday conversation between housemates for an interactive fiction (a role-play between consenting adults). Natural, specific, in character; never a summary. Answer with JSON only.';
-export interface TalkAsk { people: { name: string; about: string }[]; topic: string; tone: Tone; stage: Stage; room: string; era?: string; user: string; lines?: number }
+export interface TalkAsk { people: { name: string; about: string }[]; topic: string; tone: Tone; stage: Stage; room: string; era?: string; user: string; lines?: number; /** [expanded] 0.2.1-15: the conversation runs in beats: how many in all, and which one is written now */ arc?: { beats: number; at: number } }
 export function talkPrompt(t: TalkAsk): string {
     const n = t.lines ?? (t.stage === 'end' ? 2 : 3);
+    if (t.arc) return `In the ${t.room}, ${t.people.map(p => p.name).join(', ')} are talking${t.era ? ` (${t.era})` : ''}. ${t.user} walks in.
+Who they are:
+${t.people.map(p => `- ${p.name}: ${p.about}`).join('\n')}
+What about: ${t.topic}.
+How: ${TONES[t.tone]}.
+Where the conversation is: ${STAGES[t.stage]}.
+This conversation will run ${t.arc.beats} short beat${t.arc.beats === 1 ? '' : 's'}; ${t.user} hears beat ${t.arc.at + 1} of them.
+Plan it: "outline": one short phrase for each of the ${t.arc.beats} beat${t.arc.beats === 1 ? '' : 's'}, saying where it goes; "end": how it ends (${ENDS.map(e => `${e}: ${END_WORDS[e]}`).join('; ')}).
+Write beat ${t.arc.at + 1}: ${n} lines (each one line of speech, maybe a short action in asterisks; in character; specific, not generic; they do not notice ${t.user} yet), ending at a natural pause between them${t.arc.beats === 1 ? '; the last line ends the conversation' : ''}. Also say in a few words what the conversation is about, as it turned out.
+JSON only: {"about": "...", "outline": ["..."], "end": "settle", "lines": [{"who": "Name", "say": "..."}]}`;
     return `In the ${t.room}, ${t.people.map(p => p.name).join(', ')} are talking${t.era ? ` (${t.era})` : ''}. ${t.user} walks in.
 Who they are:
 ${t.people.map(p => `- ${p.name}: ${p.about}`).join('\n')}
@@ -337,6 +347,63 @@ export function keepThreads(list: Thread[], add: Thread[], day: number): Thread[
 }
 /** Threads that fit the people here (all of the thread's people among them, or two of them in it). */
 export const threadsFor = (list: Thread[], who: string[]) => list.filter(t => t.who.filter(a => who.includes(a)).length >= Math.min(2, t.who.length));
+/* ---------- a conversation in beats (Mundi Expanded 15) ---------- */
+// What you walk in on is not one snatch of talk but a conversation with a length and a way it ends, heard a beat of two
+// to four lines at a time. The next beat is written only when you stay and ask for it (or, if you chose that, by
+// itself, slowly): your attention is the budget. Someone can notice you, more with each beat.
+
+export type End = 'settle' | 'split' | 'storm' | 'makeup' | 'drift';
+export const ENDS: End[] = ['settle', 'split', 'storm', 'makeup', 'drift'];
+export const END_WORDS: Record<End, string> = { settle: 'it peters out calmly', split: 'they go their separate ways', storm: 'one of them storms off', makeup: 'they patch things up', drift: 'it trails off onto something else' };
+/** A conversation in its beats: how many, which is next (0-based), where each goes and how it ends, what was said last. */
+export interface Arc { beats: number; at: number; outline: string[]; end: End; hushed?: boolean; turn?: Tone | ''; lines: { who: string; say: string }[] }
+/** Beats a conversation of this tone runs (a light chat is short, an argument or a heart-to-heart longer). */
+export const ARC: Record<Tone, [number, number]> = { lazy: [2, 3], joking: [2, 3], gossip: [2, 3], complain: [2, 3], argue: [3, 5], heart: [3, 5], lecture: [3, 5], flirt: [3, 5] };
+/** How many beats are left to hear, when you walk in at this stage: all; without the first third; the last one. */
+export function arcLength(tone: Tone, drama: Drama, stage: Stage, rng: Rng): number {
+    const [lo, hi] = ARC[tone];
+    let n = lo + Math.floor(rng() * (hi - lo + 1)) + (drama === 'calm' ? -1 : drama === 'spicy' ? 1 : 0);
+    n = Math.max(2, Math.min(5, n));
+    return stage === 'end' ? 1 : stage === 'middle' ? n - Math.floor(n / 3) : n;
+}
+/** The chance that a conversation turns (after its second beat), and into what. */
+export const TURN_CHANCE: Record<Drama, number> = { calm: 0.05, normal: 0.1, spicy: 0.2 };
+export const TURNS: Record<Tone, Tone> = { joking: 'argue', lazy: 'joking', gossip: 'argue', complain: 'argue', argue: 'heart', heart: 'joking', lecture: 'argue', flirt: 'joking' };
+export const moodTurn = (tone: Tone, drama: Drama, rng: Rng): Tone | null => (rng() < TURN_CHANCE[drama] ? TURNS[tone] : null);
+/** Being noticed: a chance each beat after the first (more if they are nosy), and so cumulative: after k beats, 1 - (1 - p)^k. */
+export const NOTICE_BASE = 0.1;
+export const noticeChance = (nosy: number) => NOTICE_BASE + Math.max(0, Math.min(100, nosy)) / 500;
+export const noticedBy = (k: number, nosy: number) => 1 - (1 - noticeChance(nosy)) ** Math.max(0, k);
+/** Minutes of game time between one beat and the next. */
+export const BEAT_MINUTES = 2;
+
+/** The plan the model made, read: where each beat goes (at most `beats`), how it ends. */
+export function parseArc(j: any, beats: number): { outline: string[]; end: End } {
+    const outline = (Array.isArray(j?.outline) ? j.outline : []).map((x: unknown) => String(x ?? '').replace(/\s+/g, ' ').trim().slice(0, 100)).filter(Boolean).slice(0, beats) as string[];
+    const e = String(j?.end ?? '').trim().toLowerCase() as End;
+    return { outline, end: ENDS.includes(e) ? e : 'settle' };
+}
+export interface BeatAsk { people: { name: string; about: string }[]; topic: string; tone: Tone; room: string; era?: string; user: string; arc: Arc; turn?: Tone | null }
+/** The next beat: from the plan and the last lines. */
+export function beatPrompt(t: BeatAsk): string {
+    const a = t.arc; const last = a.at + 1 >= a.beats;
+    return `In the ${t.room}, ${t.people.map(p => p.name).join(', ')} are talking${t.era ? ` (${t.era})` : ''}. ${t.user} stands listening.
+Who they are:
+${t.people.map(p => `- ${p.name}: ${p.about}`).join('\n')}
+What about: ${t.topic}.
+How: ${TONES[t.tone]}.${t.turn ? ` The mood turns: now it is ${TONES[t.turn]}.` : ''}
+The plan: ${a.outline.length ? a.outline.map((o, i) => `${i + 1}. ${o}`).join(' ') : 'it goes where it goes'}. It ends: ${END_WORDS[a.end]}.
+${a.hushed ? `They have noticed ${t.user} and keep their voices down: shorter, guarded lines, nothing they would not say in front of ${t.user}.` : `They do not notice ${t.user}.`}
+The last lines:
+${a.lines.slice(-6).map(l => `${l.who}: ${l.say}`).join('\n') || '(none yet)'}
+Write beat ${a.at + 1} of ${a.beats}${a.outline[a.at] ? `: ${a.outline[a.at]}` : ''}. 2 to 4 lines (each one line of speech, maybe a short action in asterisks) that go on from there and stop at a natural pause${last ? `; the last line ends the conversation as planned (${END_WORDS[a.end]})` : ''}.
+JSON only: {"lines": [{"who": "Name", "say": "..."}]}`;
+}
+/** What the story says when a conversation ends (storm: the one who leaves is told by the room they go to). */
+export const endLine = (end: End, names: string): string => ({
+    settle: `${names} wrap it up.`, split: `${names} go their separate ways.`, makeup: `${names} patch it up.`, drift: `${names} drift onto other things.`, storm: `${names} fall out.`,
+} as Record<End, string>)[end];
+
 
 /* ---------- the social battery, and initiative ---------- */
 

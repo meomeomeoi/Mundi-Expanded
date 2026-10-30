@@ -30,9 +30,11 @@ export function talkCardHtml() {
     }
     const ready = !!c.lines;
     const heard = !!c.heard;
+    const arc = c.cur.arc;
+    const more = !!arc && arc.at < arc.beats; // [expanded] 0.2.1-15: a conversation in beats: more to hear
     return `<div class="mu-talkcard" role="dialog"><span class="mu-talk-faces">${faces}</span>
-        <span class="mu-talk-text"><span data-notr>${esc(list(c.who.map(a => nm(g, a))))}</span> ${heard ? 'go on talking.' : `are ${TONE_WORD[c.cur.tone]}.`}${c.cur.stage === 'end' && !heard ? ' <small>It sounds like they are wrapping up.</small>' : ''}</span>
-        <span class="mu-talk-btns">${heard ? '' : `<button data-act="tk-listen" ${ready ? '' : 'aria-busy="true"'}>${icon('speaker')}<span>${ready ? 'Listen' : 'Listen…'}</span></button>`}
+        <span class="mu-talk-text"><span data-notr>${esc(list(c.who.map(a => nm(g, a))))}</span> ${heard ? (arc?.hushed ? 'have lowered their voices.' : 'go on talking.') : `are ${TONE_WORD[c.cur.tone]}.`}${c.cur.stage === 'end' && !heard ? ' <small>It sounds like they are wrapping up.</small>' : ''}</span>
+        <span class="mu-talk-btns">${heard ? (more ? `<button data-act="tk-more" ${c.busy ? 'aria-busy="true"' : ''}>${icon('speaker')}<span>${c.busy ? 'Listening…' : 'Keep listening'}</span></button>` : '') : `<button data-act="tk-listen" ${ready ? '' : 'aria-busy="true"'}>${icon('speaker')}<span>${ready ? 'Listen' : 'Listen…'}</span></button>`}
             <button class="mu-primary" data-act="tk-join">${icon('users')}<span>Join in</span></button><button data-act="tk-pass">${heard ? 'Leave them to it' : 'Walk past'}</button></span></div>`;
 }
 /** Invitations for tonight (from texts): yes or no. */
@@ -98,6 +100,10 @@ export function talkSettingsHtml(g) {
         ${TOG('ask2', c.ask2, 'Ask first', c.ask2 ? 'A card: listen, or not now (sent away too often, they come less).' : 'Off: they just start talking.')}
         <b>What they talk about</b>${SEG('drama', c.drama, [['calm', 'Calm'], ['normal', 'Usual'], ['spicy', 'Spicy']])}
         <small class="mu-muted">Mostly everyday things (interests, the list below, what was left open); the house's own news (who did what, secrets they all know) more often when spicy.</small>
+        <b>Overheard conversations go on by themselves</b>${SEG('auto', c.auto, [['off', 'Off'], ['slow', 'Slowly'], ['normal', 'Normally']])}
+        <small class="mu-muted">${c.auto === 'off' ? 'Off: a conversation you stand by goes on in beats of a few lines, each one when you press Keep listening.' : `While you stand listening and the message box is empty, the next beat comes after about ${c.auto === 'slow' ? '45' : '25'} seconds.`} Someone may notice you after a beat or two: more the longer you stay.</small>
+        <b>Their words are written by</b>${SEG('writer', c.writer, [['mech', 'The mechanics model'], ['main', 'The main model']])}
+        <small class="mu-muted">${c.writer === 'main' ? 'The main model: their voices come out truer to their cards, at its price (a beat is a short call).' : 'The mechanics model: a short, cheap call for each beat.'}</small>
         <b>Invitations for the evening</b>${SEG('invites', c.invites, [['off', 'Off'], ['rare', 'Every few days'], ['normal', 'Daily at most']])}
         ${TOG('battery', c.battery, 'Social battery', c.battery ? 'Company tires them (introverts sooner, close people later); when they have had enough, they go to their room. Hidden; Show the truth says where it stands.' : 'Off: they never tire of company.')}
         ${TOG('doing', c.doing, 'What they are doing, under their names', 'Reading, headphones on, making tea…')}
@@ -120,6 +126,8 @@ Object.assign(ACT, {
     'tk-listen': (el) => { if (el.getAttribute('aria-busy'))
         return; void R.listen(); },
     'tk-join': () => { void R.join(); },
+    'tk-more': (el) => { if (el.getAttribute('aria-busy'))
+        return; void R.keepListening(); }, // [expanded] 0.2.1-15
     'tk-pass': () => R.pass(),
     'tk-inv': async (el) => { const x = ctxW(); if (!x)
         return; const t = await R.answerInvite(x.g, x.w, el.dataset.id, el.dataset.v === '1'); if (t)

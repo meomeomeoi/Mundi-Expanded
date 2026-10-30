@@ -3,6 +3,8 @@
 // editing and deleting all use SillyTavern's own functions.
 import { isRpg } from '../sim/rpg.js';
 import { setHtml } from '../core/safe.js';
+import { isSceneMessage, parseEnsemble, NARRATION } from '../sim/ensemble.js'; // [expanded] 0.2.1-15: one reply for the room
+import { liveCast, lastIsBeat, beatSwipeState, beatSwipe, regenBeat, goOn, sendTurn, cancelPlanning } from '../sim/turnrun.js';
 import { lex } from '../core/lexicon.js';
 import { setPrompt } from '../st/bridge.js';
 import { socialCheck } from '../sim/judge.js';
@@ -218,6 +220,7 @@ function background(g, w) {
 import { giftButton, giftHtml, withGift } from './giftui.js'; // [expanded]
 import { togetherButton, togetherHtml, reactionOf } from './together.js'; // [expanded] 0.2.0.10
 import { doingOf } from './talkui.js'; // [expanded] 0.2.0.11
+import { joinTyping } from '../sim/talkrun.js'; // [expanded] 0.2.1-15
 import { exprPrompt, parseExprs, parseMoves, EXPR_SYSTEM } from '../sim/exprs.js'; // [expanded]
 import { applyMoves, movePlaces } from '../sim/goes.js'; // [expanded]
 import { fullPicOf as fullPic } from './chatlook.js';
@@ -231,7 +234,21 @@ const pastLine = (i) => { const m = chat()[i]; if (!m)
     return ''; const who = m.extra?.mundi_narrator ? tr('Narrator') : m.is_user ? (m.name || me()) : m.name; return `<div class="mu-line is-past ${m.is_user ? 'is-user' : ''}"><div class="mu-line-body"><div class="mu-line-head"><b>${esc(who)}</b></div><div class="mu-line-text mes_text">${lineText(m, i)}</div></div></div>`; };
 // SillyTavern's own formatting (Markdown, code blocks, regex scripts of your presets), with Mundi's as a fallback.
 const lineText = (m, i) => stFormat(cleanText(shownText(m)), m, i, (t) => `<p>${formatText(t)}</p>`);
-function lineHtml(m, i, last, lastChar) {
+// [expanded] 0.2.1-15: a reply for the room while it is still whole (streaming): drawn as the people's lines it will be cut into
+function ghostLine(b, i, live) {
+    const pseudo = b.who === NARRATION ? { name: 'Narrator', is_user: false, is_system: false, mes: b.text, extra: { mundi_narrator: true } }
+        : { name: charOf(b.who)?.name ?? '?', is_user: false, is_system: false, original_avatar: b.who, force_avatar: '', mes: b.text, extra: {} };
+    return lineHtml(pseudo, i, live, -2, true);
+}
+function liveBeatInner(m, i) {
+    const blocks = parseEnsemble(String(m.mes ?? ''), liveCast(), me(), 9, true).blocks;
+    if (!blocks.length)
+        return `<div class="mu-line is-live"><div class="mu-line-body"><div class="mu-line-text mes_text"><p class="mu-muted">…</p></div></div></div>`;
+    return blocks.map((b, k) => ghostLine(b, i, k === blocks.length - 1)).join('');
+}
+function lineHtml(m, i, last, lastChar, ghost = false) {
+    if (!ghost && isSceneMessage(m))
+        return `<div class="mu-beat" data-beat="${esc(i)}">${liveBeatInner(m, i)}</div>`;
     const narr = !!m.extra?.mundi_narrator;
     // a picture SillyTavern made (Image Generation posts it as a system line) is shown; other system lines are not
     const pic = m.is_system && !narr && isGeneratedPicture(m);
@@ -239,17 +256,23 @@ function lineHtml(m, i, last, lastChar) {
         return '';
     const who = narr ? tr('Narrator') : pic && (!m.name || /system/i.test(String(m.name))) ? tr('Picture') : m.is_user ? (m.name || me()) : m.name;
     const editing = state.modal?.type === 'edit' && state.modal.i === i;
-    const swipes = !m.is_user && i === lastChar && Array.isArray(m.swipes) && m.swipes.length > 0
-        ? `<span class="mu-swipes"><button data-act="swipe" data-d="-1" title="Previous answer" ${(m.swipe_id ?? 0) <= 0 ? 'disabled' : ''}>‹</button><small>${(m.swipe_id ?? 0) + 1}/${m.swipes.length}</small><button data-act="swipe" data-d="1" title="Next answer (generates a new one at the end)">›</button></span>` : '';
-    return `<div class="mu-line ${m.is_user ? 'is-user' : ''} ${narr ? 'is-narrator' : ''} ${last && state.generating && !m.is_user ? 'is-live' : ''}" data-i="${esc(i)}">${narr ? '' : cardPicHtml(m)}<div class="mu-line-body">
+    const bs = !ghost && !m.is_user && i === lastChar ? beatSwipeState(m) : null; // [expanded] 0.2.1-15: the versions of a whole beat
+    const swipes = ghost ? '' : bs
+        ? `<span class="mu-swipes"><button data-act="swipe" data-d="-1" title="Previous version of what they said" ${bs.sw <= 0 ? 'disabled' : ''}>‹</button><small>${bs.sw + 1}/${bs.total}</small><button data-act="swipe" data-d="1" title="Next version (generates a new one at the end)">›</button></span>`
+        : !m.is_user && i === lastChar && Array.isArray(m.swipes) && m.swipes.length > 0
+            ? `<span class="mu-swipes"><button data-act="swipe" data-d="-1" title="Previous answer" ${(m.swipe_id ?? 0) <= 0 ? 'disabled' : ''}>‹</button><small>${(m.swipe_id ?? 0) + 1}/${m.swipes.length}</small><button data-act="swipe" data-d="1" title="Next answer (generates a new one at the end)">›</button></span>` : '';
+    const body = `<div class="mu-line ${m.is_user ? 'is-user' : ''} ${narr ? 'is-narrator' : ''} ${last && state.generating && !m.is_user ? 'is-live' : ''}" ${ghost ? '' : `data-i="${esc(i)}"`}>${narr ? '' : cardPicHtml(m)}<div class="mu-line-body">
         <div class="mu-line-head">${narr ? '' : avatarHtml(m)}<b ${narr ? '' : `data-act="portrait" data-src="${esc(fullPic(m))}" data-name="${esc(who)}"`}>${esc(who)}</b>${swipes}
             ${state.modal?.type === 'delete' && state.modal.i === i
         ? `<span class="mu-line-ask">Delete this line? <button class="mu-danger" data-act="delete-yes" data-i="${esc(i)}">Delete</button><button data-act="edit-cancel">Cancel</button></span>`
-        : `<span class="mu-line-tools">${m.is_user ? '' : ttsButton(i)}${game() && systemOn(getWorld(game().world), 'pins') ? `<button data-act="remember-line" data-i="${esc(i)}" title="Remember this (Journal)">${icon('book')}</button>` : ''}<button data-act="edit" data-i="${esc(i)}" title="Edit">${icon('edit')}</button><button data-act="delete" data-i="${esc(i)}" title="Delete">${icon('trash')}</button></span>`}</div>
+        : ghost ? '' : `<span class="mu-line-tools">${m.is_user ? '' : ttsButton(i)}${game() && systemOn(getWorld(game().world), 'pins') ? `<button data-act="remember-line" data-i="${esc(i)}" title="Remember this (Journal)">${icon('book')}</button>` : ''}<button data-act="edit" data-i="${esc(i)}" title="Edit">${icon('edit')}</button><button data-act="delete" data-i="${esc(i)}" title="Delete">${icon('trash')}</button></span>`}</div>
         ${editing
         ? `<textarea class="mu-msgedit" data-focus="edit" rows="4">${esc(m.mes)}</textarea><div class="mu-row"><button class="mu-primary" data-act="edit-save" data-i="${esc(i)}">Save</button><button data-act="edit-cancel">Cancel</button></div>`
-        : `<div class="mu-line-text mes_text">${lineText(m, i)}${attachments(m)}</div>`}
+        : `<div class="mu-line-text mes_text">${lineText(m, i)}${ghost ? '' : attachments(m)}</div>`}
     </div></div>`;
+    // [expanded] 0.2.1-15: the parts of a beat still to come (they are added a moment after the first)
+    const more = !ghost && Array.isArray(m.extra?.mundi_beat_pending) ? m.extra.mundi_beat_pending : [];
+    return more.length ? body + more.map((b, k) => ghostLine(b, i, last && k === more.length - 1)).join('') : body;
 }
 function logHtml() {
     const list = chat();
@@ -332,7 +355,7 @@ export function sceneHtml() {
                     ${state.generating
         ? '<button class="mu-danger" data-act="stop">■ Stop</button>'
         : `<button class="mu-primary" data-act="send">Send</button>
-                       <button data-act="continue" title="The character continues their last line" ${nobody ? 'disabled' : ''}>${icon('forward')}</button>
+                       <button data-act="continue" title="${lastIsBeat() ? 'Let them go on (nothing from you)' : 'The character continues their last line'}" ${nobody ? 'disabled' : ''}>${icon('forward')}</button>
                        <button data-act="regenerate" title="Regenerate the last answer" ${nobody ? 'disabled' : ''}>${icon('redo')}</button>
                        <button data-act="impersonate" title="The AI writes your line" ${nobody ? 'disabled' : ''}>${icon('pen')}</button>${diceButton(nobody)}${giftButton(nobody) /* [expanded] */}${togetherButton(nobody) /* [expanded] */}${sdButton()}${micButton()}<button data-act="ext-menu" class="${EXT.open ? 'is-on' : ''}" title="SillyTavern extensions">${icon('grid')}</button>`}
                 </div>
@@ -449,6 +472,17 @@ export function patchLastLine() {
         return;
     const list = chat();
     const i = list.length - 1;
+    if (isSceneMessage(list[i])) { // [expanded] 0.2.1-15: a reply for the room streams in as the people's lines
+        const beat = log.querySelector(`.mu-beat[data-beat="${esc(i)}"]`);
+        if (!beat) {
+            notify();
+            return;
+        }
+        setHtml(beat, liveBeatInner(list[i], i));
+        if (STICK.get(log) !== false)
+            log.scrollTop = log.scrollHeight;
+        return;
+    }
     const el = log.querySelector(`.mu-line[data-i="${esc(i)}"] .mu-line-text`);
     if (!el) {
         notify();
@@ -732,6 +766,7 @@ Object.assign(ACT, {
             await soloNarrate(g0, w0, text);
             return;
         }
+        await joinTyping(); // [expanded] 0.2.1-15: writing while you stand by a conversation you overheard: you have joined it
         // RPG: an attempt to persuade, lie, threaten… is judged by the AI and decided by the dice before anyone answers
         if (g0 && w0 && isRpg(w0) && !scenarioOpen()) {
             const force = CHECK.on;
@@ -756,6 +791,7 @@ Object.assign(ACT, {
             await addUserLine(men.text);
             void replyAs(men.who.avatar);
         }
+        else if (await sendTurn(text, INPUT_MODE.v === 'story')) { /* [expanded] 0.2.1-15: sent by who answers (sim/turnrun.ts) */ }
         else if (!sendText(text)) {
             toast('SillyTavern\'s message box was not found.', 'error');
             return;
@@ -782,11 +818,22 @@ Object.assign(ACT, {
     'ext-menu': () => { EXT.open = !EXT.open; notify(); },
     drawer: () => { DRAWER.open = !DRAWER.open; notify(); },
     'drawer-look': () => { DRAWER.look = !DRAWER.look; notify(); },
-    stop: () => stop(),
-    continue: () => continueLast(),
-    regenerate: () => regenerate(),
+    stop: () => { cancelPlanning(); stop(); },
+    continue: () => { if (lastIsBeat())
+        void goOn();
+    else
+        continueLast(); }, // [expanded] 0.2.1-15: after a beat: "let them go on"
+    regenerate: () => { if (lastIsBeat())
+        void regenBeat();
+    else
+        regenerate(); },
     impersonate: () => { state.impersonating = true; impersonate(); },
-    swipe: (el) => (Number(el.dataset.d) < 0 ? swipeLeft() : swipeRight()),
+    swipe: (el) => { if (lastIsBeat())
+        void beatSwipe(Number(el.dataset.d));
+    else if (Number(el.dataset.d) < 0)
+        swipeLeft();
+    else
+        swipeRight(); }, // [expanded] 0.2.1-15: a beat swipes as a whole
     edit: (el) => { state.modal = { type: 'edit', i: Number(el.dataset.i) }; notify(); },
     'edit-cancel': () => { state.modal = null; notify(); },
     'edit-save': (el) => {

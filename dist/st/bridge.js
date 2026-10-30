@@ -5,6 +5,7 @@
 // @ts-ignore
 import { getContext } from '../../../../../st-context.js';
 import { safeUrl, scriptText } from '../core/safe.js';
+import { isSceneAvatar } from '../sim/ensemble.js'; // [expanded] 0.2.1-15: the director card is not a person
 // @ts-ignore
 import { getCurrentChatId, deleteMessage, updateMessageBlock, saveChatDebounced, getCharacters, setUserName, printCharacters, doNewChat, processDroppedFiles, deleteCharacterChatByName } from '../../../../../../script.js';
 // [expanded] the whole module too, for a flag older SillyTavern may not export (a missing name would break loading)
@@ -25,7 +26,9 @@ import { createNewWorldInfo, deleteWorldInfo, saveWorldInfo, loadWorldInfo, crea
 export const ctx = () => getContext();
 const headers = (json = true) => ctx().getRequestHeaders(json ? undefined : { omitContentType: true });
 /* ---------- characters ---------- */
-export const characters = () => (ctx().characters ?? []).filter((c) => c?.avatar);
+export const characters = () => (ctx().characters ?? []).filter((c) => c?.avatar && !isSceneAvatar(c.avatar)); // [expanded] the director card (0.2.1-15) is not a person: no list shows it
+/** [expanded] 0.2.1-15: the director card (SillyTavern's own character, a muted member of every game's group), if it exists. */
+export const sceneChar = () => (ctx().characters ?? []).find((c) => c?.avatar && isSceneAvatar(c.avatar)) ?? null;
 export const charOf = (avatar) => characters().find(c => c.avatar === avatar) ?? null;
 export const nameOf = (avatar) => charOf(avatar)?.name ?? '?';
 // Pictures at their original resolution (default), or SillyTavern's small thumbnails when chosen in Settings (faster).
@@ -367,6 +370,10 @@ export async function setPresent(groupId, members, present) {
     const g = groupOf(groupId);
     if (!g)
         return;
+    // [expanded] 0.2.1-15: the director card stays a member, always muted (SillyTavern's own turn order never picks it)
+    const dir = sceneChar()?.avatar;
+    if (dir && !members.includes(dir))
+        members = [...members, dir];
     const off = members.filter(a => !present.includes(a));
     const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
     let dirty = false;
@@ -403,6 +410,8 @@ export const saveChat = () => saveChatDebounced();
 export function speakerOf(m) {
     if (!m || m.is_user || m.is_system)
         return null;
+    if (isSceneAvatar(m.original_avatar) || m.name === 'Mundi Scene')
+        return null; // [expanded] 0.2.1-15: the director is nobody
     if (m.original_avatar)
         return m.original_avatar;
     return characters().find(c => c.name === m.name)?.avatar ?? null;
@@ -500,6 +509,64 @@ export async function replyAs(avatar) {
 }
 export async function addUserLine(text) {
     await ctx().executeSlashCommandsWithOptions(`/send ${scriptText(text)}`);
+}
+/** [expanded] 0.2.1-15: a line already in the chat becomes someone else's (the director's reply is cut into people's
+ *  lines: the first part takes the director's own line). Name, picture, text and the marks; shown at once. */
+export function setLineAs(index, who, text, extra) {
+    const m = chat()[index];
+    if (!m)
+        return false;
+    const x = { ...(m.extra ?? {}) };
+    let pic = '';
+    if (who === 'narration') {
+        m.name = 'Narrator';
+        m.is_system = false;
+        m.force_avatar = 'img/five.png';
+        delete m.original_avatar;
+        pic = 'img/five.png';
+        x.type = 'narrator';
+        x.mundi_narrator = true;
+    }
+    else {
+        m.name = who.name;
+        m.original_avatar = who.avatar;
+        m.force_avatar = pic = ctx().getThumbnailUrl('avatar', who.avatar);
+        if (x.type === 'narrator')
+            delete x.type;
+        delete x.mundi_narrator;
+    }
+    delete x.display_text;
+    m.extra = { ...x, mundi: true, ...extra };
+    m.mes = text;
+    m.swipes = [text];
+    m.swipe_id = 0;
+    try {
+        updateMessageBlock(index, m);
+    }
+    catch { /* the line is not drawn (another chat is open) */ }
+    const el = document.querySelector(`#chat .mes[mesid="${index}"]`); // SillyTavern's own chat shows the new name and picture too
+    if (el) {
+        el.setAttribute('ch_name', m.name);
+        const nt = el.querySelector('.name_text');
+        if (nt)
+            nt.textContent = m.name;
+        const im = el.querySelector('.avatar img');
+        if (im && pic)
+            im.setAttribute('src', pic);
+    }
+    saveChatDebounced();
+    return true;
+}
+/** [expanded] 0.2.1-15: adds one line of a beat (a person's, or the narrator's) at the end of the chat, with its marks. */
+export async function addBeatLine(who, text, extra) {
+    const before = chat().length;
+    if (who === 'narration')
+        await narratorLine(text);
+    else
+        await sendAs(who.name, text);
+    for (let i = before; i < chat().length; i++)
+        chat()[i].extra = { ...(chat()[i].extra ?? {}), ...extra };
+    saveChatDebounced();
 }
 export async function narratorLine(text) {
     const before = chat().length;
@@ -1320,5 +1387,15 @@ export async function uploadSpritesTo(folder, file, label) {
 export const on = (name, fn) => {
     const c = ctx();
     if (c.eventTypes?.[name])
+        c.eventSource.on(c.eventTypes[name], fn);
+};
+/** [expanded] 0.2.1-15: like `on`, but before everyone else's listener (translation, voices see the line as it is changed to). */
+export const onFirst = (name, fn) => {
+    const c = ctx();
+    if (!c.eventTypes?.[name])
+        return;
+    if (typeof c.eventSource.makeFirst === 'function')
+        c.eventSource.makeFirst(c.eventTypes[name], fn);
+    else
         c.eventSource.on(c.eventTypes[name], fn);
 };

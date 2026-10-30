@@ -273,6 +273,22 @@ happened": "Try again".
 Next, maybe: a token budget for the long memory (drop the oldest ordinary lines first when it is over); a weekly
 look back ("a week in the house") for the diary; memory for guests who come back.
 
+## 16. Who speaks (0.2.1-15, done)
+
+SillyTavern's Natural order: a die per member against a number on the card, one answer each, one call each; nobody is
+answered inside a turn, and the die does not know who was spoken to. Groups stay (saves, authorship, sprites, voices,
+memory depend on them); the model of a turn changes. The line you send is read first (a call by name; the mechanics
+model's short call; or a score): one person answers alone (alone and the others left out, if private), or the room
+answers together in one reply, written by a muted "director" card as parts "[Name] …" and cut into ordinary lines
+before anything else reads them. Each beat ends at the first natural pause; a beat is a unit you can swipe, redo, or
+"let them go on" with. Overheard conversations are in beats too, with a plan and an ending of their own; the next beat
+comes when you stay (a button; or slowly by itself, an option), and your attention is the budget: they may notice you
+more with each beat.
+
+Not in this release: honest knowledge per speaker (a single answer written from a prompt with only what that person
+knows: it builds on 0.2.0.8 and would go through the single-person path); emotion labels inside the room's reply;
+the room's reply outside Home games.
+
 ## An audit (to do, not now)
 
 A careful pass over the whole fork for bugs and things that contradict each other, before more features. What to look
@@ -293,6 +309,9 @@ for, from what has already slipped through:
   of a scene printed and read end to end, and the UI clicked through in every phone skin.
 
 ## Later (discussed, not designed yet)
+
+- **Honest knowledge per speaker**: single replies get a prompt with only what that person knows (builds on 0.2.0.8:
+  secrets, who was where), so someone really does not know what they were never told.
 
 - **Better and worse things**: quality and condition (an old CRT or a big screen, a sagging couch, a good bed for
   better sleep), wear and repairs (upstream's breakables), upgrading what you have. Not decided whether it is worth it.

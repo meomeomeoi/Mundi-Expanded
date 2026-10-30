@@ -11,8 +11,8 @@
 // conversation is going). Also here: the social battery (hidden; time with you tires them, they leave when they have
 // had enough), initiative (apart, they come looking for you, knock, text, invite you to something that evening),
 // threads (what was left open, from the night reader), and where you last saw everyone (the map's fog, an option).
-import { nowAbs, saveGame, notify, game, settings, state } from '../core/store.js';
-import { isScenario } from '../core/world.js';
+import { nowAbs, saveGame, notify, game, settings, state, toast } from '../core/store.js';
+import { isScenario, getWorld } from '../core/world.js';
 import { onHour, onDay } from './hooks.js';
 import { presentNotes, afterSync, roomMinutes, talkHooks } from './lifehooks.js';
 import { presentAt, whereNow, OUT } from './people.js';
@@ -26,7 +26,7 @@ import { talksOf } from './consequences.js';
 import { feelings, flirtOn } from './love.js';
 import { isOuting, placeOf } from './places.js';
 import { isSleeping } from './plans.js';
-import { hm } from './time.js';
+import { hm, advance } from './time.js';
 import * as T from './talk.js';
 import { chat } from '../st/bridge.js';
 export const talkOf = (g) => {
@@ -44,7 +44,7 @@ export const talkOf = (g) => {
 export const tcfg = (g) => {
     const c = talkOf(g).cfg;
     return { talk: c.talk ?? 'normal', come: c.come ?? 'normal', ask1: c.ask1 !== false, ask2: c.ask2 !== false, drama: c.drama ?? 'normal', battery: c.battery !== false,
-        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true };
+        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true, auto: c.auto === 'slow' || c.auto === 'normal' ? c.auto : 'off', writer: c.writer === 'main' ? 'main' : 'mech' };
 };
 /** The player's own topics and the built-in ones turned off (in SillyTavern's settings: every game). */
 export const topicsCfg = () => { const s = settings(); const t = (s.talkTopics ??= {}); t.off ??= []; t.mine ??= []; return t; };
@@ -142,7 +142,8 @@ function startTalk(g, w, who) {
     const t = rollTopic(g, who, rng);
     const tone = toneFor(g, who, t, rng);
     const stage = T.pickStage(rng);
-    const cur = { who, topic: t.topic, tone, stage, src: t.src, about: '', room: g.player.loc, at: nowAbs(g), how: 'pending', ...(t.private ? { private: true } : {}) };
+    const cur = { who, topic: t.topic, tone, stage, src: t.src, about: '', room: g.player.loc, at: nowAbs(g), how: 'pending', ...(t.private ? { private: true } : {}),
+        arc: { beats: T.arcLength(tone, tcfg(g).drama, stage, rng), at: 0, outline: [], end: 'settle', lines: [] } }; // [expanded] 0.2.1-15: it runs in beats
     const x = talkOf(g);
     x.cur = cur;
     x.last = nowAbs(g);
@@ -155,16 +156,31 @@ function startTalk(g, w, who) {
     card(c);
     void words(g, w, c);
 }
+/** One call to whoever writes the conversation's beats (the mechanics model, or the main one when it is chosen). */
+async function askWriter(g, prompt, tokens) {
+    if (tcfg(g).writer === 'main') {
+        const { quiet } = await bridge();
+        return quiet(prompt, tokens, T.TALK_SYSTEM);
+    }
+    const { bgAsk } = await import('./regulator.js');
+    return bgAsk(prompt, tokens, T.TALK_SYSTEM);
+}
 async function words(g, w, c) {
     const cur = c.cur;
+    const arc = cur.arc;
     const people = cur.who.map(a => ({ name: name(g, a), about: aboutOf(a) }));
     const era = eraNow(g) !== 'now' ? `the ${eraNow(g)}` : '';
-    const prompt = T.talkPrompt({ people, topic: cur.topic, tone: cur.tone, stage: cur.stage, room: roomName(g, w, cur.room).replace('{{user}}', 'the player'), era, user: 'the player' });
+    const prompt = T.talkPrompt({ people, topic: cur.topic, tone: cur.tone, stage: cur.stage, room: roomName(g, w, cur.room).replace('{{user}}', 'the player'), era, user: 'the player', ...(arc ? { arc: { beats: arc.beats, at: arc.at } } : {}) });
     let parsed = null;
     try {
-        const { bgAsk } = await import('./regulator.js');
         const { looseJson } = await import('./jsonfix.js');
-        parsed = T.parseTalk(looseJson(await bgAsk(prompt, 700, T.TALK_SYSTEM)), people.map(p => p.name));
+        const j = looseJson(await askWriter(g, prompt, 700));
+        parsed = T.parseTalk(j, people.map(p => p.name));
+        if (parsed && arc) {
+            const a = T.parseArc(j, arc.beats);
+            arc.outline = a.outline;
+            arc.end = a.end;
+        }
     }
     catch {
         parsed = null;
@@ -244,66 +260,179 @@ export async function listen() {
     }
     if (!c.lines)
         return; // still coming (the button waits)
+    await deliver(g, c, c.lines);
+}
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const LAST = { beat: 0, input: Date.now() };
+/** A beat of the conversation goes into the story; then: it is over, you are noticed, or the card waits for you. */
+async function deliver(g, c, lines) {
+    const b = await bridge();
+    const arc = c.cur.arc;
     c.heard = true;
     c.cur.how = 'listened';
-    if (c.lines.length)
-        for (const l of c.lines) {
+    c.lines = lines;
+    if (lines.length)
+        for (const l of lines) {
             await b.sendAs(l.who, l.say);
-            await new Promise(r => setTimeout(r, 250));
+            await sleep(250);
         }
     else
         await b.narratorLine(`${names(g, c.who)} are talking (${T.TONES[c.cur.tone]}) about ${c.cur.topic}.`);
-    // the end of it: they split up; about you or a secret: they fall silent; otherwise they may pull you in
-    if (c.cur.stage === 'end') {
-        await b.narratorLine(`${names(g, c.who)} wrap it up.`);
-        card(null);
-        saveGame();
-        return;
-    }
+    LAST.beat = Date.now();
     const nosy = Math.max(...c.who.map(a => profileOf(g, a)?.nosy ?? 50));
-    const notice = H(`${c.cur.at}|${c.who.join()}|notice`) < 0.35 + nosy / 250;
-    if (notice && (c.cur.private || /\{\{user\}\}|the player/i.test(c.cur.about))) {
-        c.cur.how = 'silent';
-        await b.narratorLine(`${names(g, c.who)} notice {{user}} and fall silent.`);
-        card(null);
+    if (!arc) { // a conversation from before beats: one snatch, as it was
+        if (c.cur.stage === 'end') {
+            await b.narratorLine(`${names(g, c.who)} wrap it up.`);
+            card(null);
+            saveGame();
+            return;
+        }
+        if (H(`${c.cur.at}|${c.who.join()}|notice`) < 0.35 + nosy / 250) {
+            await noticed(g, c, b);
+            return;
+        }
+        c.noticed = false;
+        notify();
         saveGame();
         return;
     }
-    if (notice) {
-        c.cur.how = 'pulled';
-        card(null);
-        saveGame();
-        const a = c.who[Math.floor(H(`${c.cur.at}|pull`) * c.who.length)];
-        b.setAsk(`[${name(g, a)} notices {{user}} and pulls {{user}} into the conversation (${c.cur.about}): asks what {{user}} thinks, or makes {{user}} take a side. One reply.]`);
-        await b.replyAs(a);
+    arc.lines = [...arc.lines, ...lines].slice(-6);
+    arc.at++;
+    if (arc.at >= arc.beats) {
+        await finish(g, c);
+        return;
+    }
+    // [expanded] 0.2.1-15: each beat after the first, a chance to be noticed (more the longer you stand there)
+    if (arc.at >= 2 && H(`${c.cur.at}|${arc.at}|notice`) < T.noticeChance(nosy)) {
+        await noticed(g, c, b);
         return;
     }
     c.noticed = false;
     notify();
     saveGame();
 }
-/** Join in: what they said goes into the story (if it has not), and you speak next. */
-export async function join() {
+/** They notice you: silent when it is about you or private; otherwise they pull you in, or lower their voices (once). */
+async function noticed(g, c, b) {
+    const arc = c.cur.arc;
+    if (c.cur.private || /\{\{user\}\}|the player/i.test(c.cur.about)) {
+        c.cur.how = 'silent';
+        await b.narratorLine(`${names(g, c.who)} notice {{user}} and fall silent.`);
+        card(null);
+        saveGame();
+        return;
+    }
+    if (arc && !arc.hushed && H(`${c.cur.at}|${arc.at}|hush`) < 0.5) {
+        arc.hushed = true;
+        await b.narratorLine(`${names(g, c.who)} glance at {{user}} and lower their voices.`);
+        c.noticed = false;
+        notify();
+        saveGame();
+        return;
+    }
+    c.cur.how = 'pulled';
+    card(null);
+    saveGame();
+    const a = c.who[Math.floor(H(`${c.cur.at}|pull`) * c.who.length)];
+    b.setAsk(`[${name(g, a)} notices {{user}} and pulls {{user}} into the conversation (${c.cur.about}): asks what {{user}} thinks, or makes {{user}} take a side. One reply.]`);
+    await b.replyAs(a);
+}
+/** The conversation is over (as planned): the story says how; someone who storms off goes to their room. */
+async function finish(g, c) {
+    const b = await bridge();
+    const w = getWorld(g.world);
+    const end = c.cur.arc?.end ?? 'settle';
+    const who = names(g, c.who);
+    let said = false;
+    if (end === 'storm' && w) {
+        const rs = c.who.map(a => g.cast[a]).filter((r) => !!r && !r.guest);
+        const r = rs[Math.floor(H(`${c.cur.at}|storm`) * rs.length)];
+        if (r)
+            said = leave(g, w, r, `${r.name} storms off to their room.`);
+    }
+    if (!said)
+        await b.narratorLine(T.endLine(end === 'storm' ? 'split' : end, who));
+    card(null);
+    saveGame();
+}
+/** Keep listening: the next beat of the conversation, written now (a little time passes first). */
+export async function keepListening() {
+    const g = game();
+    const w = g && getWorld(g.world);
+    const c = TK.card;
+    if (!g || !w || !c || c.kind !== 'talk' || !c.cur.arc || c.busy)
+        return;
+    const arc = c.cur.arc;
+    if (arc.at >= arc.beats)
+        return;
+    if (state.generating) {
+        setTimeout(() => void keepListening(), 800);
+        return;
+    }
+    c.busy = true;
+    notify();
+    try {
+        const here = () => presentAt(g, w, g.player.loc).map(r => r.avatar);
+        if (!c.who.every(a => here().includes(a))) {
+            card(null);
+            return;
+        } // someone has gone: it is over
+        if (arc.at === 2 && arc.turn === undefined) {
+            const t = T.moodTurn(c.cur.tone, tcfg(g).drama, rngFor(g, `turn${c.cur.at}`));
+            arc.turn = t ?? '';
+            if (t)
+                c.cur.tone = t;
+        }
+        const people = c.who.map(a => ({ name: name(g, a), about: aboutOf(a) }));
+        const era = eraNow(g) !== 'now' ? `the ${eraNow(g)}` : '';
+        const prompt = T.beatPrompt({ people, topic: c.cur.about || c.cur.topic, tone: c.cur.tone, room: roomName(g, w, c.cur.room).replace('{{user}}', 'the player'), era, user: 'the player', arc, turn: arc.turn || null });
+        let lines = [];
+        try {
+            const { looseJson } = await import('./jsonfix.js');
+            lines = T.parseTalk(looseJson(await askWriter(g, prompt, 500)), people.map(p => p.name))?.lines ?? [];
+        }
+        catch {
+            lines = [];
+        }
+        if (TK.card !== c)
+            return;
+        advance(g, w, T.BEAT_MINUTES).forEach(m => toast(m, 'warn')); // a little time passes
+        await deliver(g, c, lines);
+        await sync();
+    }
+    finally {
+        c.busy = false;
+        notify();
+    }
+}
+/** Join in: what they said goes into the story (if it has not), and you speak next. Typing into the box does the same. */
+export async function join(typing = false) {
     const g = game();
     const c = TK.card;
     if (!g || !c || c.kind !== 'talk')
         return;
     if (state.generating) {
-        setTimeout(() => void join(), 800);
+        setTimeout(() => void join(typing), 800);
         return;
     }
     const b = await bridge();
     if (!c.heard && c.lines?.length)
         for (const l of c.lines) {
             await b.sendAs(l.who, l.say);
-            await new Promise(r => setTimeout(r, 200));
+            await sleep(200);
         }
     c.cur.how = 'joined';
     card(null);
     saveGame();
-    b.setAsk(`[{{user}} joins ${names(g, c.who)}'s conversation (${c.cur.about || c.cur.topic}); they let {{user}} in, as fits how they get along.]`, 15 * 60000);
-    setTimeout(() => document.querySelector('#mundi-root [data-focus="composer"]')?.focus(), 50);
+    // [expanded] 0.2.1-15: not every conversation is private, and people often do not mind: the scene decides how they take it
+    const cut = c.cur.private || /\{\{user\}\}|the player/i.test(c.cur.about);
+    b.setAsk(cut
+        ? `[{{user}} cuts into a conversation ${names(g, c.who)} were having between themselves (${c.cur.about || c.cur.topic}); they react as fits who they are and how they get along with {{user}}: some do not mind, some do.]`
+        : `[{{user}} joins ${names(g, c.who)}'s conversation (${c.cur.about || c.cur.topic}); they let {{user}} in, as fits how they get along.]`, 15 * 60000);
+    if (!typing)
+        setTimeout(() => document.querySelector('#mundi-root [data-focus="composer"]')?.focus(), 50);
 }
+/** You write something while a conversation you stand by is open: you have joined it. */
+export const joinTyping = () => (TK.card?.kind === 'talk' ? join(true) : Promise.resolve());
 /** Walk past / not now. */
 export function pass() {
     const g = game();
@@ -408,20 +537,21 @@ afterSync.push((g, w, here) => {
     whenIdle(() => bridge().then(b => b.narratorLine(`${acts.length > 1 ? `${acts.slice(0, -1).join(', ')} and ${acts.at(-1)} come in` : `${acts[0]} comes in`}.`)));
 });
 /** They go to their room (had enough company): for an hour, and the story says so. */
-function leave(g, w, r) {
+function leave(g, w, r, line = `${r.name} goes to their room.`) {
     if (r.guest)
-        return; // a visitor has no room of their own to go to (Mundi 0.2.1)
+        return false; // a visitor has no room of their own to go to (Mundi 0.2.1)
     const s = social(g);
     const now = nowAbs(g);
     const to = ownRoom(r);
     if (to === g.player.loc)
-        return;
+        return false;
     (s.went ??= {})[r.avatar] = { loc: to, until: now + 60, line: -1 };
     s.with = (s.with ?? []).filter((c) => c.avatar !== r.avatar);
     if (s.lock?.who)
         s.lock.who = s.lock.who.filter((a) => a !== r.avatar);
     saveGame();
-    whenIdle(() => bridge().then(b => b.narratorLine(`${r.name} goes to their room.`)).then(() => sync()));
+    whenIdle(() => bridge().then(b => b.narratorLine(line)).then(() => sync()));
+    return true;
 }
 /** What someone wants to talk to you about most ('' : nothing in particular). */
 function agendaFor(g, a, use = false) {
@@ -664,7 +794,7 @@ presentNotes.push((g, w, present) => {
                 out.push(`${name(g, cur.who[0])} came up to {{user}} to talk about ${what}.`);
         }
         else
-            out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${{ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: '{{user}} walked past and did not join them: they carry on quietly between themselves in the background and leave {{user}} alone. Do not write their conversation; at most a glance or a word to {{user}}, and only if {{user}} speaks to them do they turn to {{user}}.', pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' }[cur.how] ?? ''}`);
+            out.push(`When {{user}} came in, ${names(g, cur.who)} were talking about ${what} (${T.TONES[cur.tone]}). ${{ listened: '{{user}} stood listening.', joined: '{{user}} joined in.', passed: `{{user}} walked past and did not join them: they carry on quietly between themselves in the background and leave {{user}} alone. Do not write their conversation; at most a glance or a word to {{user}}, and only if {{user}} speaks to them do they turn to {{user}}.${cur.arc && cur.arc.at < cur.arc.beats ? ` (Where it goes, in case it comes up: ${cur.arc.outline.slice(cur.arc.at).join('; ') || 'on and on'}; ${T.END_WORDS[cur.arc.end]}.)` : ''}`, pulled: 'They pulled {{user}} in.', silent: 'They fell silent when they noticed {{user}}.' }[cur.how] ?? ''}`);
     }
     if (tcfg(g).battery)
         for (const r of present) {
@@ -706,4 +836,37 @@ export function mapPeople(g, w, loc) {
     const mine = new Set(presentAt(g, w, g.player.loc).map(r => r.avatar));
     const ghosts = Object.values(g.cast).filter(r => !mine.has(r.avatar) && x.seen[r.avatar]?.loc === loc && now - x.seen[r.avatar].at <= 180).map(r => ({ r, ago: now - x.seen[r.avatar].at }));
     return { here: [], ghosts };
+}
+/* ---------- by itself, slowly (an option) ---------- */
+function autoTick() {
+    const g = game();
+    const c = TK.card;
+    if (!g || !c || c.kind !== 'talk' || !c.heard || c.busy)
+        return;
+    const mode = tcfg(g).auto;
+    const arc = c.cur.arc;
+    if (mode === 'off' || !arc || arc.at >= arc.beats)
+        return;
+    if (!state.open || state.view !== 'scene' || document.visibilityState !== 'visible' || state.generating)
+        return;
+    if (String(state.composer ?? '').trim())
+        return; // you are writing something: you are joining, not listening
+    if (Date.now() - Math.max(LAST.beat, LAST.input) < (mode === 'slow' ? 45000 : 25000))
+        return;
+    void keepListening();
+}
+let autoOn = false;
+/** Called once from index.ts: the timer, and what counts as you being there (a key, a click). */
+export function installTalkAuto() {
+    if (autoOn)
+        return;
+    autoOn = true;
+    for (const ev of ['keydown', 'pointerdown'])
+        document.addEventListener(ev, () => { LAST.input = Date.now(); }, true);
+    setInterval(() => { try {
+        autoTick();
+    }
+    catch (e) {
+        console.warn('[Mundi Expanded] conversation timer', e);
+    } }, 2000);
 }

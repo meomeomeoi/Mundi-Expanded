@@ -12,11 +12,12 @@ import { ctx, quiet, chat, answerText } from '../st/bridge.js';
 
 export type RegMode = 'message' | 'night';
 interface Stats { day: string; calls: number; tin: number; tout: number; fails: number }
-interface RegCfg { profile: string; mode: RegMode; stats: Stats; /** facial expressions: SillyTavern's classifier, or a model for everyone in the scene */ expr: 'st' | 'mech' | 'main'; /** group turns: everyone here's cards joined (cacheable) instead of the speaker's */ joinCards: boolean; /** how much the mechanics model may think: its least (default), low, or its own default */ think: 'min' | 'low' | 'auto' }
+interface RegCfg { profile: string; mode: RegMode; stats: Stats; /** facial expressions: SillyTavern's classifier, or a model for everyone in the scene */ expr: 'st' | 'mech' | 'main'; /** group turns: everyone here's cards joined (cacheable) instead of the speaker's */ joinCards: boolean; /** how much the mechanics model may think: its least (default), low, or its own default */ think: 'min' | 'low' | 'auto'; /** [expanded] 0.2.1-15: who answers when several are in the scene: by meaning (auto), SillyTavern's own turn order (each), or one reply for the room (scene) */ scene: 'auto' | 'each' | 'scene'; /** [expanded] 0.2.1-15: the most parts in one reply for the room */ beatMax: number }
 const today = () => new Date().toISOString().slice(0, 10);
 export const regCfg = (): RegCfg => {
     const s = settings() as any; s.regulator ??= {};
     const r = s.regulator; r.profile ??= ''; r.mode ??= 'message'; r.expr ??= 'st'; r.joinCards ??= false; r.think ??= 'min';
+    if (r.scene !== 'each' && r.scene !== 'scene') r.scene = 'auto'; if (!(Number(r.beatMax) >= 2 && Number(r.beatMax) <= 5)) r.beatMax = 3;   // [expanded] 0.2.1-15
     if (!r.stats || r.stats.day !== today()) r.stats = { day: today(), calls: 0, tin: 0, tout: 0, fails: 0 };
     return r as RegCfg;
 };

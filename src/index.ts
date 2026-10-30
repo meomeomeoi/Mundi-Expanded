@@ -7,6 +7,8 @@ import { setLang } from './core/tr.js';
 import './core/saves.js';   // save safety: migrations, backups and repairs when a save is opened
 import { mount, openApp, closeApp } from './ui/app.js';
 import { patchLastLine, GENACT } from './ui/scene.js';
+import { installBeats } from './sim/turnrun.js';   // [expanded] 0.2.1-15: one reply for the room
+import { installTalkAuto } from './sim/talkrun.js';   // [expanded] 0.2.1-15: overheard conversations in beats
 import { fillerAt, TURN, hideFillers } from './st/bridge.js';   // [expanded]
 import { installSfx } from './ui/sfx.js';
 import { refreshPrompt, clearPrompt } from './sim/prompt.js';
@@ -119,6 +121,8 @@ function follow() {
         if (who && markMet(g, who)) { saveGame(); (await import('./sim/prompt.js')).refreshPrompt(); redraw(); }
     });
     for (const ev of ['MESSAGE_RECEIVED', 'MESSAGE_SENT', 'MESSAGE_SWIPED', 'MESSAGE_EDITED', 'MESSAGE_DELETED', 'MESSAGE_UPDATED']) on(ev, redraw);
+    installTalkAuto();
+    installBeats();   // [expanded] 0.2.1-15: the director's reply is cut into people's lines (after the listeners above)
     on('CHAT_CHANGED', () => {
         // "Continue" opens what was last played in Mundi: a world save or a scenario chat
         if (state.open) {
