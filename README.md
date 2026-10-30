@@ -7,6 +7,8 @@
 > keep working here), and running the two at once breaks both. Install from
 > `https://github.com/meomeomeoi/Mundi-Expanded`.
 >
+> **!!!WARNING!!! Consumes more tokens than original Mundi, not measured yet, mechanics can be delegated to smaller model.**
+>
 > Everything below is the original Mundi README.
 
 # Mundi
