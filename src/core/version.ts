@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15';
+export const VERSION = '0.2.1-15.1';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,9 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.1', fork: true, title: 'Chores from the first day', items: [
+        ['user', 'The week\'s rota of chores is made as soon as it is needed, not at the first midnight: before, in a new game nobody had a turn yet, so there was no "Wash the dishes" in the kitchen and the Chores page showed "—" for everyone.'],
+    ] },
     { v: '0.2.1-15', fork: true, title: 'Who speaks', items: [
         ['users', 'With two or more people in the room, the line you send is read first: who is spoken to, who is in the middle of the talk, who is worn out. One person called by name answers alone; a line to the room is answered by the room in one reply, so they answer, interrupt and tease each other, and every part is its own line (sprites, voices, memory work as always). One call instead of one per person.'],
         ['forward', '"Let them go on" (the forward button after a reply for the room) writes the next beat with nothing from you. Swipe and regenerate redo the whole beat; each version is kept.'],

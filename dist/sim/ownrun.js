@@ -94,7 +94,8 @@ actionMods.push((g, w, list) => {
     if (room === 'home:player' && !ids.has('x-tidy'))
         add.push(mk('x-own-tidy', 'Tidy up your room', '🧹', 30, { mood: 2 }));
     // chores whose room this is: yours (your turn) or anyone's (covering for them)
-    if (ocfg(g).chores !== 'off')
+    if (ocfg(g).chores !== 'off') {
+        ensureRota(g);
         for (const c of O.CHORES) {
             if (!c.room.test(roomName(g, w, room)))
                 continue;
@@ -104,6 +105,7 @@ actionMods.push((g, w, list) => {
             const mine = who === YOU;
             add.push(mk(`x-own-chore-${c.id}`, `${c.name}${mine ? ' (your turn)' : ` (${name(g, who)}'s turn)`}`, '🧽', GAME_OF[`x-own-chore-${c.id}`].minutes, { hygiene: -5 }));
         }
+    }
     return [...list, ...add];
 });
 /* ---------- a mini-game first ---------- */
@@ -209,6 +211,27 @@ function choreDone(g, w, c, by) {
     }
 }
 const peopleForRota = (g) => [YOU, ...housemates(g).map(r => r.avatar)];
+/** [expanded] 0.2.1-15.1: this week's rota exists as soon as anyone asks for it. It used to be made only at midnight, so
+ *  in a new game (or one with chores just turned on) every chore had nobody's turn until the first night: no actions in
+ *  the kitchen, and "—" on the Chores page. A new week (or the first one): last week's weekly chores of yours not done
+ *  are counted as skipped, then a new rota goes round the people. */
+export function ensureRota(g) {
+    if (ocfg(g).chores === 'off')
+        return;
+    const x = ownOf(g);
+    const wk = O.weekOf(g.day);
+    if (x.chores.week === wk && Object.keys(x.chores.rota).length)
+        return;
+    const newWeek = x.chores.week !== wk;
+    if (newWeek && x.chores.week >= 0)
+        for (const ch of O.CHORES)
+            if (x.chores.rota[ch.id] === YOU && ch.per < 7 && (x.chores.done[ch.id] ?? 0) < ch.per)
+                x.chores.skipped.push({ a: YOU, c: ch.id, day: g.day - 1 });
+    x.chores.week = wk;
+    x.chores.rota = O.rota(peopleForRota(g), wk);
+    if (newWeek)
+        x.chores.done = {};
+}
 onDay.push((g, w) => {
     if (!on(g, w))
         return [];
@@ -218,16 +241,7 @@ onDay.push((g, w) => {
     const out = [];
     // a new week: a new rota
     const wk = O.weekOf(day);
-    if (c.chores !== 'off' && x.chores.week !== wk) {
-        // last week's weekly chores that were yours and not done
-        if (x.chores.week >= 0)
-            for (const ch of O.CHORES)
-                if (x.chores.rota[ch.id] === YOU && ch.per < 7 && (x.chores.done[ch.id] ?? 0) < ch.per)
-                    x.chores.skipped.push({ a: YOU, c: ch.id, day: day - 1 });
-        x.chores.week = wk;
-        x.chores.rota = O.rota(peopleForRota(g), wk);
-        x.chores.done = {};
-    }
+    ensureRota(g);
     // a new week: what everyone has coming up
     if (c.calendar && x.cal.cevWeek !== wk) {
         x.cal.cevWeek = wk;

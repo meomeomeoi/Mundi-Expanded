@@ -1,5 +1,12 @@
 # Changelog
 
+## Mundi Expanded 15.1 (0.2.1-15.1) · Chores from the first day
+
+- **The rota exists from the start.** The week's chores went round the people only at midnight, so in a new game (or
+  with chores just turned on) nobody had a turn until the first night: no "Wash the dishes" in the kitchen, no "Take
+  out the trash", and the Chores page showed "—" against every chore. Now the rota is made the first time it is asked
+  for (opening the room's actions, or the Chores page), and again each new week.
+
 ## Mundi Expanded 15 (0.2.1-15) · Who speaks
 
 SillyTavern's group turn rolls a die per person against the talkativeness on their card, and each one who is picked

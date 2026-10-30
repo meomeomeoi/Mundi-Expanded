@@ -9,7 +9,7 @@
     "generate_interceptor": "mundiExpandedInterceptor",
     "css": "style.css",
     "author": "meomeomeoi (fork of Mundi by Thales)",
-    "version": "0.2.1-15",
+    "version": "0.2.1-15.1",
     "homePage": "https://github.com/meomeomeoi/Mundi-Expanded",
     "auto_update": false,
     "description": "Mundi Expanded: a Home-focused fork of Mundi. Adds relationships between the characters that grow and change on their own, with a relationship graph and memory book. Do not enable together with the original Mundi."

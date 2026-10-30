@@ -51,6 +51,7 @@ function worksHtml(g: Save): string {
 function choresHtml(g: Save, w: WorldDef): string {
     const x = R.ownOf(g); const c = R.ocfg(g);
     if (c.chores === 'off') return '<p class="mu-muted">Chores are off (Settings).</p>';
+    R.ensureRota(g);   // [expanded] 0.2.1-15.1: the rota is made when first asked for, not only at midnight
     const room = (id: string) => (w.places.find(p => p.id === id)?.name ?? '');
     const messy = Object.entries(x.chores.mess).filter(([id, v]) => v >= 20 && !id.startsWith('home:') && room(id)).sort((a, b) => b[1] - a[1]);
     return `<section><h4>This week</h4>${O.CHORES.map(ch => { const who = x.chores.rota[ch.id]; const n = x.chores.done[ch.id] ?? 0;
