@@ -81,6 +81,7 @@ function editor(id: string, own: string, now: string) {
 }
 
 Object.assign(ACT, {
+    'aic-narrate': (el) => { (UI() as any).narrateMode = el.dataset.v; saveSettings(); notify(); },   // [expanded] 0.2.1-14.5 (a click: it was in INPUT, where buttons never look)
     'aic-preview': () => { A.preview = !A.preview; notify(); },
     'aic-edit': (el) => { A.edit = A.edit === el.dataset.id ? '' : el.dataset.id!; notify(); },
     'aic-reset': (el) => { const pc = promptCfg(); const id = el.dataset.id!; if (id === 'rules') pc.rules = ''; else delete pc.text[id]; saveSettings(); refreshPrompt(); notify(); },
@@ -95,7 +96,6 @@ Object.assign(INPUT, {
     'aic-text': (el) => { const pc = promptCfg(); const v = (el as unknown as HTMLTextAreaElement).value; if (v.trim()) pc.text[el.dataset.id!] = v; else delete pc.text[el.dataset.id!]; saveSettings(); refreshPrompt(); },
     'aic-rules': (el) => { promptCfg().rules = (el as unknown as HTMLTextAreaElement).value; saveSettings(); refreshPrompt(); },
     'aic-extra': (el) => { promptCfg().extra = (el as unknown as HTMLTextAreaElement).value; saveSettings(); refreshPrompt(); },
-    'aic-narrate': (el) => { (UI() as any).narrateMode = el.dataset.v; saveSettings(); notify(); },   // [expanded] 0.2.1-14.5
     'aic-budget': (el) => {
         promptCfg().budget = BUDGETS[Number(el.value)] ?? 0;   // [expanded]
         saveSettings(); refreshPrompt(); notify();

@@ -86,6 +86,7 @@ function editor(id, own, now) {
         ${own.trim() ? `<button class="mu-ghost" data-act="aic-reset" data-id="${esc(id)}">${icon('undo')}<span>Back to Mundi's text</span></button>` : ''}</div>`;
 }
 Object.assign(ACT, {
+    'aic-narrate': (el) => { UI().narrateMode = el.dataset.v; saveSettings(); notify(); }, // [expanded] 0.2.1-14.5 (a click: it was in INPUT, where buttons never look)
     'aic-preview': () => { A.preview = !A.preview; notify(); },
     'aic-edit': (el) => { A.edit = A.edit === el.dataset.id ? '' : el.dataset.id; notify(); },
     'aic-reset': (el) => { const pc = promptCfg(); const id = el.dataset.id; if (id === 'rules')
@@ -109,7 +110,6 @@ Object.assign(INPUT, {
         delete pc.text[el.dataset.id]; saveSettings(); refreshPrompt(); },
     'aic-rules': (el) => { promptCfg().rules = el.value; saveSettings(); refreshPrompt(); },
     'aic-extra': (el) => { promptCfg().extra = el.value; saveSettings(); refreshPrompt(); },
-    'aic-narrate': (el) => { UI().narrateMode = el.dataset.v; saveSettings(); notify(); }, // [expanded] 0.2.1-14.5
     'aic-budget': (el) => {
         promptCfg().budget = BUDGETS[Number(el.value)] ?? 0; // [expanded]
         saveSettings();

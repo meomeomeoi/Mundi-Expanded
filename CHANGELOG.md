@@ -30,6 +30,8 @@ speaks and how, without leaving group chats (saves, who said what, sprites, voic
 - **Settings**: Settings → Game → Group scenes (Auto, Scene reply, or One reply each: SillyTavern's own order, as before)
   and the most parts in a reply. People → Settings: overheard conversations by themselves (off, slowly, normally) and who
   writes their words (the mechanics or the main model).
+- **Fix**: the three buttons "Narrate what you do right away" (Everything / What matters / Nothing, from 0.2.1-14.5)
+  did nothing when pressed: their handler was registered for typing, not for clicks.
 - A card "Mundi Scene" is made in SillyTavern the first time (a muted member of each game's group, never picked by
   SillyTavern itself); no list of Mundi shows it. Known limit: in SillyTavern's own chat (not Mundi's), swiping one line
   of a beat writes just that person's answer again.
