@@ -107,7 +107,7 @@ export function toLine(a) {
 }
 /** The instruction for one beat (an extension prompt for a single call). */
 export function beatPrompt(a) {
-    const cast = a.cast?.length ? `\nWho is here:\n${a.cast.map(p => `- ${p.name}: ${p.about}${p.doing ? ` (right now: ${p.doing})` : ''}`).join('\n')}` : '';
+    const cast = a.cast?.length ? `\nWho is here:\n${a.cast.map(p => `- ${p.name}: ${p.about}${p.doing ? ` (right now: ${p.doing})` : ''}${p.voice ? `\n  How ${p.name} talks, for example: ${p.voice}` : ''}`).join('\n')}` : '';
     const who = a.speakers?.length ? `\nLikely to speak: ${list(a.speakers)}. The others may react with a short action, and speak only if staying silent would be odd.` : '';
     return `[Scene beat. Write what happens next, as the people in this scene: ${list(a.names)}.
 ${toLine(a)}${who}${cast}
@@ -117,5 +117,7 @@ Stop at the first natural pause where {{user}} could respond: a question put to 
 Never write {{user}}'s words, actions or thoughts.]`;
 }
 /** A person's card in a few lines (the director's prompt carries them when the cards themselves are not in it). */
-export const aboutText = (s, max = 650) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+/** Only a safety cap (a card of 30 000 characters): a normal card goes in whole, as in SillyTavern's own prompt. */
+export const CARD_CAP = 4000, VOICE_CAP = 1200;
+export const aboutText = (s, max = CARD_CAP) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 export const beatId = () => `b${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;

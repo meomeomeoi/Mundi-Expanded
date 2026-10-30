@@ -86,11 +86,15 @@ interface Pending { id: string; blocks: E.Block[]; n: number }
 const RUN: { plan: E.BeatPlan | null; carry: string[] | null; pending: Pending | null; flushing: Promise<void> | null; cancel: boolean } = { plan: null, carry: null, pending: null, flushing: null, cancel: false };
 const whoOf = (g: Save, b: E.Block): { avatar: string; name: string } | 'narration' => b.who === E.NARRATION ? 'narration' : { avatar: b.who, name: g.cast[b.who]?.name ?? B.nameOf(b.who) };
 
-/** The people's own words, for a prompt whose cards are not the people's (the director is the card in it). */
+/** The people's own cards, for a prompt whose card is the director's: description and personality whole, and the example
+ *  messages (how they talk). Not cut: one call with everyone's card costs less than one call each with a card each. */
 function castFor(g: Save, w: WorldDef, people: TP.Person[]): E.BeatAsk['cast'] {
     if (regCfg().joinCards) return undefined;   // joined cards: everyone's own card is in the prompt already
-    const each = Math.max(220, Math.min(650, Math.floor(3600 / Math.max(1, people.length))));
-    return people.map(p => ({ name: p.name, about: E.aboutText(cardText(p.avatar), each) || '(no description)', doing: doingOf(g, w, g.cast[p.avatar]) || undefined }));
+    return people.map(p => {
+        const c: any = B.charOf(p.avatar);
+        const voice = E.aboutText(String(c?.mes_example ?? c?.data?.mes_example ?? '').replace(/<START>/gi, ' ').replace(/\{\{char\}\}/gi, p.name), E.VOICE_CAP);
+        return { name: p.name, about: E.aboutText(cardText(p.avatar)) || '(no description)', doing: doingOf(g, w, g.cast[p.avatar]) || undefined, ...(voice ? { voice } : {}) };
+    });
 }
 /** Asks the director for one beat and cuts it into lines. false: no director (the caller answers some other way). */
 export async function runBeat(plan: E.BeatPlan, carry: string[] | null = null): Promise<boolean> {

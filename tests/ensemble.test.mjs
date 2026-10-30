@@ -61,6 +61,9 @@ test('the instruction: names, who speaks, the format, no cards when they are in 
     assert.match(p, /for example \[Mira\]/); assert.match(p, /at most 3 parts/); assert.match(p, /Never write \{\{user\}\}/); assert.doesNotMatch(p, /Who is here/);
     const q = E.beatPrompt({ names: ['Mira', 'Finn'], to: 'some', toNames: ['Mira'], max: 2, cast: [{ name: 'Mira', about: 'sharp-tongued', doing: 'cooking' }] });
     assert.match(q, /spoke to Mira\./); assert.match(q, /- Mira: sharp-tongued \(right now: cooking\)/); assert.doesNotMatch(q, /Likely to speak/);
+    assert.match(E.beatPrompt({ names: ['Mira'], to: 'room', max: 2, cast: [{ name: 'Mira', about: 'x', voice: '"Not my turn."' }] }), /How Mira talks, for example: "Not my turn\."/);
+    const long = 'word '.repeat(600).trim();   // a 3000-character card goes in whole; only an absurd one is cut
+    assert.equal(E.aboutText(long).length, long.length); assert.equal(E.aboutText('x'.repeat(30000)).length, E.CARD_CAP);
     assert.match(E.toLine({ to: 'none' }), /lets them go on/); assert.match(E.toLine({ to: 'story' }), /direction for the story/);
 });
 console.log(`ensemble: ${n} tests passed`);
