@@ -101,7 +101,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
         if (p.src === 'scene' && p.who.some(a => !spoke.includes(a))) continue;
         // [expanded] 0.2.0.8: who else knows it
         const seen = p.seen === 'none' ? [] : p.seen ?? (p.src === 'scene' ? [...new Set(p.who.flatMap(a => [...(around[a] ?? [])]))].filter(a => p.who.every(x => around[x]?.has(a) || x === a)) : []);
-        const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen });
+        const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen, day });
         if (c) changes.push(c);
     }
     // [expanded] 0.2.0.8: secrets found out in today's scenes
@@ -129,7 +129,7 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
         const type = sh.kind === 'friends' ? (v >= 70 ? 'bestfriend' : 'friend') : sh.kind === 'enemies' ? (v > -60 ? 'rival' : 'enemy') : sh.kind;
         setStatus(gl, sh.a, sh.b, type);
         const t = statusOf(gl, sh.a, sh.b); if (t) { t.day = day; if (sh.secret && sh.kind === 'dating') t.secret = true; else { delete t.secret; delete t.know; } }
-        const c = applyChange(gl, [sh.a, sh.b], sh.kind === 'friends' || sh.kind === 'dating' ? 1 : -1, sh.why || `${nm(sh.a)} and ${nm(sh.b)}: ${sh.kind}.`, 'offscreen', sh.secret && sh.kind === 'dating' ? { pub: 'private' } : sh.kind === 'dating' || sh.kind === 'ex' ? { pub: 'public' } : undefined);
+        const c = applyChange(gl, [sh.a, sh.b], sh.kind === 'friends' || sh.kind === 'dating' ? 1 : -1, sh.why || `${nm(sh.a)} and ${nm(sh.b)}: ${sh.kind}.`, 'offscreen', sh.secret && sh.kind === 'dating' ? { pub: 'private', day } : sh.kind === 'dating' || sh.kind === 'ex' ? { pub: 'public', day } : { day });
         if (c) changes.push(c);
         (b as any).shiftDay = day;
     }

@@ -152,10 +152,10 @@ export function addFact(g, who, text, kind = 'standing', src = 'user', delta, k)
     if (people.length < 2 || people.length > 3 || !t)
         return null;
     const b = bondsOf(g);
-    const f = { id: newId(b), who: people, text: t, kind, day: g.day, src, ...(delta ? { delta } : {}), ...(k?.pub ? { pub: k.pub } : {}) };
+    const f = { id: newId(b), who: people, text: t, kind, day: k?.day ?? g.day, src, ...(delta ? { delta } : {}), ...(k?.pub ? { pub: k.pub } : {}) };
     for (const a of k?.seen ?? [])
         if (!people.includes(a) && (a === YOU || g.cast[a]))
-            (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: g.day };
+            (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: k?.day ?? g.day };
     b.facts.push(f);
     // [expanded] 0.2.0.8: at most `keep` episodes per pair (or trio): the oldest go first
     // [expanded] 0.2.1-14: landmarks are never trimmed (only you delete them)
@@ -199,9 +199,9 @@ export function applyChange(g, who, steps, text, src, k) {
             p.v = clamp(p.v + s * STEP, -100, 100);
             writeBack(g, a, b, p);
         }
-        p.changed = g.day;
+        p.changed = k?.day ?? g.day; // [expanded] the night's day, not the one that has already begun
     }
-    const f = addFact(g, people, text, 'episode', src, s || undefined, k ?? (src === 'scene' ? { seen: [YOU] } : undefined)); // a scene: you were there
+    const f = addFact(g, people, text, 'episode', src, s || undefined, src === 'scene' && !k?.seen ? { ...k, seen: [YOU] } : k); // a scene: you were there
     return { who: people, names: people.map(a => g.cast[a].name), delta: s, text: text.trim(), src, you: !!f && knows(factK(f), YOU) };
 }
 // Once a day: pairs with nothing new for a week drift one point back toward where they started. Safe to call more

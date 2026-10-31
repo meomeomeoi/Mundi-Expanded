@@ -97,7 +97,7 @@ export async function memNight(g: Save, w: WorldDef, day: number, range?: { star
     for (const m of o.moments) {
         if (m.who === YOU || !g.cast[m.who]) continue;
         const seen = [...(d.around[m.who] ?? [])].filter(a => a !== m.who);
-        const f = addFact(G(g), [YOU, m.who], m.text, 'episode', 'scene', undefined, { seen: [YOU, ...seen] });
+        const f = addFact(G(g), [YOU, m.who], m.text, 'episode', 'scene', undefined, { seen: [YOU, ...seen], day });
         if (f) { f.w = m.w; if (m.w >= c.landmark) out.push(`${nm(m.who)}: ${m.text}`); }
     }
     for (const r of o.rates) { const f = tonight[r.i]; if (f) f.w = r.w; }

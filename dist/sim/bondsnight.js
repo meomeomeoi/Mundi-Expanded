@@ -151,7 +151,7 @@ export async function bondsNight(g, w, day, range) {
             continue;
         // [expanded] 0.2.0.8: who else knows it
         const seen = p.seen === 'none' ? [] : p.seen ?? (p.src === 'scene' ? [...new Set(p.who.flatMap(a => [...(around[a] ?? [])]))].filter(a => p.who.every(x => around[x]?.has(a) || x === a)) : []);
-        const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen });
+        const c = applyChange(gl, p.who, p.delta, p.text, p.src, { pub: p.seen === 'none' ? 'private' : 'witnessed', seen: p.src === 'scene' ? [YOU, ...seen] : seen, day });
         if (c)
             changes.push(c);
     }
@@ -203,7 +203,7 @@ export async function bondsNight(g, w, day, range) {
                 delete t.know;
             }
         }
-        const c = applyChange(gl, [sh.a, sh.b], sh.kind === 'friends' || sh.kind === 'dating' ? 1 : -1, sh.why || `${nm(sh.a)} and ${nm(sh.b)}: ${sh.kind}.`, 'offscreen', sh.secret && sh.kind === 'dating' ? { pub: 'private' } : sh.kind === 'dating' || sh.kind === 'ex' ? { pub: 'public' } : undefined);
+        const c = applyChange(gl, [sh.a, sh.b], sh.kind === 'friends' || sh.kind === 'dating' ? 1 : -1, sh.why || `${nm(sh.a)} and ${nm(sh.b)}: ${sh.kind}.`, 'offscreen', sh.secret && sh.kind === 'dating' ? { pub: 'private', day } : sh.kind === 'dating' || sh.kind === 'ex' ? { pub: 'public', day } : { day });
         if (c)
             changes.push(c);
         b.shiftDay = day;

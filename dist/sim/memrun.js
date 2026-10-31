@@ -123,7 +123,7 @@ export async function memNight(g, w, day, range) {
         if (m.who === YOU || !g.cast[m.who])
             continue;
         const seen = [...(d.around[m.who] ?? [])].filter(a => a !== m.who);
-        const f = addFact(G(g), [YOU, m.who], m.text, 'episode', 'scene', undefined, { seen: [YOU, ...seen] });
+        const f = addFact(G(g), [YOU, m.who], m.text, 'episode', 'scene', undefined, { seen: [YOU, ...seen], day });
         if (f) {
             f.w = m.w;
             if (m.w >= c.landmark)

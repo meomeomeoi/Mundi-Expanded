@@ -161,12 +161,12 @@ const cleanWho = (g: GLike, who: string[]) => [...new Set(who)].filter(a => !!g.
 // facts may also be about the player (written by the player; the night never writes them)
 const cleanWhoYou = (g: GLike, who: string[]) => [...new Set(who)].filter(a => a === YOU || !!g.cast[a]);
 
-export function addFact(g: GLike, who: string[], text: string, kind: BondFact['kind'] = 'standing', src: BondFact['src'] = 'user', delta?: number, k?: { pub?: Pub; seen?: string[] }): BondFact | null {
+export function addFact(g: GLike, who: string[], text: string, kind: BondFact['kind'] = 'standing', src: BondFact['src'] = 'user', delta?: number, k?: { pub?: Pub; seen?: string[]; day?: number }): BondFact | null {
     const people = cleanWhoYou(g, who); const t = text.trim();
     if (people.length < 2 || people.length > 3 || !t) return null;
     const b = bondsOf(g);
-    const f: BondFact = { id: newId(b), who: people, text: t, kind, day: g.day, src, ...(delta ? { delta } : {}), ...(k?.pub ? { pub: k.pub } : {}) };
-    for (const a of k?.seen ?? []) if (!people.includes(a) && (a === YOU || g.cast[a])) (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: g.day };
+    const f: BondFact = { id: newId(b), who: people, text: t, kind, day: k?.day ?? g.day, src, ...(delta ? { delta } : {}), ...(k?.pub ? { pub: k.pub } : {}) };
+    for (const a of k?.seen ?? []) if (!people.includes(a) && (a === YOU || g.cast[a])) (f.know ??= {})[a] = { lvl: 'knows', how: 'saw', day: k?.day ?? g.day };
     b.facts.push(f);
     // [expanded] 0.2.0.8: at most `keep` episodes per pair (or trio): the oldest go first
     // [expanded] 0.2.1-14: landmarks are never trimmed (only you delete them)
@@ -188,15 +188,15 @@ export const factsOfPerson = (g: GLike, a: string) => bondsOf(g).facts.filter(f 
 /* ---------- changes ---------- */
 
 // Applies one moment: every pair among `who` moves by `steps` (-3…3) and the moment becomes an episode.
-export function applyChange(g: GLike, who: string[], steps: number, text: string, src: 'scene' | 'offscreen', k?: { pub?: Pub; seen?: string[] }): Change | null {
+export function applyChange(g: GLike, who: string[], steps: number, text: string, src: 'scene' | 'offscreen', k?: { pub?: Pub; seen?: string[]; day?: number }): Change | null {
     const people = cleanWho(g, who); const s = clamp(Math.round(steps), -3, 3);
     if (people.length < 2 || people.length > 3 || !text.trim()) return null;
     for (const [a, b] of pairsIn(people)) {
         const p = pairOf(g, a, b);
         if (s) { p.v = clamp(p.v + s * STEP, -100, 100); writeBack(g, a, b, p); }
-        p.changed = g.day;
+        p.changed = k?.day ?? g.day;   // [expanded] the night's day, not the one that has already begun
     }
-    const f = addFact(g, people, text, 'episode', src, s || undefined, k ?? (src === 'scene' ? { seen: [YOU] } : undefined));   // a scene: you were there
+    const f = addFact(g, people, text, 'episode', src, s || undefined, src === 'scene' && !k?.seen ? { ...k, seen: [YOU] } : k);   // a scene: you were there
     return { who: people, names: people.map(a => g.cast[a].name), delta: s, text: text.trim(), src, you: !!f && knows(factK(f), YOU) };
 }
 

@@ -274,4 +274,15 @@ test('night: who else saw it (0.2.0.8)', () => {
     assert.equal(out[1].seen, 'none'); assert.equal(out[2].seen, undefined); assert.equal(out[3].seen, 'none'); assert.equal(out[3].text, 'They kissed in the pantry');
 });
 
+test('night facts carry the day that ended, not the day already begun (0.2.1-15.3.2)', () => {
+    const g = game([tie('Mia', 'Rin', 'good')]); g.day = 2;   // asleep: the game is already on day 2, the night is reading day 1
+    const c = B.applyChange(g, ['Mia.png', 'Rin.png'], 1, 'Rin teased Mia about her shirt.', 'scene', { day: 1 });
+    assert.ok(c);
+    const f = B.bondsOf(g).facts.at(-1);
+    assert.equal(f.day, 1); assert.equal(B.pairOf(g, 'Mia.png', 'Rin.png').changed, 1);
+    assert.equal(Object.values(f.know ?? {})[0]?.day, 1);
+    B.applyChange(g, ['Mia.png', 'Rin.png'], 1, 'Right now.', 'scene');
+    assert.equal(B.bondsOf(g).facts.at(-1).day, 2);   // no `day`: today, as before
+});
+
 console.log(`bonds: ${n} tests passed`);

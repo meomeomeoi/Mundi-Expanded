@@ -1,5 +1,12 @@
 # Changelog
 
+## Mundi Expanded 15.3.2 (0.2.1-15.3.2) · Facts on the right day
+
+- **A fact of day 1 said "day 2".** The night reads the day that has just ended, but wrote its facts after the game had
+  moved on, with the new day's number: in Relationships the tag read "day 2 · in a scene" for something that happened
+  on day 1 (the Journal, which keeps its own days, was right). The relationship facts, the pairs' "last changed" and
+  the memory moments of the night now carry the day they are about. Facts already written keep the number they have.
+
 ## Mundi Expanded 15.3.1 (0.2.1-15.3.1) · Acquaintances are not friends
 
 - **A new situation for a Home: "You know each other".** The two situations where you already know everyone started
