@@ -1,5 +1,26 @@
 # Changelog
 
+## Mundi Expanded 15.3 (0.2.1-15.3) · Plans in your own words
+
+- **Say a plan, and it is made.** "Oh, listen, let's do some embroidery today at 2?", "давай посмотрим фильм завтра
+  вечером", "how about a walk in an hour?": in the scene (Say and Free) or in a text to one person on the phone. A line
+  is a proposal only with both a way of proposing (let's, how about, давай, are you free…) and a time (at 14, at 2pm,
+  tonight, tomorrow evening, in an hour…), so ordinary talk is never taken for one. No AI call: it is read by rules, and
+  the engine decides before anyone answers.
+- **One person**: the same check as the "Make plans" form: they work then, it is too late or too early, they have plans
+  (with you, or their own, which you may outrank), they just say no, they do not know you well enough yet. A yes is in the
+  calendar (with your own words as its name) and in their memory, and the AI is told "it is settled" before it writes
+  their answer. A no comes with its reason, and the AI is told to say it in character.
+- **Another time** (when the trouble is only the time): the nearest time that suits them is found (later that day first,
+  then earlier, then tomorrow) and they suggest it in their own words, with two buttons on screen, on any screen: yes puts
+  it in the calendar, no leaves it. On the phone the text answer is written the same way.
+- **Several people, or "everyone"**: the house's call for everyone decides for each (free then? in the mood? how you get
+  along?). The answers are told to the AI first. Those who say yes are in; with a known activity (a movie, games, cooking,
+  a walk, coffee, dinner…) it is the house's own plan with you in it; otherwise each has your plan with your own title.
+- A movie night in a room with no TV is just the company, under the same name. Out of the house: the café, the cinema, the
+  walk. A date only when you say so (and they are ready for one).
+- People → Settings: "Plans in your own words" (on). The "Make plans" form works as before.
+
 ## Mundi Expanded 15.2 (0.2.1-15.2) · Free writing, and carrying things
 
 - **Free** (a fourth way to write, next to Say, Do, Story and See): "quotes" are what you say, and what is outside them

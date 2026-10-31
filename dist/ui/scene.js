@@ -3,7 +3,8 @@
 // editing and deleting all use SillyTavern's own functions.
 import { isRpg } from '../sim/rpg.js';
 import { setHtml } from '../core/safe.js';
-import { shape } from '../sim/shape.js'; // [expanded] 0.2.1-15.2
+import { shape } from '../sim/shape.js';
+import { fromScene } from '../sim/askplanrun.js'; // [expanded] 0.2.1-15.3   // [expanded] 0.2.1-15.2
 import { isSceneMessage, parseEnsemble, NARRATION } from '../sim/ensemble.js'; // [expanded] 0.2.1-15: one reply for the room
 import { liveCast, lastIsBeat, beatSwipeState, beatSwipe, regenBeat, goOn, sendTurn, cancelPlanning } from '../sim/turnrun.js';
 import { lex } from '../core/lexicon.js';
@@ -768,6 +769,8 @@ Object.assign(ACT, {
             return;
         }
         await joinTyping(); // [expanded] 0.2.1-15: writing while you stand by a conversation you overheard: you have joined it
+        if (INPUT_MODE.v === 'say' || INPUT_MODE.v === 'free')
+            fromScene(raw); // [expanded] 0.2.1-15.3: a plan in your own words ("let's… at 2?") is decided before anyone answers
         // RPG: an attempt to persuade, lie, threaten… is judged by the AI and decided by the dice before anyone answers
         if (g0 && w0 && isRpg(w0) && !scenarioOpen()) {
             const force = CHECK.on;

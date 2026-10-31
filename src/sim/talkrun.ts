@@ -32,7 +32,7 @@ import { chat, groupTurnOn, setAsk } from '../st/bridge.js';
 
 /* ---------- the save ---------- */
 
-export interface TalkCfg { bump?: boolean; talk?: T.Freq; come?: T.Freq; ask1?: boolean; ask2?: boolean; drama?: T.Drama; battery?: boolean; invites?: 'off' | 'rare' | 'normal'; doing?: boolean; move?: boolean; fog?: boolean; /** [expanded] 0.2.1-15: an overheard conversation goes on by itself (slowly) while you stand listening */ auto?: 'off' | 'slow' | 'normal'; /** who writes its beats: the mechanics model or the main one */ writer?: 'mech' | 'main' }
+export interface TalkCfg { bump?: boolean; talk?: T.Freq; come?: T.Freq; ask1?: boolean; ask2?: boolean; drama?: T.Drama; battery?: boolean; invites?: 'off' | 'rare' | 'normal'; doing?: boolean; move?: boolean; fog?: boolean; /** [expanded] 0.2.1-15.3: a plan said in your own words ("let's… at 2?") is read and decided */ plans?: boolean; /** [expanded] 0.2.1-15: an overheard conversation goes on by itself (slowly) while you stand listening */ auto?: 'off' | 'slow' | 'normal'; /** who writes its beats: the mechanics model or the main one */ writer?: 'mech' | 'main' }
 export interface Cur { who: string[]; topic: string; tone: T.Tone; stage: T.Stage; src: T.Source; about: string; room: string; at: number; how: 'pending' | 'listened' | 'joined' | 'passed' | 'pulled' | 'silent'; private?: boolean; /** [expanded] 0.2.1-15: the conversation in beats (an older one has none: it is a single snatch) */ arc?: T.Arc }
 export interface Invite { id: string; avatar: string; act: 'movie' | 'games' | 'cook'; place: string; from: number; text: string; state: 'open' | 'yes' | 'no' | 'gone'; appt?: string; reminded?: boolean; nudged?: boolean }
 export interface TalkX {
@@ -53,7 +53,7 @@ export const talkOf = (g: Save): TalkX => {
 export const tcfg = (g: Save) => {
     const c = talkOf(g).cfg;
     return { talk: c.talk ?? 'normal', come: c.come ?? 'normal', ask1: c.ask1 !== false, ask2: c.ask2 !== false, drama: c.drama ?? 'normal', battery: c.battery !== false,
-        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true, auto: c.auto === 'slow' || c.auto === 'normal' ? c.auto : 'off', writer: c.writer === 'main' ? 'main' : 'mech' } as Required<TalkCfg>;
+        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true, plans: c.plans !== false, auto: c.auto === 'slow' || c.auto === 'normal' ? c.auto : 'off', writer: c.writer === 'main' ? 'main' : 'mech' } as Required<TalkCfg>;
 };
 /** The player's own topics and the built-in ones turned off (in SillyTavern's settings: every game). */
 export const topicsCfg = (): { off: number[]; mine: string[] } => { const s = settings() as any; const t = (s.talkTopics ??= {}); t.off ??= []; t.mine ??= []; return t; };

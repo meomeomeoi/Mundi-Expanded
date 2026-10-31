@@ -23,7 +23,7 @@ export const DATE_BOND = 50;      // a date needs a good bond, a Spark match or 
 export const COME_BOND = 25;      // "come over now"
 export const ALONG_BOND = 15;     // "come with me"
 export const HOME_BOND = 50;      // your home is for close people
-const PLAN_LENGTH = 120, ALONG_LENGTH = 240, GRACE = 60;   // they wait an hour before giving up
+export const PLAN_LENGTH = 120, ALONG_LENGTH = 240, GRACE = 60;   // they wait an hour before giving up
 
 export interface Answer { ok: boolean; why: string }
 const yes: Answer = { ok: true, why: '' };

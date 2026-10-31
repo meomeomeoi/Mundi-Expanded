@@ -5,4 +5,7 @@ import { doorHtml } from './doors.js';
 import { knockHtml } from './knockui.js';
 import { talkCardHtml, inviteHtml } from './talkui.js';
 import { ownHtml } from './minigames.js';
-export const expandedOverlays = () => `${lifeSetupHtml()}${doorHtml()}${knockHtml()}${callHtml() /* 0.2.0.10 */}${talkCardHtml()}${inviteHtml() /* 0.2.0.11 */}${ownHtml() /* 0.2.1-12 */}`;
+import { offerHtml } from '../sim/askplanrun.js'; // 0.2.1-15.3
+import { esc } from '../core/store.js';
+import { thumb } from '../st/bridge.js';
+export const expandedOverlays = () => `${lifeSetupHtml()}${doorHtml()}${knockHtml()}${callHtml() /* 0.2.0.10 */}${talkCardHtml()}${offerHtml(esc, thumb) /* 0.2.1-15.3 */}${inviteHtml() /* 0.2.0.11 */}${ownHtml() /* 0.2.1-12 */}`;

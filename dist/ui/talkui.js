@@ -8,6 +8,7 @@ import { icon } from './icons.js';
 import { ACT, INPUT } from './reg.js';
 import * as R from '../sim/talkrun.js';
 import * as T from '../sim/talk.js';
+import { acceptOffer, declineOffer } from '../sim/askplanrun.js'; // [expanded] 0.2.1-15.3
 import { slotAt } from '../sim/lifeday.js';
 import { whereNow } from '../sim/people.js';
 import { hm } from '../sim/time.js';
@@ -100,6 +101,7 @@ export function talkSettingsHtml(g) {
         ${TOG('ask2', c.ask2, 'Ask first', c.ask2 ? 'A card: listen, or not now (sent away too often, they come less).' : 'Off: they just start talking.')}
         <b>What they talk about</b>${SEG('drama', c.drama, [['calm', 'Calm'], ['normal', 'Usual'], ['spicy', 'Spicy']])}
         <small class="mu-muted">Mostly everyday things (interests, the list below, what was left open); the house's own news (who did what, secrets they all know) more often when spicy.</small>
+        ${TOG('plans', c.plans, 'Plans in your own words', c.plans ? 'Say "let\'s do some embroidery today at 2?" (in the scene, or by text on the phone): they decide by their day (work, sleep, plans, how well they know you), and the plan goes in the calendar. If only the time is wrong, they offer another with two buttons. Several people: those free and in the mood say yes.' : 'Off: only the Make plans form and the phone\'s plans make plans; what you write is just talk.')}
         <b>Overheard conversations go on by themselves</b>${SEG('auto', c.auto, [['off', 'Off'], ['slow', 'Slowly'], ['normal', 'Normally']])}
         <small class="mu-muted">${c.auto === 'off' ? 'Off: a conversation you stand by goes on in beats of a few lines, each one when you press Keep listening.' : `While you stand listening and the message box is empty, the next beat comes after about ${c.auto === 'slow' ? '45' : '25'} seconds.`} Someone may notice you after a beat or two: more the longer you stay.</small>
         <b>Their words are written by</b>${SEG('writer', c.writer, [['mech', 'The mechanics model'], ['main', 'The main model']])}
@@ -126,6 +128,8 @@ Object.assign(ACT, {
     'tk-listen': (el) => { if (el.getAttribute('aria-busy'))
         return; void R.listen(); },
     'tk-join': () => { void R.join(); },
+    'ap-yes': () => { void acceptOffer(); }, // [expanded] 0.2.1-15.3: the other time they offered
+    'ap-no': () => declineOffer(),
     'tk-more': (el) => { if (el.getAttribute('aria-busy'))
         return; void R.keepListening(); }, // [expanded] 0.2.1-15
     'tk-pass': () => R.pass(),

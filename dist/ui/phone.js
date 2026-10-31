@@ -1,4 +1,5 @@
 import { meApp } from './meapp.js'; // [expanded] 0.2.1-12
+import { fromPhone } from '../sim/askplanrun.js'; // [expanded] 0.2.1-15.3
 import { romOf } from '../sim/romance.js';
 import { safeUrl } from '../core/safe.js';
 // The phone (Modern world): messages, people, jobs, bank and homes. Opens over the map or the scene.
@@ -746,7 +747,8 @@ Object.assign(ACT, {
         notify();
         try {
             // the answer to a friend's question: what it means is judged, and they decide
-            const reply = askingFrom(g, who) ? (await answerAdvice(g, w, who, text), social(g).threads[who]?.at(-1)?.text ?? '') : await sendText(g, w, who, text);
+            const planned = askingFrom(g, who) ? null : await fromPhone(g, w, who, text); // [expanded] 0.2.1-15.3: a plan in your own words ("let's… at 2?"): they decide and answer
+            const reply = planned !== null ? planned : askingFrom(g, who) ? (await answerAdvice(g, w, who, text), social(g).threads[who]?.at(-1)?.text ?? '') : await sendText(g, w, who, text);
             if (!reply)
                 toast('No answer (is the AI connected?).', 'warn');
             else if (!(P.open && P.app === 'thread' && P.who === who)) {

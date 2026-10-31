@@ -44,7 +44,7 @@ export const talkOf = (g) => {
 export const tcfg = (g) => {
     const c = talkOf(g).cfg;
     return { talk: c.talk ?? 'normal', come: c.come ?? 'normal', ask1: c.ask1 !== false, ask2: c.ask2 !== false, drama: c.drama ?? 'normal', battery: c.battery !== false,
-        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true, auto: c.auto === 'slow' || c.auto === 'normal' ? c.auto : 'off', writer: c.writer === 'main' ? 'main' : 'mech' };
+        invites: c.invites ?? 'rare', doing: c.doing !== false, move: c.move !== false, fog: c.fog === true, bump: c.bump === true, plans: c.plans !== false, auto: c.auto === 'slow' || c.auto === 'normal' ? c.auto : 'off', writer: c.writer === 'main' ? 'main' : 'mech' };
 };
 /** The player's own topics and the built-in ones turned off (in SillyTavern's settings: every game). */
 export const topicsCfg = () => { const s = settings(); const t = (s.talkTopics ??= {}); t.off ??= []; t.mine ??= []; return t; };

@@ -24,6 +24,7 @@ const homeTopics = (w) => {
             items: [
                 ['Say, Do, Story, See, Free', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something. Free: write as in a story: "quotes" are what you say, the rest is what you do. A line that already has quotes or asterisks goes as you wrote it.'],
                 ['@ someone', 'Type @ and pick a name: only that person answers your line.'],
+                ['Plans in your own words', 'Say "let\'s do some embroidery today at 2?" (or text it): they decide by their day, and a yes goes in the calendar. If only the time is wrong, they offer another with two buttons. Name several people, or say "everyone", to ask them all.'],
                 ['Several people here', 'Call someone by name and they answer; talk to the room and the room answers together, in one reply. The forward button then says "Let them go on": the next bit, with nothing from you. Swipe and regenerate redo the whole bit.'],
                 ['Overheard talk', 'Walking in on a conversation: Listen, then Keep listening for the next few lines (or Join in, or write something). The longer you stay, the likelier they notice you.'],
                 ['Buttons on a line', 'Edit, delete, regenerate, continue, or let the AI write your line.'],
@@ -101,6 +102,7 @@ const topics = (w) => {
             items: [
                 ['Say, Do, Story, See, Free', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something. Free: write as in a story: "quotes" are what you say, the rest is what you do. A line that already has quotes or asterisks goes as you wrote it.'],
                 ['@ someone', 'Type @ and pick a name: only that person answers your line.'],
+                ['Plans in your own words', 'Say "let\'s do some embroidery today at 2?" (or text it): they decide by their day, and a yes goes in the calendar. If only the time is wrong, they offer another with two buttons. Name several people, or say "everyone", to ask them all.'],
                 ['Talk only with them', 'On a person\'s card: the others stay but give you space.'],
                 ['Buttons on a line', 'Edit, delete, regenerate, continue, or let the AI write your line.'],
                 ['Bonds grow as you talk', 'Being kind brings people closer (a little each line, up to a limit each day). Rude lines push them away.'],

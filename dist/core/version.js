@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.2';
+export const VERSION = '0.2.1-15.3';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,11 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.3', fork: true, title: 'Plans in your own words', items: [
+            ['calendar', 'Say it as you would: "oh, listen, let\'s do some embroidery today at 2?" (in the scene, or by text on the phone). They decide by their day: they work then, it is too late, they have plans, they just say no, they do not know you well enough yet. If they say yes, it is in the calendar and in their memory before they answer, and they answer as someone who just agreed.'],
+            ['chat', 'If only the time is the trouble, they suggest another one ("not at 2, but at 4?") and two buttons appear: yes puts it in the calendar, no leaves it.'],
+            ['users', 'Several people, or everyone ("everyone, let\'s watch a movie tonight at 8"): the house\'s call for everyone decides for each (free then? in the mood? how you get along?). Those who say yes are in; for a movie night, games, cooking and the like it is the house\'s own plan with you in it. People → Settings can turn it off.'],
+        ] },
     { v: '0.2.1-15.2', fork: true, title: 'Free writing, and carrying things', items: [
             ['pen', 'The message box has a fourth way to write: Free. "Quotes" are what you say, and what is outside them is what you do (it gets its asterisks): I walk in and say "Hi", then sit down. And in Say and Do a line that already has quotes or asterisks in it goes as you wrote it, so mixed lines (*smiles* "Hey" *sits*) are no longer broken.'],
             ['user', 'Small things can be carried: in a room with a handheld console, a deck of cards, a guitar, the room\'s actions have "Take it to your room" (a minute), and in your room "Take it back to the storage room". What you found, ordered or bought is yours once it is in your room; the house\'s own things are only lent. Big things stay.'],
