@@ -4770,7 +4770,7 @@ body.mundi-open #completion_prompt_manager_popup {
 @keyframes mh-cneed-low { 50% { box-shadow: 0 0 0 3px rgba(255, 80, 80, .45); } }
 /* [expanded] 0.2.1-15: a reply for the room, drawn line by line while it streams in: the wrapper takes no room of its own,
    so the lines sit in the log's grid as any other lines do. */
-#mundi-root .mu-beat { display: contents; }
+#mundi-root .mu-roombeat { display: contents; }   /* (not .mu-beat: that is the quick reactions' buttons) */
 /* The scene's background fading from one time of day to the next (ui/bgfade.ts): the old picture, on top, fading out. */
 #mundi-root .mu-scene-bg-old { position: absolute; inset: 0; background-color: #10141f; background-repeat: no-repeat; pointer-events: none; }
 /* The character picker's folders (new game, someone moves in, guests…): the same size as a character's card (the

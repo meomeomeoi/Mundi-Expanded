@@ -1,5 +1,11 @@
 # Changelog
 
+## Mundi Expanded 15.1.1 (0.2.1-15.1.1) · Quick reactions look right again
+
+- The quick-reaction buttons over the message box were drawn as one line of bare text, the options run together: the
+  CSS class of the new streaming reply (0.2.1-15) was the one the buttons use, and it said "display: contents". Renamed;
+  a test keeps the two apart.
+
 ## Mundi Expanded 15.1 (0.2.1-15.1) · Chores from the first day
 
 - **The rota exists from the start.** The week's chores went round the people only at midnight, so in a new game (or

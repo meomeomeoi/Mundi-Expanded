@@ -109,5 +109,15 @@ const id6 = director('[Hana]\n"a"\n[Boruto]\n"b"\n[Hana]\n"c"');
 T.convertAt(id6); await T.flush();
 ok(ctx.chat.length === 3, `two parts at most (${ctx.chat.length - 1})`);
 
+// the wrapper of a streaming reply must not borrow the class of the quick reactions' buttons (.mu-beat): "display: contents"
+// on it took their background, border and padding away (0.2.1-15)
+{
+    const fs = await import('node:fs'); const css = fs.readdirSync(path.join(root, 'css')).map(f => fs.readFileSync(path.join(root, 'css', f), 'utf8')).join('\n');
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(m => m[1].split(',').some(sel => /(^|\s)#mundi-root\s+\.mu-beat\s*$/.test(sel.trim())));
+    ok(rules.length >= 1 && !rules.some(m => /display\s*:\s*contents/.test(m[2])), '.mu-beat (the quick reactions) is never "display: contents"');
+    ok(/\.mu-roombeat\s*\{[^}]*display\s*:\s*contents/.test(css), 'the reply\'s wrapper has its own class');
+    const scene = fs.readFileSync(path.join(root, 'src/ui/scene.ts'), 'utf8');
+    ok(!/class="mu-beat"/.test(scene) && /class="mu-roombeat"/.test(scene), 'the scene uses it');
+}
 console.log(`beatrun: ${passes} checks passed${fails ? `, ${fails} FAILED` : ''}`);
 if (fails) process.exit(1);

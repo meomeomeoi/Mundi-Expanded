@@ -248,7 +248,7 @@ function liveBeatInner(m, i) {
 }
 function lineHtml(m, i, last, lastChar, ghost = false) {
     if (!ghost && isSceneMessage(m))
-        return `<div class="mu-beat" data-beat="${esc(i)}">${liveBeatInner(m, i)}</div>`;
+        return `<div class="mu-roombeat" data-beat="${esc(i)}">${liveBeatInner(m, i)}</div>`;
     const narr = !!m.extra?.mundi_narrator;
     // a picture SillyTavern made (Image Generation posts it as a system line) is shown; other system lines are not
     const pic = m.is_system && !narr && isGeneratedPicture(m);
@@ -473,7 +473,7 @@ export function patchLastLine() {
     const list = chat();
     const i = list.length - 1;
     if (isSceneMessage(list[i])) { // [expanded] 0.2.1-15: a reply for the room streams in as the people's lines
-        const beat = log.querySelector(`.mu-beat[data-beat="${esc(i)}"]`);
+        const beat = log.querySelector(`.mu-roombeat[data-beat="${esc(i)}"]`);
         if (!beat) {
             notify();
             return;

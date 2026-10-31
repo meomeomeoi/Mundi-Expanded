@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.1';
+export const VERSION = '0.2.1-15.1.1';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,9 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.1.1', fork: true, title: 'Quick reactions look right again', items: [
+            ['gear', 'The quick-reaction buttons over the message box were drawn as one line of bare text (no button, no gap): a style meant for the room\'s streaming reply (0.2.1-15) was reaching them. They are buttons again.'],
+        ] },
     { v: '0.2.1-15.1', fork: true, title: 'Chores from the first day', items: [
             ['user', 'The week\'s rota of chores is made as soon as it is needed, not at the first midnight: before, in a new game nobody had a turn yet, so there was no "Wash the dishes" in the kitchen and the Chores page showed "—" for everyone.'],
         ] },

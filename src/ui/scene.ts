@@ -219,7 +219,7 @@ function liveBeatInner(m: any, i: number) {
     return blocks.map((b, k) => ghostLine(b, i, k === blocks.length - 1)).join('');
 }
 function lineHtml(m: any, i: number, last: boolean, lastChar: number, ghost = false): string {
-    if (!ghost && isSceneMessage(m)) return `<div class="mu-beat" data-beat="${esc(i)}">${liveBeatInner(m, i)}</div>`;
+    if (!ghost && isSceneMessage(m)) return `<div class="mu-roombeat" data-beat="${esc(i)}">${liveBeatInner(m, i)}</div>`;
     const narr = !!m.extra?.mundi_narrator;
     // a picture SillyTavern made (Image Generation posts it as a system line) is shown; other system lines are not
     const pic = m.is_system && !narr && isGeneratedPicture(m);
@@ -422,7 +422,7 @@ export function patchLastLine() {
     const list = chat();
     const i = list.length - 1;
     if (isSceneMessage(list[i])) {   // [expanded] 0.2.1-15: a reply for the room streams in as the people's lines
-        const beat = log.querySelector<HTMLElement>(`.mu-beat[data-beat="${esc(i)}"]`);
+        const beat = log.querySelector<HTMLElement>(`.mu-roombeat[data-beat="${esc(i)}"]`);
         if (!beat) { notify(); return; }
         setHtml(beat, liveBeatInner(list[i], i));
         if (STICK.get(log) !== false) log.scrollTop = log.scrollHeight;
