@@ -108,6 +108,39 @@ export function moveFixture(g, id, room, owner) {
     x.room = room;
     if (owner)
         x.owner = owner;
+    delete x.from;
+    delete x.ownerWas; // moved by hand or by the story: it is not "carried" any more
+    return x;
+}
+/* ---------- carrying small things to your room and back (0.2.1-15.2) ---------- */
+/** Things you may carry: small ones, not decor, the house's or yours (never someone else's, and nothing in their bedroom unless it is yours). */
+export function carryable(x, room) {
+    if (x.decor || catOf(x.cat ?? '')?.size !== 'small')
+        return false;
+    if (x.owner !== 'house' && x.owner !== 'player')
+        return false;
+    return !(room.startsWith('home:') && room !== PLAYER_ROOM && x.owner !== 'player'); // someone's bedroom: only what is yours
+}
+/** Whose it is once it is in your room: what you found, ordered or bought is yours; the house's own things are only lent. */
+export const ownerInYourRoom = (x) => (x.owner === 'house' && ['found', 'order', 'shop', 'bought'].includes(x.via) ? 'player' : x.owner);
+/** Takes a small thing to your room; remembers where it was (and whose), to put it back. Null: not possible (too big, not yours to take, the room is full). */
+export function carryToYou(g, id) {
+    const x = fixtureById(g, id);
+    if (!x || x.room === PLAYER_ROOM || !carryable(x, x.room) || roomFull(g, PLAYER_ROOM))
+        return null;
+    const from = x.room, was = x.owner;
+    moveFixture(g, id, PLAYER_ROOM, ownerInYourRoom(x));
+    x.from = from;
+    x.ownerWas = was;
+    return x;
+}
+/** Puts a thing you carried back where it was, as whose it was. Null: it was not carried, or its room is gone or full. */
+export function carryBack(g, id, roomExists = () => true) {
+    const x = fixtureById(g, id);
+    if (!x || x.room !== PLAYER_ROOM || !x.from || !roomExists(x.from) || roomFull(g, x.from))
+        return null;
+    const to = x.from, was = x.ownerWas ?? x.owner;
+    moveFixture(g, id, to, was);
     return x;
 }
 /** Can `who` (an avatar, or 'player') use this thing: the house's, or their own. */

@@ -604,7 +604,7 @@ Object.assign(ACT, {
 export const narrateMode = (): 'all' | 'matter' | 'none' => { const m = (UI() as any).narrateMode; return m === 'all' || m === 'matter' || m === 'none' ? m : UI().narrateActions === false ? 'none' : 'matter'; };
 /** Upkeep: it only restores hunger, thirst or being clean, with no skill, roll, game or outing (a meal, a shower, a glass of water). */
 export const isRoutine = (a: { id: string; roll?: unknown; outing?: boolean; hobby?: string; effects: Record<string, number> }) =>
-    !a.roll && !a.outing && !a.hobby && !GAME_OF[a.id] && ['hunger', 'thirst', 'hygiene'].some(k => (a.effects[k] ?? 0) > 0);
+    !a.roll && !a.outing && !a.hobby && !GAME_OF[a.id] && (['hunger', 'thirst', 'hygiene'].some(k => (a.effects[k] ?? 0) > 0) || /^x-fx-(carry|back)-/.test(a.id));   // [expanded] 0.2.1-15.2: carrying a thing is upkeep too
 function narrateNow(label: string, routine = false) {
     const m = narrateMode();
     if (state.view !== 'scene' || state.generating || m === 'none' || (routine && m === 'matter')) return;

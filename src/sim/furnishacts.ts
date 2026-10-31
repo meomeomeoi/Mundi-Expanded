@@ -59,6 +59,12 @@ actionMods.push((g, w, list) => {
     // someone left something on the curb today: from the hallway or the front of the house
     const curb = fxx(g).curb; const kind = houseRooms(g, w).find(r => r.id === room)?.kind;
     if (curb && curb.day === g.day && (kind === 'hall' || kind === 'outdoor')) { const c = F.catOf(curb.cat); if (c) add.push({ id: 'x-fx-curb', name: 'Take it in', label: `Take in the ${F.catName(c, eraOf(g)).toLowerCase()} someone left on the curb`, icon: '🪑', cost: 0, minutes: 15, effects: { energy: -4 } } as ActionDef); }
+    // [expanded] 0.2.1-15.2: small things go to your room and back (a minute); big ones stay where they are
+    if (room !== F.PLAYER_ROOM) { for (const x of F.fixturesIn(G(g), room).filter(y => F.carryable(y, room)).slice(0, 6)) if (!F.roomFull(G(g), F.PLAYER_ROOM)) add.push({ id: `x-fx-carry-${x.id}`, name: `Take the ${x.name.toLowerCase()} to your room`, label: `Take the ${x.name.toLowerCase()} to your room`, icon: '🎒', cost: 0, minutes: 1, home: true, effects: {} } as ActionDef); }
+    else for (const x of F.fixturesIn(G(g), room).filter(y => y.from && F.carryable(y, room))) {
+        const back = houseRooms(g, w).find(r => r.id === x.from); if (!back || F.roomFull(G(g), back.id)) continue;
+        add.push({ id: `x-fx-back-${x.id}`, name: `Take the ${x.name.toLowerCase()} back to the ${back.name.toLowerCase()}`, label: `Take the ${x.name.toLowerCase()} back to the ${back.name.toLowerCase()}`, icon: '🎒', cost: 0, minutes: 1, home: true, effects: {} } as ActionDef);
+    }
     // the storage room, once a week
     if (kind === 'storage' && (fxx(g).rummaged ?? -99) <= g.day - 7) add.push({ id: 'x-fx-rummage', name: 'Rummage', label: 'Rummage through the old boxes', icon: '📦', cost: 0, minutes: 30, effects: { hygiene: -5 } } as ActionDef);
     return [...kept, ...add];
@@ -72,6 +78,13 @@ onAction.push((g, w, a) => {
         void import('../ui/phone.js').then(m => { (m as any).P.open = true; (m as any).P.app = 'order'; notify(); }).catch(() => { /* no phone */ });
         return;
     }
+    { const m = /^x-fx-(carry|back)-(.+)$/.exec(a.id);   // [expanded] 0.2.1-15.2
+      if (m) {
+        const rooms = houseRooms(g, w);
+        const x = m[1] === 'carry' ? F.carryToYou(G(g), m[2]) : F.carryBack(G(g), m[2], r => rooms.some(z => z.id === r));
+        if (x) { const where = m[1] === 'carry' ? 'your room' : (rooms.find(r => r.id === x.room)?.name ?? 'its place').toLowerCase(); setTimeout(() => toast(`The ${x.name.toLowerCase()} is in ${where === 'your room' ? where : `the ${where}`} now${m[1] === 'carry' && x.owner === 'house' ? ' (lent: it is still the house\'s)' : ''}.`, 'success'), 50); saveGame(); }
+        return;
+    } }
     if (a.id === 'x-fx-curb') {
         const f = fxx(g); const c = f.curb && F.catOf(f.curb.cat); if (!c) return; delete f.curb;
         const rooms = houseRooms(g, w); const to = rooms.find(r => !r.owner && r.kind && c.rooms.includes(r.kind)) ?? rooms.find(r => r.id === g.player.loc)!;

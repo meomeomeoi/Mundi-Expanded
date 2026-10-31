@@ -1,5 +1,25 @@
 # Changelog
 
+## Mundi Expanded 15.2 (0.2.1-15.2) · Free writing, and carrying things
+
+- **Free** (a fourth way to write, next to Say, Do, Story and See): "quotes" are what you say, and what is outside them
+  is what you do, each stretch in its own asterisks: `I walk in and say "Hi" then sit down` is sent as
+  `*I walk in and say* "Hi" *then sit down*`. With no quotes and no asterisks it is all action.
+- **Marked lines go as written** (Say and Do): a line with a pair of quotes or asterisks anywhere in it is no longer
+  wrapped whole, which broke `*smiles* "Hey" *sits*` and `"Hey" *smiles*` (Do used to add asterisks around all of it).
+- **Carrying things**: a small thing (a handheld console, cards, a guitar, a DVD player) in the room you are in can be
+  taken to your room (a minute), and from your room back to where it was. Big things (a pool table, a TV) stay. Not
+  decor, not someone else's, nothing from someone's bedroom unless it is yours, nothing into a full room. What you found
+  (Rummage), ordered or bought is yours once it is in your room; the house's own things are only lent, and go back as
+  the house's. Moving by hand in Storage forgets that it was carried. Told in a line, no scene of its own.
+- **Leaving is told**: when someone leaves the room by their own day (to their room, out of the house, to another
+  room), the story says so in a line, as it already did for people coming in. Not when you moved, not for a long wait,
+  not when you are asleep. And if your line is being answered at that moment, whoever is leaving is told to answer with
+  one short parting line instead of carrying on as if staying.
+- **Clean replies**: a reply that arrives with a `[Group Chat: …]` header, or the speaker's own name as a label
+  (`**Leah:**`, `Leah:`), loses them (SillyTavern took off `Leah:` only when it was not bold). Only at the start of the
+  reply, and only the speaker's own name.
+
 ## Mundi Expanded 15.1.1 (0.2.1-15.1.1) · Quick reactions look right again
 
 - The quick-reaction buttons over the message box were drawn as one line of bare text, the options run together: the

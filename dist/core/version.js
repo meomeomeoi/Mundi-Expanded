@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.1.1';
+export const VERSION = '0.2.1-15.2';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,12 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.2', fork: true, title: 'Free writing, and carrying things', items: [
+            ['pen', 'The message box has a fourth way to write: Free. "Quotes" are what you say, and what is outside them is what you do (it gets its asterisks): I walk in and say "Hi", then sit down. And in Say and Do a line that already has quotes or asterisks in it goes as you wrote it, so mixed lines (*smiles* "Hey" *sits*) are no longer broken.'],
+            ['user', 'Small things can be carried: in a room with a handheld console, a deck of cards, a guitar, the room\'s actions have "Take it to your room" (a minute), and in your room "Take it back to the storage room". What you found, ordered or bought is yours once it is in your room; the house\'s own things are only lent. Big things stay.'],
+            ['map', 'When someone leaves the room by their own day (their room, out of the house, another room), the story says so in a line. And if you are speaking at that moment, they answer with a short parting line, not as if they were staying.'],
+            ['gear', 'A reply that arrives with a "[Group Chat: …]" header or its speaker\'s name in bold ("**Leah:** …") loses them.'],
+        ] },
     { v: '0.2.1-15.1.1', fork: true, title: 'Quick reactions look right again', items: [
             ['gear', 'The quick-reaction buttons over the message box were drawn as one line of bare text (no button, no gap): a style meant for the room\'s streaming reply (0.2.1-15) was reaching them. They are buttons again.'],
         ] },

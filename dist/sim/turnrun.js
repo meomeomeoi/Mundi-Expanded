@@ -16,6 +16,7 @@ import { regCfg, regOn, bgAsk } from './regulator.js';
 import { cardText, slotAt } from './lifeday.js';
 import { looseJson } from './jsonfix.js';
 import { tierOf } from './talkrun.js';
+import { cleanReply } from './cleanreply.js'; // [expanded] 0.2.1-15.2
 import * as E from './ensemble.js';
 import * as TP from './turnplan.js';
 const ctxG = () => { const g = game(); const w = g && getWorld(g.world); return g && w ? { g, w } : null; };
@@ -234,12 +235,25 @@ export function sweep() {
         repairPending();
     void flush();
 }
+/** [expanded] 0.2.1-15.2: a reply that came with a "[Group Chat: …]" header or its speaker's own label: taken off its start. */
+export function cleanAt(id) {
+    const m = B.chat()[id];
+    if (!m || m.is_user || m.is_system || !B.selectedGroup())
+        return false;
+    const was = String(m.mes ?? '');
+    const now = cleanReply(was, String(m.name ?? ''));
+    if (now === was || !now.trim())
+        return false;
+    B.editMessage(id, now);
+    return true;
+}
 let installed = false;
 export function installBeats() {
     if (installed)
         return;
     installed = true;
     B.onFirst('MESSAGE_RECEIVED', (id) => { try {
+        cleanAt(id);
         convertAt(id);
     }
     catch (e) {

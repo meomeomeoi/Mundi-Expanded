@@ -3,6 +3,7 @@
 // editing and deleting all use SillyTavern's own functions.
 import { isRpg } from '../sim/rpg.js';
 import { setHtml } from '../core/safe.js';
+import { shape, type Mode as ShapeMode } from '../sim/shape.js';   // [expanded] 0.2.1-15.2
 import { isSceneMessage, parseEnsemble, NARRATION, type Block } from '../sim/ensemble.js';   // [expanded] 0.2.1-15: one reply for the room
 import { liveCast, lastIsBeat, beatSwipeState, beatSwipe, regenBeat, goOn, sendTurn, cancelPlanning } from '../sim/turnrun.js';
 import { lex } from '../core/lexicon.js';
@@ -672,22 +673,14 @@ async function soloNarrate(g: Save, w: WorldDef, text: string) {
 
 /* ---------- the message box: Say / Do / Story / See (26) ---------- */
 
-export type InputMode = 'say' | 'do' | 'story' | 'see';
-const MODES: [InputMode, string, string][] = [['say', 'Say', 'chat'], ['do', 'Do', 'forward'], ['story', 'Story', 'book'], ['see', 'See', 'search']];
+export type InputMode = ShapeMode;   // [expanded] 0.2.1-15.2: and Free
+const MODES: [InputMode, string, string][] = [['say', 'Say', 'chat'], ['do', 'Do', 'forward'], ['story', 'Story', 'book'], ['see', 'See', 'search'], ['free', 'Free', 'pen']];
 export const INPUT_MODE = { v: 'say' as InputMode };
 function modesHtml() {
-    return `<div class="mh-modes">${MODES.map(([id, label, ic]) => `<button class="${INPUT_MODE.v === id ? 'is-on' : ''}" data-act="input-mode" data-v="${esc(id)}" title="${({ say: 'What you say out loud', do: 'What you do', story: 'Steer the story (a direction for the narrator)', see: 'Look at something: the AI describes what you see' } as any)[id]}">${icon(ic)}<span>${label}</span></button>`).join('')}</div>`;
+    return `<div class="mh-modes">${MODES.map(([id, label, ic]) => `<button class="${INPUT_MODE.v === id ? 'is-on' : ''}" data-act="input-mode" data-v="${esc(id)}" title="${({ say: 'What you say out loud', do: 'What you do', story: 'Steer the story (a direction for the narrator)', see: 'Look at something: the AI describes what you see', free: 'Write as in a story: "quotes" are what you say, the rest is what you do' } as any)[id]}">${icon(ic)}<span>${label}</span></button>`).join('')}</div>`;
 }
-// How a line is sent in each mode.
-export function shapeLine(text: string): string {
-    const t = text.trim();
-    switch (INPUT_MODE.v) {
-        case 'do': return /^\*.*\*$/s.test(t) ? t : `*${t.replace(/^\*|\*$/g, '')}*`;
-        case 'story': return `[Story direction: ${t}]`;
-        case 'see': return `*looks at ${t.replace(/^(at|the)\s+/i, (m) => m.toLowerCase() === 'at ' ? '' : m)}* [Describe what {{user}} sees.]`;
-        default: return /^["“*]/.test(t) ? t : `"${t}"`;
-    }
-}
+// How a line is sent in each mode (rules in sim/shape.ts).
+export function shapeLine(text: string): string { return shape(INPUT_MODE.v, text); }
 
 /* ---------- other SillyTavern extensions' buttons (23) ---------- */
 

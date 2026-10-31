@@ -28,7 +28,7 @@ import { isOuting, placeOf } from './places.js';
 import { isSleeping } from './plans.js';
 import { hm, advance } from './time.js';
 import * as T from './talk.js';
-import { chat } from '../st/bridge.js';
+import { chat, groupTurnOn, setAsk } from '../st/bridge.js';
 export const talkOf = (g) => {
     const x = (g.talkx ??= {});
     x.cfg ??= {};
@@ -475,6 +475,31 @@ afterSync.push((g, w, here) => {
     const before = new Set(x.prevHere ?? []);
     x.prevLoc = loc;
     x.prevHere = here.map(r => r.avatar);
+    const prevAt = x.prevAt ?? now;
+    x.prevAt = now;
+    // [expanded] 0.2.1-15.2: someone who was here and is gone by their own day (not because you went, not the jump of a long wait): the story says so,
+    // and a reply to your line being written right now is told to be a short parting one
+    if (!moved && now - prevAt <= 45 && !g.asleep && !isOuting(loc) && loc !== OUT) {
+        const said = (x.said ??= {});
+        const out = [];
+        for (const a of before) {
+            const r = g.cast[a];
+            if (!r || here.some(h => h.avatar === a) || (said[a] !== undefined && now - said[a] < 30))
+                continue;
+            const at = whereNow(g, w, r);
+            if (at === loc)
+                continue;
+            said[a] = now;
+            out.push({ r, line: at === OUT ? `${r.name} heads out.` : at === ownRoom(r) ? `${r.name} goes to their room.` : `${r.name} goes to ${roomName(g, w, at)}.` });
+        }
+        if (out.length) {
+            const nm = names(g, out.map(o => o.r.avatar));
+            if (groupTurnOn())
+                setAsk(`[${nm} ${out.length > 1 ? 'are' : 'is'} leaving the room right now. If ${out.length > 1 ? 'they answer' : `${out[0].r.name} answers`}, it is one short parting line (a word, what to do with something left behind), and then ${out.length > 1 ? 'they are' : 'they are'} gone. Do not write more than that for ${out.length > 1 ? 'them' : out[0].r.name}.]`, 90000);
+            for (const o of out.slice(0, 3))
+                whenIdle(() => bridge().then(b => b.narratorLine(o.line)));
+        }
+    }
     if (moved) {
         if (TK.card)
             TK.card = null;
@@ -546,6 +571,7 @@ function leave(g, w, r, line = `${r.name} goes to their room.`) {
     if (to === g.player.loc)
         return false;
     (s.went ??= {})[r.avatar] = { loc: to, until: now + 60, line: -1 };
+    (talkOf(g).said ??= {})[r.avatar] = now; // [expanded] 0.2.1-15.2: this one has a line of its own (below)
     s.with = (s.with ?? []).filter((c) => c.avatar !== r.avatar);
     if (s.lock?.who)
         s.lock.who = s.lock.who.filter((a) => a !== r.avatar);

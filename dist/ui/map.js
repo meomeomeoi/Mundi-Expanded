@@ -784,7 +784,7 @@ Object.assign(ACT, {
 /** [expanded] 0.2.1-14.5: what the AI narrates of the things you do: everything, only what matters (default), nothing. */
 export const narrateMode = () => { const m = UI().narrateMode; return m === 'all' || m === 'matter' || m === 'none' ? m : UI().narrateActions === false ? 'none' : 'matter'; };
 /** Upkeep: it only restores hunger, thirst or being clean, with no skill, roll, game or outing (a meal, a shower, a glass of water). */
-export const isRoutine = (a) => !a.roll && !a.outing && !a.hobby && !GAME_OF[a.id] && ['hunger', 'thirst', 'hygiene'].some(k => (a.effects[k] ?? 0) > 0);
+export const isRoutine = (a) => !a.roll && !a.outing && !a.hobby && !GAME_OF[a.id] && (['hunger', 'thirst', 'hygiene'].some(k => (a.effects[k] ?? 0) > 0) || /^x-fx-(carry|back)-/.test(a.id)); // [expanded] 0.2.1-15.2: carrying a thing is upkeep too
 function narrateNow(label, routine = false) {
     const m = narrateMode();
     if (state.view !== 'scene' || state.generating || m === 'none' || (routine && m === 'matter'))

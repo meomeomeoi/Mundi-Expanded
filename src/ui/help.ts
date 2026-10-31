@@ -23,7 +23,7 @@ const homeTopics = (w: WorldDef): Topic[] => {
         ] },
     { id: 'talk', icon: 'chat', title: 'Talking', intro: 'Write in the box under the story. The engine keeps the time and the relationships; the AI writes the scene.',
         items: [
-            ['Say, Do, Story, See', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something.'],
+            ['Say, Do, Story, See, Free', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something. Free: write as in a story: "quotes" are what you say, the rest is what you do. A line that already has quotes or asterisks goes as you wrote it.'],
             ['@ someone', 'Type @ and pick a name: only that person answers your line.'],
             ['Several people here', 'Call someone by name and they answer; talk to the room and the room answers together, in one reply. The forward button then says "Let them go on": the next bit, with nothing from you. Swipe and regenerate redo the whole bit.'],
             ['Overheard talk', 'Walking in on a conversation: Listen, then Keep listening for the next few lines (or Join in, or write something). The longer you stay, the likelier they notice you.'],
@@ -98,7 +98,7 @@ const topics = (w: WorldDef | null): Topic[] => {
         ] },
     { id: 'talk', icon: 'chat', title: 'Talking', intro: 'Write in the box under the story. The engine keeps the numbers (time, money, relationships); the AI writes the scene.',
         items: [
-            ['Say, Do, Story, See', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something.'],
+            ['Say, Do, Story, See, Free', 'Say: what you say out loud. Do: what you do. Story: a direction for the story ("it starts to rain"). See: ask the narrator to describe something. Free: write as in a story: "quotes" are what you say, the rest is what you do. A line that already has quotes or asterisks goes as you wrote it.'],
             ['@ someone', 'Type @ and pick a name: only that person answers your line.'],
             ['Talk only with them', 'On a person\'s card: the others stay but give you space.'],
             ['Buttons on a line', 'Edit, delete, regenerate, continue, or let the AI write your line.'],

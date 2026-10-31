@@ -16,6 +16,7 @@ import { regCfg, regOn, bgAsk } from './regulator.js';
 import { cardText, slotAt } from './lifeday.js';
 import { looseJson } from './jsonfix.js';
 import { tierOf } from './talkrun.js';
+import { cleanReply } from './cleanreply.js';   // [expanded] 0.2.1-15.2
 import * as E from './ensemble.js';
 import * as TP from './turnplan.js';
 
@@ -171,10 +172,18 @@ export function sweep() {
     if (!RUN.pending && !RUN.flushing) repairPending();
     void flush();
 }
+/** [expanded] 0.2.1-15.2: a reply that came with a "[Group Chat: …]" header or its speaker's own label: taken off its start. */
+export function cleanAt(id: number): boolean {
+    const m = B.chat()[id]; if (!m || m.is_user || m.is_system || !B.selectedGroup()) return false;
+    const was = String(m.mes ?? ''); const now = cleanReply(was, String(m.name ?? ''));
+    if (now === was || !now.trim()) return false;
+    B.editMessage(id, now);
+    return true;
+}
 let installed = false;
 export function installBeats() {
     if (installed) return; installed = true;
-    B.onFirst('MESSAGE_RECEIVED', (id: number) => { try { convertAt(id); } catch (e) { console.warn('[Mundi Expanded] beat', e); } });
+    B.onFirst('MESSAGE_RECEIVED', (id: number) => { try { cleanAt(id); convertAt(id); } catch (e) { console.warn('[Mundi Expanded] beat', e); } });
     for (const ev of ['GROUP_WRAPPER_FINISHED', 'GENERATION_STOPPED', 'GENERATION_ENDED']) B.on(ev, sweep);
     B.on('CHAT_CHANGED', () => { RUN.pending = null; setTimeout(sweep, 600); });
 }

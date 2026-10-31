@@ -84,7 +84,7 @@ export const catalogFor = (era: Era, kind?: RoomKind) => CATALOG.filter(c => for
 
 export type Owner = 'house' | string;   // 'house', 'player', or a character's avatar
 export type Via = 'start' | 'bought' | 'order' | 'shop' | 'found' | 'gift' | 'story' | 'hand';
-export interface Fixture { id: string; cat?: string; name: string; room: string; owner: Owner; via: Via; day: number; decor?: boolean }
+export interface Fixture { id: string; cat?: string; name: string; room: string; owner: Owner; via: Via; day: number; decor?: boolean; /** [expanded] 0.2.1-15.2: carried to your room: where it came from, and whose it was (to put it back) */ from?: string; ownerWas?: Owner }
 export interface FurnishX { items: Fixture[]; seq: number; started?: boolean; bedrooms?: boolean; orders?: Order[]; curb?: { cat: string; day: number }; rummaged?: number; props?: Proposal[]; propFreq?: 'off' | 'rare' | 'sometimes'; /** [expanded] 0.2.0.8: things a room takes */ limit?: number }
 export type GLike = { day: number; furnishx?: FurnishX };
 export function furnishOf(g: GLike): FurnishX {
@@ -113,6 +113,32 @@ export function removeFixture(g: GLike, id: string) { const f = furnishOf(g); f.
 export function moveFixture(g: GLike, id: string, room: string, owner?: Owner) {
     const x = fixtureById(g, id); if (!x) return null;
     x.room = room; if (owner) x.owner = owner;
+    delete x.from; delete x.ownerWas;   // moved by hand or by the story: it is not "carried" any more
+    return x;
+}
+/* ---------- carrying small things to your room and back (0.2.1-15.2) ---------- */
+
+/** Things you may carry: small ones, not decor, the house's or yours (never someone else's, and nothing in their bedroom unless it is yours). */
+export function carryable(x: Fixture, room: string): boolean {
+    if (x.decor || catOf(x.cat ?? '')?.size !== 'small') return false;
+    if (x.owner !== 'house' && x.owner !== 'player') return false;
+    return !(room.startsWith('home:') && room !== PLAYER_ROOM && x.owner !== 'player');   // someone's bedroom: only what is yours
+}
+/** Whose it is once it is in your room: what you found, ordered or bought is yours; the house's own things are only lent. */
+export const ownerInYourRoom = (x: Fixture): Owner => (x.owner === 'house' && ['found', 'order', 'shop', 'bought'].includes(x.via) ? 'player' : x.owner);
+/** Takes a small thing to your room; remembers where it was (and whose), to put it back. Null: not possible (too big, not yours to take, the room is full). */
+export function carryToYou(g: GLike, id: string): Fixture | null {
+    const x = fixtureById(g, id); if (!x || x.room === PLAYER_ROOM || !carryable(x, x.room) || roomFull(g, PLAYER_ROOM)) return null;
+    const from = x.room, was = x.owner;
+    moveFixture(g, id, PLAYER_ROOM, ownerInYourRoom(x));
+    x.from = from; x.ownerWas = was;
+    return x;
+}
+/** Puts a thing you carried back where it was, as whose it was. Null: it was not carried, or its room is gone or full. */
+export function carryBack(g: GLike, id: string, roomExists: (room: string) => boolean = () => true): Fixture | null {
+    const x = fixtureById(g, id); if (!x || x.room !== PLAYER_ROOM || !x.from || !roomExists(x.from) || roomFull(g, x.from)) return null;
+    const to = x.from, was = x.ownerWas ?? x.owner;
+    moveFixture(g, id, to, was);
     return x;
 }
 /** Can `who` (an avatar, or 'player') use this thing: the house's, or their own. */
