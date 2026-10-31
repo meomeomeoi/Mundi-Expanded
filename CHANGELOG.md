@@ -1,5 +1,15 @@
 # Changelog
 
+## Mundi Expanded 15.3.1 (0.2.1-15.3.1) · Acquaintances are not friends
+
+- **A new situation for a Home: "You know each other".** The two situations where you already know everyone started
+  them all as friends (closeness 30 and 45, and from 30 up the game says "Friend"), so there was no way to begin with
+  people who know each other by name and no more. The new one starts at "Acquaintance" (closeness 20). "Your house,
+  your guests" and "Together for a long time" are as they were.
+- **"friend · friend"**: in the Relationships app, a person's list showed the closeness word and the status one after
+  the other, so a friend with the status "friend" was written twice. A status that only repeats the closeness word is
+  left out now (a "good friend · sibling" stays as it is).
+
 ## Mundi Expanded 15.3 (0.2.1-15.3) · Plans in your own words
 
 - **Say a plan, and it is made.** "Oh, listen, let's do some embroidery today at 2?", "давай посмотрим фильм завтра

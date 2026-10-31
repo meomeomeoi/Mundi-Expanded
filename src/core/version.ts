@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.3';
+export const VERSION = '0.2.1-15.3.1';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -12,6 +12,10 @@ export interface Release { v: string; title: string; items: [string, string][]; 
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG: Release[] = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.3.1', fork: true, title: 'Acquaintances are not friends', items: [
+        ['users', 'New Home, "You know each other": a new situation where everyone knows everyone by name, but nobody starts as a friend (acquaintances). "Your house, your guests" and "Together for a long time" still start as friends.'],
+        ['bell', 'The people list in Relationships no longer says "friend · friend": a status that only repeats the closeness word is left out.'],
+    ] },
     { v: '0.2.1-15.3', fork: true, title: 'Plans in your own words', items: [
         ['calendar', 'Say it as you would: "oh, listen, let\'s do some embroidery today at 2?" (in the scene, or by text on the phone). They decide by their day: they work then, it is too late, they have plans, they just say no, they do not know you well enough yet. If they say yes, it is in the calendar and in their memory before they answer, and they answer as someone who just agreed.'],
         ['chat', 'If only the time is the trouble, they suggest another one ("not at 2, but at 4?") and two buttons appear: yes puts it in the calendar, no leaves it.'],

@@ -144,7 +144,7 @@ const medieval = world(ext, 'medieval'); W.registerWorld(medieval);
     ok(P.scenarioPremise(g, house).includes(house.scenario.premise) && P.scenarioPremise(g, house).includes("guests"), 'a situation adds how you fit in to the scenario\'s premise');
     g.cfg.start = { id: 'custom', text: 'Five old friends rent a cabin; {{user}} brought the keys.' };
     ok(P.scenarioPremise(g, house) === g.cfg.start.text && P.scenarioLines(g, house)[0].includes('cabin'), 'a custom premise replaces the scenario\'s own');
-    ok(W.SCENARIO_STARTS.some(s => s.id === 'custom') && W.SCENARIO_STARTS.filter(s => s.met).length === 2, 'the situations: moved in, host, long time, custom');
+    ok(W.SCENARIO_STARTS.some(s => s.id === 'custom') && W.SCENARIO_STARTS.filter(s => s.met).length === 3 && W.SCENARIO_STARTS.find(s => s.id === 'acquainted').bond < 30, 'the situations: moved in, acquainted (below Friend), host, long time, custom');
     delete g.cfg.start;
     { const PL2 = await D('sim/places.js');
       ok(PL2.roomsOn(g, house).includes('bathroom') && PL2.roomsOn(g, house).includes('frontyard'), 'the house has its rooms (and the Entrance outside)');

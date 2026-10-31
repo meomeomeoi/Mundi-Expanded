@@ -241,7 +241,7 @@ function personPanel(g, a) {
         rows.sort((m, k) => (m.x === YOU ? -1 : k.x === YOU ? 1 : k.v - m.v));
     return `<section class="mu-bd-panel">${title(isYou ? `${esc(nm(g, YOU))} (you)` : esc(nm(g, a)))}
         <div class="mu-ph-list">${rows.map(({ x, color, word }) => {
-        const st = shortStatus(g, a, x);
+        const st0 = shortStatus(g, a, x), st = st0 && st0.toLowerCase() === String(word).split(' · ')[0].toLowerCase() ? '' : st0;
         return `<button class="mu-ph-row" data-act="bd-sel" data-k="e:${esc(pairKey(a, x))}"><img src="${esc(pic(x))}" alt="">
             <span><b data-notr>${esc(x === YOU ? `${nm(g, x)} (you)` : nm(g, x))}</b><small><i class="mu-bd-dot" style="background:${color}"></i>${esc(word)}${st ? ` · <span data-notr>${esc(st)}</span>` : ''} · ${factsOfPair(G(g), a, x).length} facts</small></span></button>`;
     }).join('')}</div>
