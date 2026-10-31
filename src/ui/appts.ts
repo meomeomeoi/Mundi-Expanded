@@ -1,10 +1,10 @@
 // Getting to your plans: from an hour before, at the meeting place, "Things to do" offers to wait for them; half an
 // hour before, a calendar reminder asks whether to go now. Both take you straight to the meet-up.
 import { esc, game, notify, saveGame, toast, nowAbs, state, type Save } from '../core/store.js';
-import { getWorld, type WorldDef } from '../core/world.js';
-import { thumb } from '../st/bridge.js';
+import { getWorld, isScenario, type WorldDef } from '../core/world.js';
+import { thumb, setAsk, replyAs } from '../st/bridge.js';
 import { social, type Appointment } from '../sim/social.js';
-import { placeOf, playerHomeId, travelMinutes } from '../sim/places.js';
+import { placeOf, playerHomeId, travelMinutes, isOuting, outingName } from '../sim/places.js';
 import { advance } from '../sim/time.js';
 import { fmtClock as hm } from '../core/fmt.js';
 import { syncScene } from '../sim/game.js';
@@ -105,6 +105,34 @@ function partHours(g: Save, w: WorldDef, a: Appointment) {
 
 const find = (g: Save, id: string) => social(g).appts.find(a => a.id === id);
 // time passes until they arrive, and the meet-up starts
+// [expanded] 0.2.1-15.3.3: getting to a plan. A plan somewhere out of the house in a Home is going out: the outing has
+// to start (who is with you, the place's picture, "Back home"), as in the Go out window. travelTo alone only moved
+// the player's place, so there was no outing: no background, and nobody to bring home.
+async function getThere(g: Save, w: WorldDef, a: Appointment) {
+    if (!(isScenario(w) && isOuting(a.place) && a.place !== g.player.loc)) { const { travelTo } = await import('./map.js'); await travelTo(a.place); return; }
+    if (state.generating) { toast('Wait until they finish speaking.', 'info'); return; }
+    const place = outingName(a.place);
+    const [O, { startOuting, outingBgs }, { starterBg }] = await Promise.all([import('../sim/outplaces.js'), import('../sim/outing.js'), import('./outplaces.js')]);
+    const bg = outingBgs(g)[place] || O.bgFor(g as any, place, starterBg);
+    const people = [...new Set([a, ...group(g, a)].map(x => x.avatar))].filter(x => g.cast[x]);
+    (g as any).traveling = true;
+    try { advance(g, w, Math.max(5, travelMinutes(g, w, g.player.loc, a.place))).forEach(m => toast(m, 'warn')); } finally { delete (g as any).traveling; }
+    startOuting(g, w, place, people, bg);
+    O.rememberPlace(g as any, place, '');
+    saveGame();
+}
+
+// [expanded] 0.2.1-15.3.3: the meet-up has begun and the scene is open: one of them speaks first, instead of standing
+// there in silence until you write something.
+async function opening(g: Save, w: WorldDef, a: Appointment) {
+    if (a.kind === 'party' || a.state !== 'met' || state.generating) return;
+    const r = g.cast[a.avatar]; if (!r) return;
+    const others = social(g).appts.filter(x => x.state === 'met' && x.avatar !== a.avatar && x.from === a.from && x.place === a.place && x.kind === a.kind && g.cast[x.avatar]).map(x => g.cast[x.avatar].name);
+    const here = isOuting(a.place) ? outingName(a.place) : where(g, w, a.place);
+    setAsk(`[{{user}} and ${[r.name, ...others].join(', ')} have just met up${here ? ` at ${here}` : ''}${a.title ? ` ("${a.title}")` : ''}, as planned. ${r.name} speaks first, in their own way: a greeting, and a word about the place or what they are about to do. One short reply; nothing is written for {{user}}.]`, 90000);
+    await replyAs(a.avatar);
+}
+
 async function waitFor(g: Save, w: WorldDef, a: Appointment) {
     const mins = a.from - nowAbs(g);
     if (mins > 0) advance(g, w, mins).forEach(m => toast(m, 'warn'));
@@ -114,6 +142,7 @@ async function waitFor(g: Save, w: WorldDef, a: Appointment) {
     showTransition(group(g, a).length > 1 || a.kind === 'party' ? label(a) : `${what(a)} with ${r?.name ?? ''}`, `${where(g, w, a.place)} · ${hm(a.from % 1440)}`, 'time');
     state.view = 'scene';
     notify();
+    void opening(g, w, a);
 }
 
 Object.assign(ACT, {
@@ -126,16 +155,14 @@ Object.assign(ACT, {
         const g = game(); const w = g && getWorld(g.world); const a = g && find(g, el.dataset.id!);
         if (!g || !w || !a) return;
         remindAll(g, a);
-        const { travelTo } = await import('./map.js');
-        await travelTo(a.place);
+        await getThere(g, w, a);
         if (a.state === 'set' && g.player.loc === a.place) await waitFor(g, w, a);
     },
     'cf-go': async () => {
         const g = game(); const w = g && getWorld(g.world); const a = g && find(g, CF.id);
         CF.id = ''; if (!g || !w || !a) { notify(); return; }
         remindAll(g, a);
-        const { travelTo } = await import('./map.js');
-        await travelTo(a.place);
+        await getThere(g, w, a);
         if (a.state === 'set' && g.player.loc === a.place) await waitFor(g, w, a);
     },
     'cf-part': async () => {
@@ -144,10 +171,10 @@ Object.assign(ACT, {
         const o = g.player.job && w.occupations.find(x => x.id === g.player.job!.id); if (!o) return;
         const h = partHours(g, w, a); remindAll(g, a);
         const { workShift } = await import('../sim/work.js');
-        const { finishWork, travelTo } = await import('./map.js');
+        const { finishWork } = await import('./map.js');
         await finishWork(workShift(g, w, 'normal', h), o.name);
         await new Promise(r => setTimeout(r, 2900));   // the shift's transition, then off to the plan
-        await travelTo(a.place);
+        await getThere(g, w, a);
         if (a.state === 'set' && g.player.loc === a.place) await waitFor(g, w, a);
     },
     'cf-close': () => { CF.id = ''; notify(); },

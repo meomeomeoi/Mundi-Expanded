@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.3.2';
+export const VERSION = '0.2.1-15.3.3';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,10 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.3.3', fork: true, title: 'Plans out of the house', items: [
+            ['map-pin', 'Going to a plan somewhere out (the mall, a café) is now going out: the place has its picture, who is with you comes along, and "Back home" works. Before, you arrived in a black scene with no outing at all.'],
+            ['message-circle', 'A meet-up or a date begins with them speaking first, instead of standing there in silence until you write.'],
+        ] },
     { v: '0.2.1-15.3.2', fork: true, title: 'Facts on the right day', items: [
             ['calendar', 'What the night wrote about the day that ended (relationship facts, memory moments) was dated with the day that had already begun: a thing from day 1 read "day 2". It carries its own day now.'],
         ] },

@@ -18,8 +18,10 @@ import { judgeLine, judgeReaction, settleLine } from '../sim/mood.js';
 import { state, notify, esc, game, toast, ROOT_ID, saveGame, settings } from '../core/store.js';
 import { getWorld, worldFile, systemOn, isScenario } from '../core/world.js';
 import { chat, speakerOf, thumb, sendText, replyAs, regenerate, continueLast, impersonate, stop, swipeLeft, swipeRight, editMessage, deleteMessageAt, expressionOf, fetchSprites, saveChat, me, currentCharacter, charOf, characters, ctx, addUserLine, narratorLine, personaName, quiet, lorebooks, chatLores, setChatLores, currentChatId, groupTurnOn, isFiller, scenarioOpen, scenarioCast, scenarioTitle, addToScenario, removeFromScenario, setChatBackground, newScenarioChat, persona, personas, personaThumb, usePersona, } from '../st/bridge.js';
-import { placeOf, isOuting } from '../sim/places.js';
-import { outingOf } from '../sim/outing.js';
+import { placeOf, isOuting, outingName } from '../sim/places.js';
+import { outingOf, outingBgs } from '../sim/outing.js';
+import { bgFor } from '../sim/outplaces.js'; // [expanded]
+import { starterBg } from './outplaces.js'; // [expanded]
 import { bgStyle } from './outing.js';
 import { bgHead, bgGrid } from './bgpick.js';
 import { presentAt } from '../sim/people.js';
@@ -201,8 +203,14 @@ function diceButton(nobody) {
 }
 /* ---------- drawing ---------- */
 function background(g, w) {
-    if (isOuting(g.player.loc))
-        return bgStyle(outingOf(g)?.bg ?? ''); // Home, out of the house: the background you chose
+    if (isOuting(g.player.loc)) { // Home, out of the house: the background you chose
+        const o = outingOf(g);
+        if (o)
+            return bgStyle(o.bg ?? '');
+        // [expanded] 0.2.1-15.3.3: out with no outing (a game that went to a plan before this fix): the place's own picture
+        const name = outingName(g.player.loc);
+        return bgStyle(outingBgs(g)[name] || bgFor(g, name, starterBg));
+    }
     const p = placeOf(g, w, g.player.loc);
     if (!p)
         return '';

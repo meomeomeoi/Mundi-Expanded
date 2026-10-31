@@ -1,5 +1,15 @@
 # Changelog
 
+## Mundi Expanded 15.3.3 (0.2.1-15.3.3) · Plans out of the house
+
+- **A plan out of the house is a real outing.** The calendar's "go" (and the reminder, and the one after work or sleep)
+  only moved you to the place: no outing was made, so the scene had no background, nobody was marked as with you, and
+  "Back home" had nothing to end. Now it starts the outing as the Go out window does: the place's picture (the one you
+  chose before, or the starter's), the people of the plan with you, the trip's time. A game already standing in such a
+  scene gets the place's picture too.
+- **They speak first.** When a meet-up or a date begins, one of them opens the scene (a greeting and a word about the
+  place), so it does not start in silence. Not at parties, which have their own start.
+
 ## Mundi Expanded 15.3.2 (0.2.1-15.3.2) · Facts on the right day
 
 - **A fact of day 1 said "day 2".** The night reads the day that has just ended, but wrote its facts after the game had
