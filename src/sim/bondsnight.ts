@@ -40,10 +40,14 @@ export function bondsPromptLines(g: Save, w: WorldDef, present: string[]): strin
 // small things happen between housemates without the player. One AI call; runs before the day's start mark moves.
 // `range`: the day's lines in the chat, taken when you went to sleep (the call runs later, after the diary, and you
 // may already be talking in the new day by then).
-export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { start: number; end: number }): Promise<Change[]> {
+/** [expanded] 0.2.1-15.4: `opt` is for "Redo the night" (redonight.ts): `force` runs a night that was already read, `only` redoes one part
+ *  of it (the housemates' moments, or who found out which secret); the rest of the night (feelings, a bigger change, a small
+ *  thing) is not run again, so nothing is applied twice. */
+export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { start: number; end: number }, opt?: { force?: boolean; only?: 'interactions' | 'secrets' }): Promise<Change[]> {
     if (!isScenario(w)) return [];
     const gl = G(g); const b = bondsOf(gl);
-    if (b.lastNight === day) return [];
+    if (b.lastNight === day && !opt?.force) return [];
+    const doI = !opt?.only || opt.only === 'interactions', doS = !opt?.only || opt.only === 'secrets', whole = !opt?.only;   // [expanded] 15.4
     syncTies(gl);
     // children stay out of it (their relationships are not simulated)
     const people = Object.values(g.cast).filter(r => !isMinor(g, r.avatar)).map(r => {
@@ -88,15 +92,15 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     // [expanded] unfinished business; a bigger change now and then (the setting), and small secrets
     const talks = talksOf(g).filter(t => (t.a === YOU || g.cast[t.a]) && (t.b === YOU || g.cast[t.b]));
     const every = ({ rare: 42, normal: 21, often: 10 } as Record<string, number>)[b.shifts ?? 'normal'] / (b.life === 'lively' ? 2 : 1);
-    const shiftDue = b.life !== 'off' && day - ((b as any).shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
-    const smallDue = b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
+    const shiftDue = whole && b.life !== 'off' && day - ((b as any).shiftDay ?? -99) >= 7 && Hh(`${g.world}|${day}|shift`) < 1 / every;
+    const smallDue = whole && b.life !== 'off' && Hh(`${g.world}|${day}|small`) < 0.25;
     const prompt = nightPrompt(gl, { day, user: me, premise: String((g as any).cfg?.start?.text || (w as any).scenario?.premise || ''), people, convo, spoke, life: b.life, secrets: secrets.map(x => ({ text: x.text, known: x.known })),
         talks: talks.map(t => `${nm(t.a)} needs to talk with ${nm(t.b)} about ${t.about}.`), ...(shiftDue ? { shift: flirtOn(gl as any) ? b.romance ?? 'story' : 'off' } : {}), small: smallDue, extra: [...nightLoveText(g, me), ...threadText(me)] });
     const raw = await bgAsk(prompt, 2500, NIGHT_SYSTEM);   // the mechanics model when set, else the main one
     // a refusal (or anything that is not the asked form) is not "nothing happened": say so, and try again next night
     if (!looksAnswered(raw)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${raw.slice(0, 80).replace(/\s+/g, ' ')}…")` : ''}`);
     const changes: Change[] = [];
-    for (const p of parseNight(raw, people, b.life)) {
+    for (const p of doI ? parseNight(raw, people, b.life) : []) {
         // scene moments are only between people who were in today's scenes
         if (p.src === 'scene' && p.who.some(a => !spoke.includes(a))) continue;
         // [expanded] 0.2.0.8: who else knows it
@@ -106,19 +110,19 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     }
     // [expanded] 0.2.0.8: secrets found out in today's scenes
     const findName = (q: string) => { const t = q.trim().toLowerCase(); if (t === me.toLowerCase() || t === '{{user}}' || t === 'the player') return YOU; const hit = people.filter(p => p.name.toLowerCase() === t || p.name.toLowerCase().split(/\s+/)[0] === t.split(/\s+/)[0]); return hit.length === 1 ? hit[0].avatar : null; };
-    for (const f of parseFound(raw, findName, secrets.length)) {
+    for (const f of doS ? parseFound(raw, findName, secrets.length) : []) {
         const x = secrets[f.i];
         if (learn(x.k, f.who, { lvl: 'knows', how: f.by && f.by !== f.who ? 'told' : 'saw', day, ...(f.by && f.by !== f.who ? { from: f.by } : {}) }, x.store)) react(g, { id: `n${f.i}`, parts: x.parts, text: x.text, love: !!x.love, k: x.k }, f.who);
         // you told someone a secret that was not yours: the ones it is about trust you a little less
         if (f.by === YOU) for (const p of x.parts) if (g.cast[p]) addBond(g, p, -4);
     }
-    for (const i of parseTalked(raw, talks.length)) closeTalk(g, talks[i].id);
-    { const { addThreads } = await import('./talkrun.js'); addThreads(g, raw, findName, day); }   // [expanded] 0.2.0.11: what was left open
+    if (doI) for (const i of parseTalked(raw, talks.length)) closeTalk(g, talks[i].id);
+    if (whole) { const { addThreads } = await import('./talkrun.js'); addThreads(g, raw, findName, day); }   // [expanded] 0.2.0.11: what was left open
     // a bigger change, if the rules find it believable
     // [expanded] 0.2.0.9: feelings first (sparks, confessions), then a bigger change: dating needs two crushes
-    { const n = applyLove(g, raw, findName, (a) => [...(around[a] ?? [])], day); if (n.length) console.info('[Mundi Expanded] feelings tonight:', n); }
+    if (whole) { const n = applyLove(g, raw, findName, (a) => [...(around[a] ?? [])], day); if (n.length) console.info('[Mundi Expanded] feelings tonight:', n); }
     // nights together in today's scenes (neighbours may have heard)
-    if (flirtOn(gl as any)) for (const nt of parseNights(raw, findName)) {
+    if (whole && flirtOn(gl as any)) for (const nt of parseNights(raw, findName)) {
         const room = w.places.find(p => p.name.toLowerCase() === nt.where.toLowerCase())?.id ?? (nt.who.includes(YOU) ? 'home:player' : g.cast[nt.who[0]] ? ownRoom(g.cast[nt.who[0]]) : 'home:player');
         nightTogether(g, w, nt.who, room, nt.secret || nt.who.some(a => a !== YOU && !!b.hide?.[a]));
     }
@@ -136,9 +140,9 @@ export async function bondsNight(g: Save, w: WorldDef, day: number, range?: { st
     // a small thing someone did and kept quiet
     const sm = smallDue ? parseSmall(raw, findName) : null;
     if (sm && sm.who !== YOU && g.cast[sm.who]) { const list = (b.small ??= []); list.push({ id: `s${day}${list.length}`, who: sm.who, ...(sm.about && sm.about !== YOU ? { about: sm.about } : {}), text: sm.text, day }); if (list.length > 20) list.splice(0, list.length - 20); }
-    for (const f of parseFound(raw, findName, secrets.length, 'PROMISE')) { const k = secrets[f.i].store.know?.[f.who]; if (k) k.promised = true; }
+    for (const f of doS ? parseFound(raw, findName, secrets.length, 'PROMISE') : []) { const k = secrets[f.i].store.know?.[f.who]; if (k) k.promised = true; }
     // loud fights without you are heard through the walls by whoever is nosy enough
-    for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
+    if (doI) for (const c of changes.filter(x => x.src === 'offscreen' && x.delta <= -2)) {
         const fact = b.facts.filter(f => f.kind === 'episode' && f.text === c.text).at(-1); if (!fact || factK(fact).pub === 'private') continue;
         for (const r of Object.values(g.cast)) if (!fact.who.includes(r.avatar) && Hh(`${day}|${fact.id}|${r.avatar}|walls`) < hearFight(c.delta, nosyOf(profileOf(g as any, r.avatar))) * wallsK(g)) learn(factK(fact), r.avatar, { lvl: 'knows', how: 'saw', day, ver: 'heard it through the walls' }, fact);
     }

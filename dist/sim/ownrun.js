@@ -30,7 +30,7 @@ export const ownOf = (g) => {
     }
     return x;
 };
-export const ocfg = (g) => { const c = ownOf(g).cfg; return { games: c.games !== false, pace: c.pace ?? 'normal', chores: c.chores ?? 'gentle', calendar: c.calendar !== false, digest: c.digest !== false, sound: c.sound !== false }; };
+export const ocfg = (g) => { const c = ownOf(g).cfg; return { games: c.games !== false, pace: c.pace ?? 'normal', chores: c.chores ?? 'gentle', calendar: c.calendar !== false, digest: c.digest !== false, sound: c.sound !== false, birthdays: c.birthdays !== false /* [expanded] 15.4 */ }; };
 const on = (g, w) => isScenario(w) && !g.tutorial;
 const sd = (g) => Math.max(1, Math.round(g.cfg?.seasonDays ?? 14));
 const H = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
@@ -260,8 +260,18 @@ onDay.push((g, w) => {
             const b = O.birthdayFromText(cardText(r.avatar), sd(g));
             x.cal.bday[r.avatar] = b >= 0 ? b : O.birthdayRandom(H(`${g.world}|${r.avatar}|bday`), sd(g));
         }
+    // [expanded] 15.4: a birthday coming up is announced three days before and the day before (Birthdays can be turned off)
+    if (c.birthdays)
+        for (const r of housemates(g)) {
+            const b = x.cal.bday[r.avatar];
+            if (b === undefined)
+                continue;
+            for (const ahead of [3, 1])
+                if (O.dayOfYear(day + ahead, sd(g)) === b)
+                    out.push(ahead === 1 ? `${r.name}'s birthday is tomorrow.` : `${r.name}'s birthday is in ${ahead} days.`);
+        }
     // yesterday's birthday you said nothing about: someone close is hurt
-    for (const r of housemates(g)) {
+    for (const r of c.birthdays ? housemates(g) : []) {
         const b = x.cal.bday[r.avatar];
         if (O.dayOfYear(day - 1, sd(g)) !== b)
             continue;
@@ -387,9 +397,10 @@ export function upcoming(g, days = 7) {
     const out = [];
     for (let d = g.day; d < g.day + days; d++) {
         const doy = O.dayOfYear(d, sd(g));
-        for (const [a, b] of Object.entries(x.cal.bday))
-            if (b === doy && g.cast[a])
-                out.push({ day: d, text: `${g.cast[a].name}'s birthday`, who: a });
+        if (ocfg(g).birthdays)
+            for (const [a, b] of Object.entries(x.cal.bday))
+                if (b === doy && g.cast[a])
+                    out.push({ day: d, text: `${g.cast[a].name}'s birthday`, who: a });
         if (O.isNewYear(d, sd(g)))
             out.push({ day: d, text: 'New Year' });
         if (O.isGolden(d, sd(g)) && !O.isGolden(d - 1, sd(g)))
@@ -421,7 +432,7 @@ presentNotes.push((g, w, present) => {
         out.push(`The ${roomName(g, w, g.player.loc).toLowerCase()} is ${m}${what ? ` (${what})` : ''}.`);
     }
     for (const r of present) {
-        if (x.cal.bday[r.avatar] === doy)
+        if (ocfg(g).birthdays && x.cal.bday[r.avatar] === doy)
             out.push(`Today is ${r.name}'s birthday (the house knows).`);
         for (const e of x.cal.cev.filter(e => e.a === r.avatar)) {
             if (e.day === d || e.day === d + 1)

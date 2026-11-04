@@ -55,9 +55,12 @@ function dayConvo(g: Save, w: WorldDef, range?: { start: number; end: number }):
 
 export const MEM_SYSTEM = 'You keep the long memory of an interactive fiction (a role-play story between consenting adults). You note plainly what happened and what it meant, without judging or softening it, and you never invent anything that is not in what you are given. You answer only in the requested line format.';
 
-export async function memNight(g: Save, w: WorldDef, day: number, range?: { start: number; end: number }): Promise<string[]> {
+/** [expanded] 0.2.1-15.4: `opt` is for "Redo the night" (redonight.ts): `force` reads a night that was already read, `only` redoes
+ *  the moments (and who has changed) or what they learned. */
+export async function memNight(g: Save, w: WorldDef, day: number, range?: { start: number; end: number }, opt?: { force?: boolean; only?: 'moments' | 'learned' }): Promise<string[]> {
     if (!isScenario(w)) return [];
-    const x = memOf(g); const c = x.cfg; if (!c.on || x.lastNight === day) return [];
+    const x = memOf(g); const c = x.cfg; if (!c.on || (x.lastNight === day && !opt?.force)) return [];
+    const doM = !opt?.only || opt.only === 'moments', doK = !opt?.only || opt.only === 'learned';   // [expanded] 15.4
     const me = personaName(); const folk = people(g); if (!folk.length) { x.lastNight = day; return []; }
     const nm = (a: string) => (a === YOU ? me : g.cast[a]?.name ?? a);
     const find = (q: string): string | null => {
@@ -94,20 +97,20 @@ export async function memNight(g: Save, w: WorldDef, day: number, range?: { star
     const o = M.parseMemNight(raw, find);
     if (!M.answered(o)) throw new Error(`the model did not answer in the asked form${raw ? ` (it said: "${clean(raw).slice(0, 80)}…")` : ''}`);
     const out: string[] = [];
-    for (const m of o.moments) {
+    for (const m of doM ? o.moments : []) {
         if (m.who === YOU || !g.cast[m.who]) continue;
         const seen = [...(d.around[m.who] ?? [])].filter(a => a !== m.who);
         const f = addFact(G(g), [YOU, m.who], m.text, 'episode', 'scene', undefined, { seen: [YOU, ...seen], day });
         if (f) { f.w = m.w; if (m.w >= c.landmark) out.push(`${nm(m.who)}: ${m.text}`); }
     }
-    for (const r of o.rates) { const f = tonight[r.i]; if (f) f.w = r.w; }
-    for (const k of o.knows) {
+    if (doM) for (const r of o.rates) { const f = tonight[r.i]; if (f) f.w = r.w; }
+    for (const k of doK ? o.knows : []) {
         const key = knowKey(k.who, k.about); const list = (x.know[key] ??= []);
         const old = k.replaces ? list.find(n => n.id === k.replaces) : null;
         if (old) { old.text = k.text; old.day = day; continue; }
         if (!list.some(n => n.text.toLowerCase() === k.text.toLowerCase())) list.push({ id: newId(x, 'k'), day, text: k.text });
     }
-    for (const ch of o.changes) {
+    for (const ch of doM ? o.changes : []) {
         if (!may.some(r => r.avatar === ch.who)) continue;
         // the brake: something that weighed (3+) since their last step
         const since = lastStep(ch.who) ?? -1;

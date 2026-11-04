@@ -13,7 +13,8 @@ import { facts, fill, factText, placeName, note, type Fact } from '../sim/facts.
 import { quiet, personaName, chat } from '../st/bridge.js';
 import { presentAt } from '../sim/people.js';
 import { heardRumors, rumorSource } from '../sim/living.js';
-import { ACT } from './reg.js';
+import { ACT, INPUT } from './reg.js';
+import { diaryEntries, dropDiaryTranslation } from '../sim/diary.js';   // [expanded] 15.4: editing an entry
 
 // A fact as the player reads it, in the interface language.
 export const factUi = (f: Fact) => fill(tr(f.t), (f.a ?? []).map(x => tr(x)), tr('You'));
@@ -26,7 +27,7 @@ let busy = -1;
 
 // The Journal is a calendar: one page per season, a day with something written is marked, and the chosen day shows
 // its diary entry first, with the notes of that day (the facts) under it.
-const J = { day: 0, page: -1, notes: false, rumors: false };
+const J = { day: 0, page: -1, notes: false, rumors: false, edit: 0, draft: '' /* [expanded] 15.4: the day being edited, and its text so far */ };
 // What you have heard around town (the rumor pool), newest first.
 function rumorsHtml(g: Save, w: WorldDef) {
     const list = systemOn(w, 'rumors') ? heardRumors(g) : [];
@@ -45,7 +46,7 @@ function defaultDay(g: Save) {
     const written = Object.keys(p).map(Number).filter(d => d <= g.day && p[d]);
     return written.length ? Math.max(...written) : g.day;
 }
-export function openJournal() { J.day = 0; J.page = -1; J.notes = false; }
+export function openJournal() { J.day = 0; J.page = -1; J.notes = false; J.edit = 0; J.draft = ''; }
 
 // The journal of a medieval world (a book): days in Roman numerals, old names for the days of the week.
 const ROMAN: [number, string][] = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
@@ -90,8 +91,9 @@ export function journalApp(g: Save, w: WorldDef, head: string): string {
         </section>
         <section class="mu-jr-day">
             <h4>${esc(weekday(day))} · <span>${book ? `Day ${roman(day)}` : `Day ${day}`}</span>${day === g.day ? ' <small class="mu-muted">today</small>' : ''}</h4>
-            ${text ? `<blockquote class="mu-jr-prose" data-notr>${esc(text)}</blockquote>${diaryTtsButton(day)}` : !dOn ? (items.length ? '' : '<p class="mu-muted">Nothing happened this day.</p>') : `<p class="mu-muted">${day === g.day ? 'Today\'s entry is written when you go to sleep.' : items.length ? 'No diary entry for this day.' : 'Nothing happened this day.'}</p>`}
-            ${canWrite ? `<button class="mu-ghost mu-jr-btn" data-act="jr-prose" data-day="${esc(day)}" ${busy >= 0 ? 'disabled' : ''}>${icon('pen')}<span>${busy === day ? 'Writing…' : esc(writeLabel)}</span></button>` : ''}
+            ${dOn && J.edit === day ? `<textarea class="mu-jr-edit" data-input="jr-draft" rows="8" placeholder="Write this day in your own words">${esc(J.draft)}</textarea><div class="mu-row"><button class="mu-primary" data-act="jr-save" data-day="${esc(day)}">${icon('check')}<span>Save</span></button><button class="mu-ghost" data-act="jr-cancel">Cancel</button></div>` : text ? `<blockquote class="mu-jr-prose" data-notr>${esc(text)}</blockquote>${diaryTtsButton(day)}` : !dOn ? (items.length ? '' : '<p class="mu-muted">Nothing happened this day.</p>') : `<p class="mu-muted">${day === g.day ? 'Today\'s entry is written when you go to sleep.' : items.length ? 'No diary entry for this day.' : 'Nothing happened this day.'}</p>`}
+            ${dOn && J.edit !== day ? `<button class="mu-ghost mu-jr-btn" data-act="jr-edit" data-day="${esc(day)}">${icon('pen')}<span>${text ? 'Edit the entry' : 'Write it yourself'}</span></button>` : ''}   <!-- [expanded] 15.4 -->
+            ${canWrite && J.edit !== day ? `<button class="mu-ghost mu-jr-btn" data-act="jr-prose" data-day="${esc(day)}" ${busy >= 0 ? 'disabled' : ''}>${icon('pen')}<span>${busy === day ? 'Writing…' : esc(writeLabel)}</span></button>` : ''}
             ${items.length ? `${dOn ? `<button class="mu-ghost mu-jr-notes-btn" data-act="jr-notes">${icon(J.notes ? 'up' : 'down')}<span>What happened (${items.length})</span></button>` : ''}
             ${open ? `<ol class="mu-jr-list">${items.map(f => `<li><small>${hm(f.at % 1440)} · ${esc(tr(placeName(g, w, f.place)))}</small><span data-notr>${esc(factUi(f))}</span></li>`).join('')}</ol>` : ''}` : ''}
         </section>
@@ -100,9 +102,20 @@ export function journalApp(g: Save, w: WorldDef, head: string): string {
 }
 
 Object.assign(ACT, {
-    'jr-day': (el) => { J.day = Number(el.dataset.day); notify(); },
+    'jr-day': (el) => { J.day = Number(el.dataset.day); J.edit = 0; notify(); },
+    // [expanded] 15.4: the entry of any past day (or today) can be rewritten by hand; empty deletes it
+    'jr-edit': (el) => { const g = game(); if (!g) return; const d = Number(el.dataset.day); J.edit = d; J.draft = diaryEntries(g)[d] ?? ''; notify(); },
+    'jr-cancel': () => { J.edit = 0; J.draft = ''; notify(); },
+    'jr-save': (el) => {
+        const g = game(); if (!g) return; const d = Number(el.dataset.day);
+        const box = (el.closest('.mu-jr-day') as HTMLElement | null)?.querySelector('textarea.mu-jr-edit') as HTMLTextAreaElement | null;
+        const v = String(box?.value ?? J.draft).replace(/\s+\n/g, '\n').trim();
+        if (v) diaryEntries(g)[d] = v; else delete diaryEntries(g)[d];
+        dropDiaryTranslation(g, d);
+        J.edit = 0; J.draft = ''; saveGame(); notify(); toast(v ? 'Entry saved.' : 'Entry removed.', 'success');
+    },
     'jr-page': (el) => {
-        const g = game(); if (!g) return;
+        const g = game(); if (!g) return; J.edit = 0;
         const sd = seasonDays(g); J.page = Math.max(0, Number(el.dataset.p));
         // choose a day on that page: the last one with something, else its first day
         const first = J.page * sd + 1, last = Math.min(first + sd - 1, g.day);
@@ -150,3 +163,4 @@ Object.assign(ACT, {
         saveGame(); toast(tr('Kept in the journal.'), 'success');
     },
 });
+Object.assign(INPUT, { 'jr-draft': (el) => { J.draft = String(el.value); } });   // [expanded] 15.4: kept without a redraw, so the cursor stays

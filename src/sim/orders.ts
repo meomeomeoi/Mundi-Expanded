@@ -40,7 +40,7 @@ onHour.push((g, w) => {
     const came = F.arrived(G(g), nowAbs(g)); if (!came.length) return [];
     const hall = roomName(g, w, hallOf(g, w)).toLowerCase();
     const home = !isOuting(g.player.loc) && g.player.loc !== 'out';
-    if (home) setTimeout(() => toast(`📦 A delivery: ${came.map(o => o.name).join(', ')}. The box${came.length > 1 ? 'es are' : ' is'} in the ${hall}.`, 'info', { ms: 8000 }), 50);
+    if (home) setTimeout(() => toast(`📦 A delivery: ${came.map(o => o.name).join(', ')}. The box${came.length > 1 ? 'es are' : ' is'} in the ${hall}: unpack ${came.length > 1 ? 'them' : 'it'} there.`, 'info', { ms: 8000 }), 50);
     saveGame();
     return [];
 });

@@ -1,5 +1,29 @@
 # Changelog
 
+## Mundi Expanded 15.4 (0.2.1-15.4) · Deliveries, diary, birthdays
+
+- **Delivery boxes can be unpacked in the hallway.** The courier's toast said the box was in the entrance hall, but
+  unpacking lived only in the phone's "Shop online" app, which is hidden in houses that are not modern, and the hall
+  had nothing to do with it. Now the hallway has an action, "Unpack the deliveries", that sets everything up in its room
+  (the toast says so too). The app still works.
+- **Edit the Journal.** A day's diary entry (any past day, or today's) can be rewritten by hand, or written by you when
+  the day has none; saving it empty removes it. A translated copy is dropped, so it is translated again from your text.
+- **Birthdays.** A birthday is announced three days before and the day before. New switch, Me → Settings → Birthdays
+  (on by default). Off: no reminders, no birthday scenes or notes, nothing in the calendar, and nobody is hurt when you
+  forget one.
+- **Relationships, with editing on:** in "you & a person" you can set your closeness (the bond) and how they feel about
+  you with the game's own steps: no feelings, interested, a secret crush (unspoken), secretly in love (unspoken), or a
+  crush or love they have told you. A couple's feelings stay with their status.
+- **Redo the night** (phone Settings, Home): read the last night again, one part at a time: memory (moments, weights, who
+  changed), what they learned, the housemates' moments, secrets. Each part takes back what its last reading wrote first
+  (so numbers are not counted twice) and keeps the old result when the model gives no answer. Feelings, money, things and
+  the diary are not part of it.
+- **Fixed: "Try again" did nothing.** The notice for a failed mechanics call sat inside a layer that lets clicks through,
+  so neither "Try again" nor ✕ could be pressed; and it held the copy of the game from when it appeared, which is not
+  the game once you have left Mundi or reopened the chat. Both fixed; a notice from another chat closes instead.
+- **Fixed: rubbing dirt selected text.** Scrubbing in the cleaning mini-game with the mouse no longer selects the text
+  around it.
+
 ## Mundi Expanded 15.3.3 (0.2.1-15.3.3) · Plans out of the house
 
 - **A plan out of the house is a real outing.** The calendar's "go" (and the reminder, and the one after work or sleep)

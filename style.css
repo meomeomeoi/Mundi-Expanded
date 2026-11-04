@@ -1289,6 +1289,15 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-ng-roomacts header h4 { margin: 0; }
 /* faces in the jobs list stay small */
 #mundi-root .mu-ngjobs-grid img { width: 24px; height: 24px; max-width: 24px; border-radius: 50%; object-fit: cover; flex: none; }
+
+/* [expanded] 15.4: editing a diary entry */
+#mundi-root .mu-jr-edit { width: 100%; box-sizing: border-box; min-height: 140px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: inherit; font: inherit; line-height: 1.5; resize: vertical; }
+
+/* [expanded] 15.4: Redo the night */
+#mundi-root .mu-rn { display: grid; gap: 8px; }
+#mundi-root .mu-rn-btn { display: flex; align-items: flex-start; gap: 10px; text-align: left; justify-content: flex-start; height: auto; padding: 8px 12px; }
+#mundi-root .mu-rn-btn span { display: grid; gap: 2px; }
+#mundi-root .mu-rn-btn small { font-weight: 400; opacity: .8; white-space: normal; }
 /* City events (Calendar) and hobbies (Profile) */
 #mundi-root .mu-city-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 10px; margin: 6px 0; border-radius: 12px;
     background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
@@ -2139,6 +2148,9 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-sprites.has-speaker .mu-sprite:not(.is-speaking) { filter: brightness(.88) saturate(.94); }
 #mundi-root .mu-sprites .mu-sprite.is-hop > img { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes mu-hop { 0% { translate: 0 0; } 35% { translate: 0 -10px; } 100% { translate: 0 0; } }   /* translate, not transform: transform holds the height setting */
+
+/* [expanded] 15.4: #mundi-toasts lets clicks through (pointer-events: none), and the toasts inherited it: "Try again" and the close buttons could not be pressed */
+#mundi-toasts .mu-toast { pointer-events: auto; }
 /* [expanded] 0.2.1-14: This Home › Memory */
 #mundi-root .mu-mem-dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 18px; }
 #mundi-root .mu-mem-dials .mu-field small { display: block; font-size: 11px; line-height: 1.3; }
@@ -2269,6 +2281,10 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-out-people .mu-chip.is-no small { display: block; font-size: 10px; opacity: .85; line-height: 1.1; }
 /* 12.5: the relationship graph keeps its height in a scrolling phone body (a grid row sized it 0 with a long list under it) */
 #mundi-root .mu-bd-graph { aspect-ratio: 300 / 290; min-height: min-content; flex: none; }
+
+/* [expanded] 15.4: scrubbing must not select text */
+#mundi-root .mu-og-surface, #mundi-root .mu-og-surface * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+#mundi-root.is-scrubbing, #mundi-root.is-scrubbing * { user-select: none !important; -webkit-user-select: none !important; }
 /* [expanded] 0.2.1-13: the log in scenes, and Previously */
 #mundi-root .mu-dlg-prev { position: absolute; top: 8px; right: 44px; z-index: 2; width: 30px; height: 30px; padding: 0; opacity: .5; }
 #mundi-root .mu-dlg-prev:hover, #mundi-root .mu-dlg-prev:focus-visible { opacity: 1; }

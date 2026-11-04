@@ -54,6 +54,8 @@ export async function writeDiary(g, w, day, verdict = true) {
 // The entry is kept as written (the AI reads it); the player sees the translated copy, in the language of the chat.
 const autoTranslate = () => { const t = ctx().extensionSettings?.translate; return t && (t.auto_mode === 'responses' || t.auto_mode === 'both') ? String(t.target_language ?? '') : ''; };
 const trStore = (g) => (g.journalProseTr ??= {});
+/** [expanded] 15.4: forget the translated copy of a day's entry (it was edited or removed by hand). */
+export const dropDiaryTranslation = (g, day) => { delete trStore(g)[day]; };
 const trBusy = new Set();
 const translateText = (text, lang) => translateTo(text, lang);
 // The diary entry of a day as the player should read it (translated when Chat Translation is on).

@@ -840,10 +840,24 @@ document.addEventListener?.('keydown', (e) => {
 });
 // scrubbing: hold and rub
 let scrubbing = false;
+// [expanded] 15.4: rubbing with the mouse used to select the text around the surface: nothing is selectable while scrubbing
+const stopScrub = () => { scrubbing = false; document.getElementById('mundi-root')?.classList.remove('is-scrubbing'); };
 document.addEventListener?.('pointerdown', (e) => { if (GV.game === 'clean' && e.target?.closest?.('.mu-og-surface')) {
     scrubbing = true;
+    document.getElementById('mundi-root')?.classList.add('is-scrubbing');
+    try {
+        window.getSelection?.()?.removeAllRanges();
+    }
+    catch { /* no selection API */ }
     scrubAt(e.clientX, e.clientY);
 } });
+document.addEventListener?.('mousedown', (e) => { if (GV.game === 'clean' && e.target?.closest?.('.mu-og-surface') && e.button === 0)
+    e.preventDefault(); });
+document.addEventListener?.('selectstart', (e) => { if (scrubbing || (GV.game === 'clean' && e.target?.parentElement?.closest?.('.mu-og-surface')))
+    e.preventDefault(); });
+document.addEventListener?.('dragstart', (e) => { if (scrubbing)
+    e.preventDefault(); });
 document.addEventListener?.('pointermove', (e) => { if (scrubbing)
     scrubAt(e.clientX, e.clientY); });
-document.addEventListener?.('pointerup', () => { scrubbing = false; });
+document.addEventListener?.('pointerup', stopScrub);
+document.addEventListener?.('pointercancel', stopScrub);

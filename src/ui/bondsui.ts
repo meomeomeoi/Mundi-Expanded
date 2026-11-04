@@ -23,6 +23,7 @@ import { knowOf, tieK, howText } from '../sim/knows.js';   // [expanded] 0.2.0.8
 import { partnersOf, foundOut } from '../sim/romance.js';
 import { MOODS } from '../sim/gossip.js';
 import * as L from '../sim/love.js';
+import { FEEL_CHOICES, feelOf, setFeel, setCloseness } from '../sim/feelset.js';   // [expanded] 0.2.1-15.4
 import { WALLS, wallsOf } from '../sim/listen.js';
 import { CTX_MODES, ctxMode, setCtxMode } from '../sim/scenectx.js';
 import * as NI from '../sim/nights.js';
@@ -187,6 +188,17 @@ function partnerRow(g: Save, c: string): string {
         ${today ? `<small class="mu-muted">${icon('heart')} A date tonight, ${String(Math.floor(d!.from / 60)).padStart(2, '0')}:00–${String(Math.floor(d!.to / 60)).padStart(2, '0')}:00, the ${esc((rooms.find(r => r.id === d!.room)?.name ?? '').toLowerCase())}.${d!.stay.length ? ` Not leaving: ${esc(d!.stay.map(a => nm(g, a)).join(', '))}.` : ' The house leaves it to you.'}</small>`
             : `<div class="mu-bd-row"><select data-input="bd-dateroom">${rooms.map(r => `<option value="${esc(r.id)}" ${r.id === DV.room ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select><button class="mu-ghost" data-act="bd-date" data-who="${esc(c)}">${icon('heart')}<span>A date here tonight</span></button></div>`}`;
 }
+// [expanded] 0.2.1-15.4: with editing on, how they feel about you (closeness; liking, a secret crush, love, told or not)
+function theirRow(g: Save, c: string): string {
+    if (!canEdit(g)) return '';
+    const b = bondOf(g, c); const couple = partnersOf(g).includes(c);
+    const cur = feelOf(g, c);
+    return `<div class="mu-bd-val"><span><i class="mu-bd-dot" style="background:${youTier(g, c).color}"></i><b data-bd-word>${esc(youTier(g, c).name)}</b> <small data-bd-num>${Math.round(b)}</small></span>
+            <input type="range" min="0" max="100" step="1" value="${Math.round(b)}" data-input="bd-close" data-who="${esc(c)}" style="--c:${youTier(g, c).color}"></div>
+        ${couple || !L.flirtOn(G(g) as any) ? `<small class="mu-muted">${couple ? 'You are a couple: the status says how they feel (change it above).' : 'Romance is off in this house.'}</small>`
+        : `<label class="mu-field"><span>How ${esc(nm(g, c))} feels about you</span><select data-input="bd-feel" data-who="${esc(c)}">${FEEL_CHOICES.map(o => `<option value="${esc(o.id)}" ${o.id === cur ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
+        <small class="mu-muted">What they never said stays unspoken: the scene knows it, you only see it here. A crush they have told you about is open to everyone who heard.</small>`}`;
+}
 function mineRow(g: Save, c: string): string {
     if (!L.flirtOn(G(g) as any)) return '';
     const m = L.loveOf(G(g) as any).mine?.[c];
@@ -204,7 +216,7 @@ function pairPanel(g: Save, a: string, b: string): string {
     if (a === YOU || b === YOU) {   // the player and a character: closeness is upstream's, shown as it is
         const c = a === YOU ? b : a;
         return `<section class="mu-bd-panel">${title(`${esc(nm(g, YOU))} (you) & ${esc(nm(g, c))}`)}
-            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${mineRow(g, c)}${partnerRow(g, c)}${seesAll(g) ? truthRow(g, c) : '' /* 0.2.0.11 */}
+            ${statusRow(g, YOU, c)}${secretRow(g, YOU, c)}${theirRow(g, c)}${mineRow(g, c)}${partnerRow(g, c)}${seesAll(g) ? truthRow(g, c) : '' /* 0.2.0.11 */}
             <small class="mu-muted">${esc(youLine(g, c))}: it grows with what you do together (see People).</small>
             ${facts(g, factsOfPair(G(g), YOU, c), false, 'Nothing written yet.')}
             ${addForm(g, [YOU, c])}</section>`;
@@ -381,6 +393,19 @@ Object.assign(INPUT, {
         else { const [dir, type] = v.split(':'); dir === 'ab' ? setStatus(G(g), a, b, type) : setStatus(G(g), b, a, type); }
         done();
     },
+    // [expanded] 0.2.1-15.4: closeness with a person (the bond), and how they feel about you
+    'bd-close': (el) => {
+        const g = editing(); if (!g) return; const c = el.dataset.who!; if (!g.cast[c]) return;
+        setCloseness(g, c, Number(el.value));
+        const t = youTier(g, c); const box = el.closest('.mu-bd-val');
+        const word = box?.querySelector('[data-bd-word]'); if (word) word.textContent = t.name;
+        const num = box?.querySelector('[data-bd-num]'); if (num) num.textContent = String(Math.round(bondOf(g, c)));
+        el.style.setProperty('--c', t.color);
+        saveGame();
+        if (redraw) clearTimeout(redraw);
+        redraw = setTimeout(() => { redraw = null; refreshPrompt(); notify(); }, 700);
+    },
+    'bd-feel': (el) => { const g = editing(); if (!g) return; const why = setFeel(g, el.dataset.who!, String(el.value), g.day); if (why) { toast(why, 'warn'); return; } saveGame(); refreshPrompt(); notify(); },
     // the slider: the number and word change as it moves; the graph is redrawn once it stops
     'bd-val': (el) => {
         const g = editing(); if (!g) return;

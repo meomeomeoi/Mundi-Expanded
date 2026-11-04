@@ -8,12 +8,12 @@ import type { WorldDef, ActionDef } from '../core/world.js';
 import { actionMods, onAction } from './hooks.js';
 import { presentAt } from './people.js';
 import { addBond } from './social.js';
-import { furnishOn, houseRooms, eraOf } from './furnishrun.js';
+import { furnishOn, houseRooms, eraOf, hallOf, roomName } from './furnishrun.js';   // [expanded] 15.4: hallOf, roomName
 import { nowAbs, toast, notify, saveGame } from '../core/store.js';
 import { isOuting } from './places.js';
 import { outingOf } from './outing.js';
 import { onDay } from './hooks.js';
-import { SHOPPING, shopRoll } from './orders.js';
+import { SHOPPING, shopRoll, unpackOrder } from './orders.js';   // [expanded] 15.4: unpackOrder
 import * as F from './furnish.js';
 
 const G = (g: Save) => g as unknown as F.GLike;
@@ -65,6 +65,8 @@ actionMods.push((g, w, list) => {
         const back = houseRooms(g, w).find(r => r.id === x.from); if (!back || F.roomFull(G(g), back.id)) continue;
         add.push({ id: `x-fx-back-${x.id}`, name: `Take the ${x.name.toLowerCase()} back to the ${back.name.toLowerCase()}`, label: `Take the ${x.name.toLowerCase()} back to the ${back.name.toLowerCase()}`, icon: '🎒', cost: 0, minutes: 1, home: true, effects: {} } as ActionDef);
     }
+    // [expanded] 15.4: the boxes a courier left wait in the hallway: unpack them right there (not only from the phone's shop app)
+    if (room === hallOf(g, w)) { const boxes = F.ordersOf(G(g)).filter(o => o.state === 'here'); if (boxes.length) add.push({ id: 'x-fx-unbox', name: 'Unpack the deliveries', label: `Unpack the ${boxes.length > 1 ? `${boxes.length} boxes` : 'box'} a courier left (${boxes.map(o => o.name.toLowerCase()).join(', ')})`, icon: '📦', cost: 0, minutes: 5 * Math.min(boxes.length, 4), home: true, effects: { energy: -2 } } as ActionDef); }
     // the storage room, once a week
     if (kind === 'storage' && (fxx(g).rummaged ?? -99) <= g.day - 7) add.push({ id: 'x-fx-rummage', name: 'Rummage', label: 'Rummage through the old boxes', icon: '📦', cost: 0, minutes: 30, effects: { hygiene: -5 } } as ActionDef);
     return [...kept, ...add];
@@ -85,6 +87,12 @@ onAction.push((g, w, a) => {
         if (x) { const where = m[1] === 'carry' ? 'your room' : (rooms.find(r => r.id === x.room)?.name ?? 'its place').toLowerCase(); setTimeout(() => toast(`The ${x.name.toLowerCase()} is in ${where === 'your room' ? where : `the ${where}`} now${m[1] === 'carry' && x.owner === 'house' ? ' (lent: it is still the house\'s)' : ''}.`, 'success'), 50); saveGame(); }
         return;
     } }
+    if (a.id === 'x-fx-unbox') {   // [expanded] 15.4
+        const set: string[] = [];
+        for (const o of F.ordersOf(G(g)).filter(x => x.state === 'here')) { const x = unpackOrder(g, o.id); if (x) set.push(`${x.name.toLowerCase()} (${roomName(g, w, x.room).toLowerCase()})`); }
+        if (set.length) setTimeout(() => toast(`Set up: ${set.join(', ')}.`, 'success'), 50);
+        saveGame(); return;
+    }
     if (a.id === 'x-fx-curb') {
         const f = fxx(g); const c = f.curb && F.catOf(f.curb.cat); if (!c) return; delete f.curb;
         const rooms = houseRooms(g, w); const to = rooms.find(r => !r.owner && r.kind && c.rooms.includes(r.kind)) ?? rooms.find(r => r.id === g.player.loc)!;

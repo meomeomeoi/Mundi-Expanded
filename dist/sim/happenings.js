@@ -255,6 +255,8 @@ export function lifeMoment(g, w, avatar, text, tone) {
 export const birthdayOf = (g, avatar) => Math.floor(H(`${g.world}|bday|${avatar}`) * yearDays(g));
 const yearDays = (g) => 4 * Math.max(1, Math.round(g.cfg?.seasonDays ?? 14));
 export const isBirthday = (g, avatar, day = g.day) => ((day - 1) % yearDays(g)) === birthdayOf(g, avatar);
+/** [expanded] 15.4: Me → Settings → Birthdays (on unless turned off); read from the save, so this file needs no import of ownrun. */
+const birthdaysOn = (g) => (g.ownx?.cfg?.birthdays) !== false;
 function momentsDay(g, w) {
     const out = [];
     if (!systemOn(w, 'consults'))
@@ -264,7 +266,7 @@ function momentsDay(g, w) {
             continue;
         if (breakOf(g, w, r, g.day)?.kind === 'sick')
             sickMoment(g, w, r);
-        if (isBirthday(g, r.avatar)) {
+        if (birthdaysOn(g) && isBirthday(g, r.avatar)) {
             push(g, { kind: 'birthday', avatar: r.avatar, text: `Today is ${r.name}'s birthday.`, choices: [['msg', 'Send your wishes'], ['later', 'Not now']] });
             out.push(`It's ${r.name}'s birthday today.`);
         }
