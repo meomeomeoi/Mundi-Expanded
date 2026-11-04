@@ -14,6 +14,7 @@ import { slotAt } from '../sim/lifeday.js';
 import { bump } from '../sim/social.js';
 import { looseJson } from '../sim/jsonfix.js';
 import * as R from '../sim/ownrun.js';
+import { WITH } from '../sim/shared.js'; // [expanded] 15.4.1
 import * as O from '../sim/own.js';
 export const GV = { game: '', phase: 'load', d: null, score: 0, partner: '', bubble: '', bubbleAt: 0, raf: 0, timers: [], text: '', setup: null };
 const ctxW = () => { const g = game(); const w = g && getWorld(g.world); return g && w && isScenario(w) ? { g, w } : null; };
@@ -40,7 +41,7 @@ async function ask(prompt, n) {
 }
 /* ---------- the choice: play it, or just do it ---------- */
 const PLAYABLE = { cook: 'Cook it step by step', guitar: 'Play it', clean: 'Clean it yourself', crossword: 'Solve it', work: 'Focus on it', study: 'Focus on it', code: 'Write the code', write: 'Write it' };
-const WITH = ['cook', 'guitar', 'clean', 'crossword', 'study'];
+// [expanded] 15.4.1: WITH lives in sim/shared.ts (the action list shows it too)
 export function ownHtml() {
     const c = ctxW();
     if (!c)

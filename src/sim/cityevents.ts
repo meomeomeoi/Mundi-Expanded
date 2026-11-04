@@ -5,7 +5,7 @@
 // An outdoor one is called off when it rains.
 import { nowAbs, type Save } from '../core/store.js';
 import { systemOn, type WorldDef, type CityEventDef, type ActionDef } from '../core/world.js';
-import { weatherOn } from './weather.js';
+import { weatherOn, seasonIdOn, keepsIndoors } from './weather.js';   // [expanded] 15.4.1
 import { note } from './facts.js';
 import { onHour, onDay } from './hooks.js';
 import { levelOf } from './hobbies.js';
@@ -23,7 +23,7 @@ export function eventsOn(g: Save, w: WorldDef, day: number): EventTime[] {
     if (!on(w) || day < 1) return [];
     const wd = (day - 1) % 7, week = Math.floor((day - 1) / 7);
     return w.cityEvents!.filter(e => e.weekday === wd && w.places.some(p => p.id === e.place) && week % Math.max(1, e.every ?? 1) === (e.week ?? 0) % Math.max(1, e.every ?? 1))
-        .map(e => { const from = day * 1440 + Math.round((e.from ?? 18) * 60); return { key: `${e.id}@${day}`, ev: e, day, from, to: from + Math.round((e.hours ?? 3) * 60), off: !!e.outdoor && weatherOn(g.world, day).rain }; });
+        .map(e => { const from = day * 1440 + Math.round((e.from ?? 18) * 60); return { key: `${e.id}@${day}`, ev: e, day, from, to: from + Math.round((e.hours ?? 3) * 60), off: !!e.outdoor && keepsIndoors(weatherOn(g.world, day, { season: seasonIdOn(g, day) })) }; });
 }
 // What is on right now (or at `at`), anywhere or at one place.
 export function liveEvents(g: Save, w: WorldDef, at = nowAbs(g)): EventTime[] {

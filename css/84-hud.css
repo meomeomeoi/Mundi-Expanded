@@ -395,3 +395,7 @@
 #mundi-root .mh-persona.no-needs .mh-who .mu-cash { flex-basis: 100%; margin-left: 0; font-size: 18px; }
 #mundi-root .mh-persona.no-needs .mh-rings { display: none; }
 @media (min-width: 761px) { #mundi-root:not([data-mobile]) .mh-persona.no-needs { height: auto; width: 300px; } }
+
+/* [expanded] 15.4.1: 👥 can be done with someone / 👤 just you, in front of an action's details */
+#mundi-root .mh-share { display: inline-block; margin-right: 5px; font-size: 11px; line-height: 1; vertical-align: -1px; opacity: .55; cursor: help; }
+#mundi-root .mh-share.is-with { opacity: 1; }

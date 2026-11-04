@@ -6,12 +6,13 @@ import type { Save } from '../core/store.js';
 import { systemOn, type WorldDef } from '../core/world.js';
 import type { Element } from '../core/rpgdef.js';
 import { regionOf } from './worldstate.js';
+import type { Wx } from './weather.js';   // [expanded] 15.4.1
 
 const on = (w: WorldDef) => systemOn(w, 'elements');
 const setOf = (g: Save): Record<string, { day: number; to: 'rain' | 'clear' }> => ((g as any).weatherSet ??= {});
 export function setWeather(g: Save, w: WorldDef, to: 'rain' | 'clear', place = g.player.loc) { setOf(g)[regionOf(g, w, place)] = { day: g.day, to }; }
 // The weather a spell set for today (if any): the world's weather function asks this first.
-export function weatherOverride(g: Save, w: WorldDef | null | undefined, place: string, day = g.day): { icon: string; name: string; rain: boolean } | null {
+export function weatherOverride(g: Save, w: WorldDef | null | undefined, place: string, day = g.day): Wx | null {
     if (!w) return null;
     const o = (g as any).weatherSet?.[regionOf(g, w, place)];
     if (!o || o.day !== day) return null;
@@ -20,7 +21,7 @@ export function weatherOverride(g: Save, w: WorldDef | null | undefined, place: 
 export function elementMul(w: WorldDef, el: Element | undefined, weather: { rain: boolean; name: string }): number {
     if (!on(w) || !el) return 1;
     if (weather.rain) return el === 'fire' ? 0.5 : el === 'water' || el === 'lightning' ? 1.5 : 1;
-    if (weather.name === 'Sunny' && el === 'fire') return 1.25;
+    if ((weather.name === 'Sunny' || weather.name === 'Heatwave') && el === 'fire') return 1.25;   // [expanded] 15.4.1
     return 1;
 }
 export const elementsOn = on;

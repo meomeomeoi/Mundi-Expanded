@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.4';
+export const VERSION = '0.2.1-15.4.1';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,11 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.4.1', fork: true, title: 'Weather, together or alone', items: [
+            ['cloud-rain', 'More kinds of weather. Rain is now light rain, rain or a downpour, and each season has its own: thunderstorms and heatwaves in summer, fog and wind in autumn, frost, snow and blizzards in winter. A drizzle changes nobody\'s plans; downpours, storms, snow, blizzards and heat keep people indoors. A map\'s climate bends it (no snow in the hot places, no heat in the cold).'],
+            ['users', 'Actions show whether they can be done with someone: 👥 for what you can share (cooking, music, tidying, a crossword, studying, a game with the others), 👤 for what is only you.'],
+            ['check', 'Fixed: in the Storage app the text of a thing was squeezed into a column of single letters when its details were long (Furniture tab, and rows with an owner). The name now keeps its room and the details go under it.'],
+        ] },
     { v: '0.2.1-15.4', fork: true, title: 'Deliveries, diary, birthdays', items: [
             ['download', 'A delivery box can be unpacked where the courier left it: in the hallway there is now "Unpack the deliveries". Before, the only way was the phone\'s shop app, which some houses do not show.'],
             ['pen', 'The Journal: any day\'s diary entry can be edited by hand, or written yourself when there is none.'],

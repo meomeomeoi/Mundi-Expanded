@@ -7,6 +7,7 @@ import { systemOn, type WorldDef, type LoreEntry } from '../core/world.js';
 import { onDay } from './hooks.js';
 import { residents, whereNow } from './people.js';
 import { weatherAt, regionOf, regionState } from './worldstate.js';
+import { weatherMatches } from './weather.js';   // [expanded] 15.4.1
 import { period, isWeekend, seasonOf } from './time.js';
 import { note, facts, factText } from './facts.js';
 import { homeSpot, takenHomes } from './homes.js';
@@ -40,7 +41,7 @@ export interface LoreWhen {
 type WhenLore = LoreEntry & { when?: LoreWhen; rumor?: boolean };
 // The day-wide conditions (no place or hour): also what decides when a world rumor starts going around.
 function dayHolds(g: Save, w: WorldDef, c: LoreWhen, key: string, place = g.player.loc): boolean {
-    if (c.weather && !weatherAt(g, w, place).name.toLowerCase().includes(c.weather.toLowerCase())) return false;
+    if (c.weather && !weatherMatches(weatherAt(g, w, place), c.weather)) return false;   // [expanded] 15.4.1: "Rain" is any rain
     if (c.weekend !== undefined && c.weekend !== isWeekend(g.day)) return false;
     if (c.season && c.season !== seasonOf(g).id) return false;
     if (c.fromDay && g.day < c.fromDay) return false;
