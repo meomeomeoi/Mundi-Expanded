@@ -1,5 +1,22 @@
 # Changelog
 
+## Mundi Expanded 15.4.1 (0.2.1-15.4.1) · Weather, together or alone
+
+- **More kinds of weather.** Rain is now light rain, rain or a downpour, and every season has weather of its own:
+  thunderstorms and heatwaves in summer, fog and wind in autumn, frost, snow and blizzards in winter (spring: fog,
+  showers and the odd storm). A drizzle changes nobody's plans; downpours, thunderstorms, snow, blizzards and heatwaves
+  keep people indoors (outdoor plans and city events change, outdoor places are quiet). A downpour weighs on the
+  public mood more than a drizzle does. A map's climate bends the weather: no snow, frost or blizzards in a hot place,
+  no heatwaves in a cold one. The rain sound plays for any rain. A lore entry's "Only when… weather" has all the new
+  kinds, and "Any rain" / "Any snow" match every kind of them. A day's weather is not saved, so days you already played
+  may look different when you look back at them.
+- **Together or alone.** In a Home, each action in the list has a small mark: 👥 for what can be done with someone (a
+  cooked meal, music, tidying, a crossword, studying, a game with the others) and 👤 for what is only you. The
+  mini-game picker reads the same list, so the mark and the "With:" choice always agree.
+- **Fixed: the Storage app squeezed the text.** A thing's name was pushed into a column a letter wide when the line
+  beside it was long (the Furniture tab: what the thing is for; rows with an owner's tag). The name keeps a minimum
+  width and the details go on their own line under it.
+
 ## Mundi Expanded 15.4 (0.2.1-15.4) · Deliveries, diary, birthdays
 
 - **Delivery boxes can be unpacked in the hallway.** The courier's toast said the box was in the entrance hall, but

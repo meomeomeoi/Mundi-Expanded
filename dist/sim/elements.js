@@ -17,8 +17,8 @@ export function elementMul(w, el, weather) {
         return 1;
     if (weather.rain)
         return el === 'fire' ? 0.5 : el === 'water' || el === 'lightning' ? 1.5 : 1;
-    if (weather.name === 'Sunny' && el === 'fire')
-        return 1.25;
+    if ((weather.name === 'Sunny' || weather.name === 'Heatwave') && el === 'fire')
+        return 1.25; // [expanded] 15.4.1
     return 1;
 }
 export const elementsOn = on;

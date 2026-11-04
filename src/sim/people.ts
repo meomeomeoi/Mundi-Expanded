@@ -8,7 +8,7 @@ import { nowAbs, type Save, type Resident } from '../core/store.js';
 import { systemOn, isScenario, type WorldDef } from '../core/world.js';
 import { isWeekend } from './time.js';
 import { appointmentNow, isWith } from './social.js';
-import { weatherOn } from './weather.js';
+import { weatherOn, seasonIdOn, keepsIndoors } from './weather.js';   // [expanded] 15.4.1
 import { weatherAt } from './worldstate.js';
 import { breakNow } from './daylife.js';
 import { isOpen } from './daynight.js';
@@ -49,9 +49,9 @@ function leisureSpot(g: Save, w: WorldDef, r: Resident, day: number, stepHour: n
     if (systemOn(w, 'living')) { list = list.filter(id => isOpen(w, id, stepHour * 60)); if (!list.length) return `home:${r.avatar}`; }
     // rain changes plans: outdoor spots are skipped for somewhere with a roof (or home)
     // (a region with a weather of its own may be dry while it rains elsewhere)
-    const wet = (id: string) => weatherAt(g, w, id, day).rain;
+    const wet = (id: string) => keepsIndoors(weatherAt(g, w, id, day));   // [expanded] 15.4.1: downpours, storms, snow and heat, not a drizzle
     // it rains on her plans: an outdoor spot of hers is wet (or, with none, it rains in the world)
-    const raining = list.some(id => outdoors(w, id)) ? list.some(id => outdoors(w, id) && wet(id)) : weatherOn(g.world, day).rain;
+    const raining = list.some(id => outdoors(w, id)) ? list.some(id => outdoors(w, id) && wet(id)) : keepsIndoors(weatherOn(g.world, day, { season: seasonIdOn(g, day) }));
     if (raining) {
         const dry = list.filter(id => !outdoors(w, id) || !wet(id));
         list = dry.length ? dry : w.places.filter(p => (p.tags ?? []).some(t => t === 'food' || t === 'shop')).map(p => p.id);

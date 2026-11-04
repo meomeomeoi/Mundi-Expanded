@@ -2,8 +2,8 @@
 #mundi-root .mu-st { gap: 10px; }
 #mundi-root .mu-st-tabs button small { opacity: .7; font-weight: 600; margin-left: 2px; }
 #mundi-root .mu-st-list { display: grid; gap: 4px; }
-#mundi-root .mu-st-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; }
-#mundi-root .mu-st-item > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#mundi-root .mu-st-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 7px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; }
+#mundi-root .mu-st-item > span { flex: 1 1 8em; min-width: 0; overflow-wrap: break-word; }   /* [expanded] 15.4.1: a floor for the name; `anywhere` + flex: 1 squeezed it into a column of single letters */
 #mundi-root .mu-st-item > b { color: var(--muted); font-weight: 700; }
 #mundi-root .mu-st-item.is-edit { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "name qty del" "own mv mv"; gap: 4px 6px; }
 #mundi-root .mu-st-item.is-edit .mu-st-name { grid-area: name; font-weight: 600; }
@@ -50,10 +50,13 @@
 #mundi-root .mu-mn-move > button { justify-content: center; }
 #mundi-root .mu-mn-borrow { display: grid; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid rgba(243, 156, 18, .5); background: rgba(243, 156, 18, .08); }
 /* [expanded] 0.2.0.7: the Furniture tab */
-#mundi-root .mu-fx-item small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+#mundi-root .mu-fx-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 8px; }   /* [expanded] 15.4.1: name on top, what it is for under it, instead of side by side */
+#mundi-root .mu-fx-item small { font-size: 11px; white-space: normal; overflow-wrap: break-word; }
 #mundi-root .mu-fx-item.is-decor > span, #mundi-root .mu-fx-item.is-decor .mu-st-name { font-style: italic; }
-#mundi-root .mu-fx-item.is-edit { grid-template-areas: "name what del" "own mv mv"; grid-template-columns: 1fr auto auto; }
-#mundi-root .mu-fx-item.is-edit > small { grid-area: what; max-width: 140px; }
+#mundi-root .mu-fx-item.is-edit { grid-template-areas: "name del" "what what" "own mv"; grid-template-columns: minmax(0, 1fr) auto; }
+#mundi-root .mu-fx-item.is-edit .mu-st-own { grid-area: own; }
+#mundi-root .mu-fx-item.is-edit .mu-st-mv { grid-area: mv; }
+#mundi-root .mu-fx-item.is-edit > small { grid-area: what; }
 #mundi-root .mu-fx-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--bg2); color: var(--muted); }
 #mundi-root .mu-fx-more summary { cursor: pointer; font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
 #mundi-root .mu-st-tabs { flex-wrap: wrap; }

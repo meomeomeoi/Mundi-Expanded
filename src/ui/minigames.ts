@@ -14,6 +14,7 @@ import { slotAt } from '../sim/lifeday.js';
 import { bump } from '../sim/social.js';
 import { looseJson } from '../sim/jsonfix.js';
 import * as R from '../sim/ownrun.js';
+import { WITH } from '../sim/shared.js';   // [expanded] 15.4.1
 import * as O from '../sim/own.js';
 
 type Phase = 'load' | 'play' | 'done';
@@ -34,7 +35,7 @@ async function ask(prompt: string, n: number): Promise<any> {
 /* ---------- the choice: play it, or just do it ---------- */
 
 const PLAYABLE: Record<R.Game, string> = { cook: 'Cook it step by step', guitar: 'Play it', clean: 'Clean it yourself', crossword: 'Solve it', work: 'Focus on it', study: 'Focus on it', code: 'Write the code', write: 'Write it' };
-const WITH: R.Game[] = ['cook', 'guitar', 'clean', 'crossword', 'study'];
+// [expanded] 15.4.1: WITH lives in sim/shared.ts (the action list shows it too)
 export function ownHtml(): string {
     const c = ctxW(); if (!c) return '';
     const { g, w } = c; const p = R.OWN.pending;

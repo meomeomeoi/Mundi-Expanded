@@ -13,7 +13,7 @@ import { placeOf, isHome, playerHomeId } from './places.js';
 import { presentAt } from './people.js';
 import { isWeekend } from './time.js';
 import { partOf, openNow, periodPrice, partMood } from './daynight.js';
-import { weatherOn } from './weather.js';
+import { weatherOn, seasonIdOn, keepsIndoors } from './weather.js';   // [expanded] 15.4.1: seasons and kinds of weather
 import { facts } from './facts.js';
 import { lex } from '../core/lexicon.js';
 
@@ -38,18 +38,20 @@ export function regionState(g: Save, w: WorldDef, id: string): Region {
 
 /* ---------- weather ---------- */
 
+// [expanded] 15.4.1: a map's climate, or its parent's (a district of a cold region is cold)
+const climateIn = (w: WorldDef, id: string): string | undefined => { let m = w.maps.find(x => x.id === id); for (let i = 0; m && i < 5; i++) { if (m.climate) return m.climate; m = w.maps.find(x => x.id === m!.parent); } return undefined; };
 // The weather of a region: the world's own, unless the map has a weather of its own (a far island, the mountains).
 export function weatherAt(g: Save, w: WorldDef | null | undefined, place: string, day = g.day) {
     const forced = weatherOverride(g, w, place, day); if (forced) return forced;   // a spell called rain or cleared the sky
     const map = w && place ? regionDef(w, regionOf(g, w, place)) : undefined;
-    return weatherOn(map?.ownWeather ? `${g.world}:${map.id}` : g.world, day);
+    return weatherOn(map?.ownWeather ? `${g.world}:${map.id}` : g.world, day, { season: seasonIdOn(g, day), climate: w && map ? climateIn(w, map.id) : undefined });   // [expanded] 15.4.1
 }
 
 // The weather where you are now (a moon at night when it is clear), for the HUD and the AI.
 export function weatherHere(g: Save, w: WorldDef | null | undefined) {
     const wx = weatherAt(g, w, g.player.loc);
     const night = g.minutes < 330 || g.minutes >= 1170;
-    return { ...wx, icon: night && !wx.rain ? '🌙' : wx.icon };
+    return { ...wx, icon: night && !wx.rain && !wx.snow ? '🌙' : wx.icon };
 }
 
 /* ---------- how busy a place is, right now ---------- */
@@ -78,7 +80,7 @@ export function crowdLevel(g: Save, w: WorldDef, place: string): number {
     const weekend = isWeekend(g.day);
     if (weekend) rhythm *= tags.some(t => t === 'leisure' || t === 'shop' || t === 'food') ? 1.3 : tags.some(t => t === 'work' || t === 'study' || t === 'service') ? 0.4 : 1;
     const outdoors = tags.includes('leisure') && !tags.some(t => ['food', 'shop', 'service', 'work', 'study'].includes(t));
-    if (outdoors && weatherAt(g, w, place).rain) rhythm *= 0.25;
+    if (outdoors && keepsIndoors(weatherAt(g, w, place))) rhythm *= 0.25;   // [expanded] 15.4.1: not for a drizzle
     const r = regionDef(w, p.map);
     const mood = moodNow(g, w, p.map);
     const own = p.crowd;   // a place can be quieter (0.5) or busier (1.5) than its kind
@@ -118,7 +120,7 @@ function dayInRegion(g: Save, w: WorldDef, id: string): string[] {
     const yesterday = (g.day - 1) * 1440;
     const here = facts(g).filter(f => f.at >= yesterday && f.at < g.day * 1440 && !isHome(f.place) && regionOf(g, w, f.place) === id);
     const good = here.filter(f => GOOD.includes(f.kind ?? '')).length, bad = here.filter(f => BAD.includes(f.kind ?? '')).length;
-    const wx = weatherOn(regionDef(w, id)?.ownWeather ? `${g.world}:${id}` : g.world, g.day);
+    const wx = weatherOn(regionDef(w, id)?.ownWeather ? `${g.world}:${id}` : g.world, g.day, { season: seasonIdOn(g, g.day), climate: climateIn(w, id) });   // [expanded] 15.4.1
     const out: string[] = [];
     const name = regionDef(w, id)?.name ?? id;
     // tension: back toward the usual, up with trouble; now and then something stirs people up
@@ -129,7 +131,7 @@ function dayInRegion(g: Save, w: WorldDef, id: string): string[] {
     if (t0 < 50 && r.tension >= 50) out.push(lex(w, 'tensionUp', name));
     if (t0 >= 50 && r.tension < 50) out.push(lex(w, 'tensionDown', name));
     // public mood: back toward the usual, lifted by sun, weekends and good times, pulled down by rain and tension
-    r.mood += (b.mood - r.mood) * 0.2 + (wx.rain ? -8 : wx.name === 'Sunny' ? 4 : 0) + (isWeekend(g.day) ? 5 : 0) + good * 2 - bad * 3 - r.tension / 12 + (rnd(g, `m|${id}`) - 0.5) * 12;
+    r.mood += (b.mood - r.mood) * 0.2 + (wx.harsh || (wx.rain && !wx.light) ? -8 : wx.light ? -3 : wx.name === 'Sunny' ? 4 : 0)   /* [expanded] 15.4.1: a drizzle weighs less than a downpour */ + (isWeekend(g.day) ? 5 : 0) + good * 2 - bad * 3 - r.tension / 12 + (rnd(g, `m|${id}`) - 0.5) * 12;
     r.mood = clamp(Math.round(r.mood), -100, 100);
     // prices drift a little each day around the region's usual, a bit up when times are good
     const p0 = r.price;
