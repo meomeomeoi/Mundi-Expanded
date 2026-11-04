@@ -19,6 +19,7 @@ import { getWorld, worldFile, systemOn, isScenario } from '../core/world.js';
 import { openNow, pictureAt } from '../sim/daynight.js';
 import { isRpg, longRest } from '../sim/rpg.js';
 import { journeyOf, travelRoad } from '../sim/journey.js';
+import { recordNight } from '../sim/redonight.js'; // [expanded] 0.2.1-15.4
 import { thumb } from '../st/bridge.js';
 import { pins, placeOf, travelMinutes, playerHomeId, isOuting, outingName } from '../sim/places.js';
 import { planOn, floorsOn, planTarget, unplaced, floorOf } from '../sim/plan.js';
@@ -573,6 +574,7 @@ async function sleep(wakeAt) {
         notify();
         return;
     } // a nap: the same day goes on
+    recordNight(g, dayEnded, dayLines); // [expanded] 0.2.1-15.4: kept for "Redo the night" (phone Settings)
     showTransition(`Day ${g.day}`, weekday(g.day), 'night');
     notify();
     // the day becomes a diary entry (one AI call), while the night passes on screen
@@ -600,7 +602,7 @@ async function nightBonds(g, w, day, range) {
     }
     catch (e) { // [expanded] 0.2.0.9: with "Try again" (the night's lines are kept: range)
         const { failNotice } = await import('./retry.js');
-        failNotice('bonds', `Relationships could not be updated tonight (${String(e?.message ?? e).slice(0, 120)}).`, async () => { const note = changesNote(await bondsNight(g, w, day, range), !!g.bonds?.truth); refreshPrompt(); if (note)
+        failNotice('bonds', `Relationships could not be updated tonight (${String(e?.message ?? e).slice(0, 120)}).`, async (cur) => { const note = changesNote(await bondsNight(cur, w, day, range), !!cur.bonds?.truth); refreshPrompt(); if (note)
             toast(note, 'info', { ms: 8000 });
         else
             toast('Relationships: read again, nothing changed.', 'info'); });
@@ -617,9 +619,9 @@ async function nightBonds(g, w, day, range) {
     // [expanded] 0.2.1-14: the long memory (after the relationships: it weighs tonight's moments too), then, every
     // few days, the stories so far. Each with "Try again" when the model will not answer in the form.
     const { memNight, memFold, foldDue } = await import('../sim/memrun.js');
-    const night = async () => { const n = await memNight(g, w, day, range); refreshPrompt(); if (n.length)
+    const night = async (gg = g) => { const n = await memNight(gg, w, day, range); refreshPrompt(); if (n.length)
         toast(`Remembered: ${n.slice(0, 3).join(' · ')}`, 'info', { ms: 9000 }); };
-    const fold = async () => { const n = await memFold(g, w, day); if (n) {
+    const fold = async (gg = g) => { const n = await memFold(gg, w, day); if (n) {
         refreshPrompt();
         toast(`The stories so far were brought up to date (${n}).`, 'info');
     } };

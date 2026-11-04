@@ -55,7 +55,7 @@ async function readLines(g, text, fallback) {
     const raw = await bgAsk(S.readPrompt(G(g), text, you, extra), 1500, S.READ_SYSTEM, fallback);
     // [expanded] 0.2.0.9: no answer or a refusal: a notice with "Try again" (NONE is an answer)
     if (!raw || (refused(raw) && !/\bNONE\b/.test(raw))) {
-        void import('../ui/retry.js').then(m => m.failNotice('things', `The story could not be read for things, gifts and money${raw ? ' (the mechanics model refused)' : ''}.`, async () => { const c = await readLines(g, text, fallback); saveGame(); refresh(); say(c); }));
+        void import('../ui/retry.js').then(m => m.failNotice('things', `The story could not be read for things, gifts and money${raw ? ' (the mechanics model refused)' : ''}.`, async (cur) => { const c = await readLines(cur, text, fallback); saveGame(); refresh(); say(c); }));
         return [];
     }
     const changes = S.applyRead(G(g), S.parseRead(G(g), raw, you), you);

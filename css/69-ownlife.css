@@ -100,3 +100,7 @@
 #mundi-root .mu-out-people .mu-chip.is-no small { display: block; font-size: 10px; opacity: .85; line-height: 1.1; }
 /* 12.5: the relationship graph keeps its height in a scrolling phone body (a grid row sized it 0 with a long list under it) */
 #mundi-root .mu-bd-graph { aspect-ratio: 300 / 290; min-height: min-content; flex: none; }
+
+/* [expanded] 15.4: scrubbing must not select text */
+#mundi-root .mu-og-surface, #mundi-root .mu-og-surface * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+#mundi-root.is-scrubbing, #mundi-root.is-scrubbing * { user-select: none !important; -webkit-user-select: none !important; }

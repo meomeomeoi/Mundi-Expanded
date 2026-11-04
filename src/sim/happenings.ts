@@ -205,13 +205,15 @@ export function lifeMoment(g: Save, w: WorldDef, avatar: string, text: string, t
 export const birthdayOf = (g: Save, avatar: string) => Math.floor(H(`${g.world}|bday|${avatar}`) * yearDays(g));
 const yearDays = (g: Save) => 4 * Math.max(1, Math.round((g as any).cfg?.seasonDays ?? 14));
 export const isBirthday = (g: Save, avatar: string, day = g.day) => ((day - 1) % yearDays(g)) === birthdayOf(g, avatar);
+/** [expanded] 15.4: Me → Settings → Birthdays (on unless turned off); read from the save, so this file needs no import of ownrun. */
+const birthdaysOn = (g: Save) => ((g as any).ownx?.cfg?.birthdays) !== false;
 function momentsDay(g: Save, w: WorldDef): string[] {
     const out: string[] = [];
     if (!systemOn(w, 'consults')) return out;
     for (const r of Object.values(g.cast)) {
         if (!r.met || bondOf(g, r.avatar) < KNOWN_BOND) continue;
         if (breakOf(g, w, r, g.day)?.kind === 'sick') sickMoment(g, w, r);
-        if (isBirthday(g, r.avatar)) { push(g, { kind: 'birthday', avatar: r.avatar, text: `Today is ${r.name}'s birthday.`, choices: [['msg', 'Send your wishes'], ['later', 'Not now']] }); out.push(`It's ${r.name}'s birthday today.`); }
+        if (birthdaysOn(g) && isBirthday(g, r.avatar)) { push(g, { kind: 'birthday', avatar: r.avatar, text: `Today is ${r.name}'s birthday.`, choices: [['msg', 'Send your wishes'], ['later', 'Not now']] }); out.push(`It's ${r.name}'s birthday today.`); }
     }
     return out;
 }

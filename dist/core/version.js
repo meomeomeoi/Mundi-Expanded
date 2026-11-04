@@ -2,7 +2,7 @@
 // [expanded] Mundi Expanded's versions: the upstream Mundi version it is built on, a dash, and this fork's own release
 // number, which goes on across upstream versions: 0.2.1-11.1 is Expanded 11.1 on Mundi 0.2.1 (until 0.2.0.11 the
 // two were glued together as a fourth part). `newer` compares the numbers in order, so both forms compare right.
-export const VERSION = '0.2.1-15.3.3';
+export const VERSION = '0.2.1-15.4';
 /** The upstream Mundi version this fork is based on. */
 export const BASE = VERSION.split('-')[0];
 /** This fork's own release number (11.1). */
@@ -10,6 +10,14 @@ export const EXPANDED = VERSION.split('-').slice(1).join('-');
 // Newest first. The first one is what the window shows after an update.
 export const CHANGELOG = [
     // [expanded] this fork's releases
+    { v: '0.2.1-15.4', fork: true, title: 'Deliveries, diary, birthdays', items: [
+            ['download', 'A delivery box can be unpacked where the courier left it: in the hallway there is now "Unpack the deliveries". Before, the only way was the phone\'s shop app, which some houses do not show.'],
+            ['pen', 'The Journal: any day\'s diary entry can be edited by hand, or written yourself when there is none.'],
+            ['calendar', 'Birthdays: a notice three days before and the day before, and a Birthdays switch in Me → Settings (off: no reminders, no birthday scenes, nobody minds a forgotten one).'],
+            ['heart', 'Relationships (editing on): set closeness with a person, and how they feel about you (interested, a secret crush, secretly in love, or one they have told you).'],
+            ['redo', 'Phone Settings → Redo the night: read the last night again, one part at a time (memory, what they learned, the housemates\' moments, secrets), without counting anything twice.'],
+            ['check', 'Fixed: "Try again" on a failed night notice did nothing (the notices could not be clicked, and kept an old copy of the game). Rubbing dirt in the cleaning mini-game no longer selects text.'],
+        ] },
     { v: '0.2.1-15.3.3', fork: true, title: 'Plans out of the house', items: [
             ['map-pin', 'Going to a plan somewhere out (the mall, a café) is now going out: the place has its picture, who is with you comes along, and "Back home" works. Before, you arrived in a black scene with no outing at all.'],
             ['message-circle', 'A meet-up or a date begins with them speaking first, instead of standing there in silence until you write.'],

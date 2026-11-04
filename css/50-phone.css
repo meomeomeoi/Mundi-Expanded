@@ -715,3 +715,12 @@ body.mundi-open #toast-container { display: none !important; }
 #mundi-root .mu-ng-roomacts header h4 { margin: 0; }
 /* faces in the jobs list stay small */
 #mundi-root .mu-ngjobs-grid img { width: 24px; height: 24px; max-width: 24px; border-radius: 50%; object-fit: cover; flex: none; }
+
+/* [expanded] 15.4: editing a diary entry */
+#mundi-root .mu-jr-edit { width: 100%; box-sizing: border-box; min-height: 140px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: inherit; font: inherit; line-height: 1.5; resize: vertical; }
+
+/* [expanded] 15.4: Redo the night */
+#mundi-root .mu-rn { display: grid; gap: 8px; }
+#mundi-root .mu-rn-btn { display: flex; align-items: flex-start; gap: 10px; text-align: left; justify-content: flex-start; height: auto; padding: 8px 12px; }
+#mundi-root .mu-rn-btn span { display: grid; gap: 2px; }
+#mundi-root .mu-rn-btn small { font-weight: 400; opacity: .8; white-space: normal; }

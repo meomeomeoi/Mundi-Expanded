@@ -147,3 +147,6 @@
 #mundi-root .mu-sprites.has-speaker .mu-sprite:not(.is-speaking) { filter: brightness(.88) saturate(.94); }
 #mundi-root .mu-sprites .mu-sprite.is-hop > img { animation: mu-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes mu-hop { 0% { translate: 0 0; } 35% { translate: 0 -10px; } 100% { translate: 0 0; } }   /* translate, not transform: transform holds the height setting */
+
+/* [expanded] 15.4: #mundi-toasts lets clicks through (pointer-events: none), and the toasts inherited it: "Try again" and the close buttons could not be pressed */
+#mundi-toasts .mu-toast { pointer-events: auto; }

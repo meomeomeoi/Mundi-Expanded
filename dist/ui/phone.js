@@ -49,6 +49,7 @@ import { pickFile } from './cropper.js';
 import { openHelp } from './help.js';
 import { ACT, INPUT } from './reg.js';
 import { bondsApp, bondsSettingsHtml } from './bondsui.js'; // [expanded]
+import { redoNightHtml } from './redoui.js'; // [expanded] 0.2.1-15.4
 import { stockApp } from './stockui.js'; // [expanded]
 import { moneyApp } from './moneyui.js'; // [expanded]
 import { battery } from '../sim/battery.js'; // [expanded] 0.2.1-12.3
@@ -182,7 +183,7 @@ function settingsApp() {
     const pics = WP.pick === 'chat' ? chatPictures() : WP.pick === 'gallery' ? galleryPictures() : [];
     const shown = pics ? pics.slice(0, WP.more ? 240 : 36) : [];
     const empty = WP.pick === 'chat' ? 'No pictures in this chat yet (Image Generation, attachments).' : 'No pictures in the Mundi gallery yet.';
-    return `${head('Settings', 'home')}<div class="mu-ph-body">${bondsSettingsHtml() /* [expanded] */}
+    return `${head('Settings', 'home')}<div class="mu-ph-body">${bondsSettingsHtml() /* [expanded] */}${redoNightHtml() /* [expanded] 0.2.1-15.4 */}
         <section class="mu-ph-wp"><h4>Wallpaper</h4>
             <div class="mu-ph-wp-now" style="${cur ? `background-image:${esc(cssUrl(cur))}` : ''}">${cur ? '' : '<small>Default</small>'}</div>
             <button class="mu-primary" data-act="wp-upload" ${WP.busy ? 'disabled' : ''}>${icon('upload')}<span>${WP.busy ? 'Uploading…' : 'Choose a picture from your computer'}</span></button>
